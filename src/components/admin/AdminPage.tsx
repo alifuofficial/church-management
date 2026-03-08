@@ -5117,6 +5117,8 @@ function SettingsContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingFavicon, setUploadingFavicon] = useState(false);
   const [settings, setSettings] = useState({
     siteName: 'Grace Community Church',
     siteTagline: 'Welcome Home',
@@ -5265,6 +5267,48 @@ function SettingsContent() {
     }
   };
 
+  // Handle file upload for logo/favicon
+  const handleFileUpload = async (file: File, type: 'logo' | 'favicon') => {
+    if (type === 'logo') {
+      setUploadingLogo(true);
+    } else {
+      setUploadingFavicon(true);
+    }
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', 'image');
+      
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        if (type === 'logo') {
+          setSettings(prev => ({ ...prev, logoUrl: data.url }));
+        } else {
+          setSettings(prev => ({ ...prev, faviconUrl: data.url }));
+        }
+        setSaveMessage({ type: 'success', text: `${type === 'logo' ? 'Logo' : 'Favicon'} uploaded successfully! Click "Save Changes" to apply.` });
+        setTimeout(() => setSaveMessage(null), 5000);
+      } else {
+        setSaveMessage({ type: 'error', text: 'Failed to upload file' });
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      setSaveMessage({ type: 'error', text: 'Error uploading file' });
+    } finally {
+      if (type === 'logo') {
+        setUploadingLogo(false);
+      } else {
+        setUploadingFavicon(false);
+      }
+    }
+  };
+
   const tabs = [
     { id: 'general', label: 'Site Info', icon: Church, category: 'General' },
     { id: 'logo', label: 'Logo & Branding', icon: Sparkles, category: 'General' },
@@ -5403,51 +5447,138 @@ function SettingsContent() {
           <CardHeader>
             <CardTitle className="text-white">Logo & Branding</CardTitle>
             <CardDescription className="text-slate-400">
-              Upload your church logo and favicon.
+              Upload your church logo and favicon. Changes will be reflected across all pages after saving.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Save Message */}
+            {saveMessage && (
+              <div className={cn(
+                "p-3 rounded-lg flex items-center gap-2",
+                saveMessage.type === 'success' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" : "bg-red-500/10 text-red-400 border border-red-500/30"
+              )}>
+                {saveMessage.type === 'success' ? <Check className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                {saveMessage.text}
+              </div>
+            )}
+            
             <div className="grid gap-6 md:grid-cols-2">
+              {/* Logo Upload */}
               <div className="space-y-4">
                 <Label className="text-slate-300">Church Logo</Label>
-                <div className="border-2 border-dashed border-slate-700 rounded-lg p-8 text-center hover:border-amber-500 transition cursor-pointer">
-                  {settings.logoUrl ? (
-                    <img src={settings.logoUrl} alt="Logo" className="h-24 mx-auto mb-4" />
-                  ) : (
-                    <div className="w-24 h-24 mx-auto mb-4 rounded-xl bg-amber-500/20 flex items-center justify-center">
-                      <Church className="h-12 w-12 text-amber-400" />
-                    </div>
-                  )}
-                  <p className="text-slate-400 text-sm">Click to upload or drag and drop</p>
-                  <p className="text-slate-500 text-xs mt-1">PNG, JPG or SVG (max 2MB)</p>
-                </div>
-                <Input
-                  value={settings.logoUrl}
-                  onChange={(e) => setSettings(prev => ({ ...prev, logoUrl: e.target.value }))}
-                  placeholder="Or enter logo URL"
-                  className="bg-slate-800 border-slate-700 text-white"
+                <input
+                  type="file"
+                  id="logo-upload"
+                  className="hidden"
+                  accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileUpload(file, 'logo');
+                  }}
                 />
+                <label
+                  htmlFor="logo-upload"
+                  className="border-2 border-dashed border-slate-700 rounded-lg p-8 text-center hover:border-amber-500 transition cursor-pointer block relative"
+                >
+                  {uploadingLogo ? (
+                    <div className="flex flex-col items-center justify-center">
+                      <Loader2 className="h-12 w-12 text-amber-500 animate-spin mb-3" />
+                      <p className="text-amber-400 text-sm">Uploading...</p>
+                    </div>
+                  ) : settings.logoUrl ? (
+                    <>
+                      <img src={settings.logoUrl} alt="Logo" className="h-24 mx-auto mb-4 object-contain" />
+                      <p className="text-amber-400 text-sm font-medium">Click to change logo</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-24 h-24 mx-auto mb-4 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                        <Church className="h-12 w-12 text-amber-400" />
+                      </div>
+                      <p className="text-slate-400 text-sm">Click to upload or drag and drop</p>
+                    </>
+                  )}
+                  <p className="text-slate-500 text-xs mt-1">PNG, JPG, SVG or WebP (max 50MB)</p>
+                </label>
+                <div className="space-y-2">
+                  <Label className="text-slate-400 text-xs">Or enter URL manually</Label>
+                  <Input
+                    value={settings.logoUrl}
+                    onChange={(e) => setSettings(prev => ({ ...prev, logoUrl: e.target.value }))}
+                    placeholder="https://example.com/logo.png"
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
               </div>
+              
+              {/* Favicon Upload */}
               <div className="space-y-4">
                 <Label className="text-slate-300">Favicon</Label>
-                <div className="border-2 border-dashed border-slate-700 rounded-lg p-8 text-center hover:border-amber-500 transition cursor-pointer">
-                  {settings.faviconUrl ? (
-                    <img src={settings.faviconUrl} alt="Favicon" className="h-16 w-16 mx-auto mb-4" />
-                  ) : (
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-slate-700 flex items-center justify-center">
-                      <Sparkles className="h-8 w-8 text-slate-400" />
-                    </div>
-                  )}
-                  <p className="text-slate-400 text-sm">Click to upload favicon</p>
-                  <p className="text-slate-500 text-xs mt-1">ICO, PNG (32x32 or 64x64)</p>
-                </div>
-                <Input
-                  value={settings.faviconUrl}
-                  onChange={(e) => setSettings(prev => ({ ...prev, faviconUrl: e.target.value }))}
-                  placeholder="Or enter favicon URL"
-                  className="bg-slate-800 border-slate-700 text-white"
+                <input
+                  type="file"
+                  id="favicon-upload"
+                  className="hidden"
+                  accept="image/png,image/x-icon,image/svg+xml"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileUpload(file, 'favicon');
+                  }}
                 />
+                <label
+                  htmlFor="favicon-upload"
+                  className="border-2 border-dashed border-slate-700 rounded-lg p-8 text-center hover:border-amber-500 transition cursor-pointer block relative"
+                >
+                  {uploadingFavicon ? (
+                    <div className="flex flex-col items-center justify-center">
+                      <Loader2 className="h-12 w-12 text-amber-500 animate-spin mb-3" />
+                      <p className="text-amber-400 text-sm">Uploading...</p>
+                    </div>
+                  ) : settings.faviconUrl ? (
+                    <>
+                      <img src={settings.faviconUrl} alt="Favicon" className="h-16 w-16 mx-auto mb-4 object-contain" />
+                      <p className="text-amber-400 text-sm font-medium">Click to change favicon</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-slate-700 flex items-center justify-center">
+                        <Sparkles className="h-8 w-8 text-slate-400" />
+                      </div>
+                      <p className="text-slate-400 text-sm">Click to upload favicon</p>
+                    </>
+                  )}
+                  <p className="text-slate-500 text-xs mt-1">ICO, PNG (32x32 or 64x64)</p>
+                </label>
+                <div className="space-y-2">
+                  <Label className="text-slate-400 text-xs">Or enter URL manually</Label>
+                  <Input
+                    value={settings.faviconUrl}
+                    onChange={(e) => setSettings(prev => ({ ...prev, faviconUrl: e.target.value }))}
+                    placeholder="https://example.com/favicon.ico"
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
               </div>
+            </div>
+            
+            {/* Save Button for Logo Tab */}
+            <div className="flex justify-end pt-4">
+              <Button 
+                onClick={handleSave} 
+                disabled={isSubmitting || uploadingLogo || uploadingFavicon}
+                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-black font-semibold"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-4 w-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
             </div>
             
             <Separator className="bg-slate-800" />
