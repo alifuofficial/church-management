@@ -38,7 +38,7 @@ export interface SiteSettings {
   metaDescription: string;
   metaKeywords: string;
   socialFacebook: string;
-  socialTwitter: string;
+  socialTiktok: string;
   socialInstagram: string;
   socialYoutube: string;
   siteMode: 'live' | 'coming_soon' | 'maintenance' | 'private';
@@ -70,7 +70,7 @@ const defaultSettings: SiteSettings = {
   metaDescription: 'Join us for worship, fellowship, and spiritual growth at Grace Community Church.',
   metaKeywords: 'church, worship, community, faith, grace, fellowship',
   socialFacebook: '',
-  socialTwitter: '',
+  socialTiktok: '',
   socialInstagram: '',
   socialYoutube: '',
   siteMode: 'live',

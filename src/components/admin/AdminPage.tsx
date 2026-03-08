@@ -5133,7 +5133,7 @@ function SettingsContent() {
     metaDescription: 'Join us for worship, fellowship, and spiritual growth at Grace Community Church.',
     metaKeywords: 'church, worship, community, faith, grace, fellowship',
     socialFacebook: 'https://facebook.com/gracecommunity',
-    socialTwitter: 'https://twitter.com/gracechurch',
+    socialTiktok: 'https://tiktok.com/@gracechurch',
     socialInstagram: 'https://instagram.com/gracechurch',
     socialYoutube: 'https://youtube.com/gracecommunity',
     googleAnalyticsId: '',
@@ -5238,7 +5238,7 @@ function SettingsContent() {
           metaDescription: settings.metaDescription,
           metaKeywords: settings.metaKeywords,
           socialFacebook: settings.socialFacebook,
-          socialTwitter: settings.socialTwitter,
+          socialTiktok: settings.socialTiktok,
           socialInstagram: settings.socialInstagram,
           socialYoutube: settings.socialYoutube,
           siteMode: settings.siteMode,
@@ -5597,10 +5597,11 @@ function SettingsContent() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-slate-300">Twitter/X URL</Label>
+                  <Label className="text-slate-300">TikTok URL</Label>
                   <Input
-                    value={settings.socialTwitter}
-                    onChange={(e) => setSettings(prev => ({ ...prev, socialTwitter: e.target.value }))}
+                    value={settings.socialTiktok}
+                    onChange={(e) => setSettings(prev => ({ ...prev, socialTiktok: e.target.value }))}
+                    placeholder="https://tiktok.com/@yourchurch"
                     className="bg-slate-800 border-slate-700 text-white"
                   />
                 </div>
