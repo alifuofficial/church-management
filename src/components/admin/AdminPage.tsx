@@ -7144,14 +7144,15 @@ function TestimoniesContent() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-lg bg-slate-900 border-slate-800 text-white">
+        <DialogContent className="sm:max-w-lg bg-slate-900 border-slate-800 text-white max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>{editingTestimony ? 'Edit Testimony' : 'Add New Testimony'}</DialogTitle>
             <DialogDescription className="text-slate-400">
               {editingTestimony ? 'Update the testimony details below.' : 'Fill in the details for the new testimony.'}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <ScrollArea className="flex-1 -mx-6 px-6">
+            <div className="space-y-4 py-4">
             {/* Image Upload */}
             <div className="space-y-2">
               <Label className="text-slate-300">Photo</Label>
@@ -7257,7 +7258,8 @@ function TestimoniesContent() {
                 <Label className="text-slate-300 text-sm">Featured</Label>
               </div>
             </div>
-          </div>
+            </div>
+          </ScrollArea>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="border-slate-700 text-slate-300 hover:text-white">
               Cancel
