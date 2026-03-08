@@ -23,7 +23,10 @@ import {
   Church,
   Compass,
   Star,
-  Mail
+  Mail,
+  Quote,
+  ChevronLeft,
+  MessageSquare
 } from 'lucide-react';
 
 interface Program {
@@ -75,6 +78,17 @@ interface Campaign {
   isActive: boolean;
 }
 
+interface Testimony {
+  id: string;
+  name: string;
+  role: string | null;
+  image: string | null;
+  testimony: string;
+  rating: number;
+  isFeatured: boolean;
+  createdAt: string;
+}
+
 const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export function HomePage() {
@@ -83,7 +97,9 @@ export function HomePage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [sermons, setSermons] = useState<Sermon[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [testimonies, setTestimonies] = useState<Testimony[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTestimony, setActiveTestimony] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -110,6 +126,11 @@ export function HomePage() {
             fetch('/api/campaigns?active=true&stats=true').then(res => res.json()).then(data => setCampaigns(data))
           );
         }
+        
+        // Always fetch testimonies
+        fetchPromises.push(
+          fetch('/api/testimonies?approved=true').then(res => res.json()).then(data => setTestimonies(data))
+        );
         
         await Promise.all(fetchPromises);
       } catch (error) {
@@ -441,6 +462,188 @@ export function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Testimonies Section - Modern & Creative */}
+      {testimonies.length > 0 && (
+      <section className="py-24 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
+        {/* Background Decoration */}
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-orange-500/5 rounded-full blur-3xl" />
+        </div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+          {/* Header */}
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 mb-6">
+              <MessageSquare className="w-4 h-4 text-amber-400" />
+              <span className="text-amber-400 text-sm font-medium">Life-Changing Stories</span>
+            </div>
+            <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
+              Voices of <span className="text-amber-500">Transformation</span>
+            </h2>
+            <p className="text-slate-400 max-w-2xl mx-auto text-lg">
+              Real stories from our community members whose lives have been touched by faith and fellowship
+            </p>
+          </div>
+
+          {/* Featured Testimony - Large Card */}
+          {testimonies.filter(t => t.isFeatured).length > 0 && (
+            <div className="mb-16 max-w-5xl mx-auto">
+              <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-slate-700/50 overflow-hidden">
+                <CardContent className="p-8 md:p-12">
+                  <div className="flex flex-col md:flex-row gap-8 items-center">
+                    {/* Person Info */}
+                    <div className="flex-shrink-0 text-center md:text-left">
+                      {testimonies.find(t => t.isFeatured)?.image ? (
+                        <img 
+                          src={testimonies.find(t => t.isFeatured)?.image || ''} 
+                          alt={testimonies.find(t => t.isFeatured)?.name}
+                          className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-amber-500/30 shadow-xl mx-auto md:mx-0"
+                        />
+                      ) : (
+                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-3xl md:text-4xl font-bold text-black shadow-xl mx-auto md:mx-0">
+                          {testimonies.find(t => t.isFeatured)?.name.charAt(0)}
+                        </div>
+                      )}
+                      <div className="mt-4">
+                        <h4 className="text-xl font-bold text-white">
+                          {testimonies.find(t => t.isFeatured)?.name}
+                        </h4>
+                        {testimonies.find(t => t.isFeatured)?.role && (
+                          <p className="text-amber-400 text-sm mt-1">
+                            {testimonies.find(t => t.isFeatured)?.role}
+                          </p>
+                        )}
+                      </div>
+                      {/* Rating */}
+                      <div className="flex gap-1 justify-center md:justify-start mt-3">
+                        {[...Array(5)].map((_, i) => (
+                          <Star 
+                            key={i} 
+                            className={`w-5 h-5 ${i < (testimonies.find(t => t.isFeatured)?.rating || 5) ? 'text-amber-400 fill-amber-400' : 'text-slate-600'}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Quote */}
+                    <div className="flex-1">
+                      <Quote className="w-12 h-12 text-amber-500/30 mb-4" />
+                      <blockquote className="text-xl md:text-2xl text-slate-200 leading-relaxed italic">
+                        &ldquo;{testimonies.find(t => t.isFeatured)?.testimony}&rdquo;
+                      </blockquote>
+                      <Badge className="mt-6 bg-amber-500/10 text-amber-400 border-amber-500/30">
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        Featured Testimony
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Testimony Carousel */}
+          <div className="relative">
+            {/* Navigation Buttons */}
+            <button
+              onClick={() => setActiveTestimony(prev => prev === 0 ? testimonies.length - 1 : prev - 1)}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 hover:border-amber-500/50 transition-all hidden md:flex"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <button
+              onClick={() => setActiveTestimony(prev => prev === testimonies.length - 1 ? 0 : prev + 1)}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 hover:border-amber-500/50 transition-all hidden md:flex"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+
+            {/* Carousel Container */}
+            <div className="overflow-hidden px-8 md:px-16">
+              <div 
+                className="flex transition-transform duration-500 ease-out"
+                style={{ transform: `translateX(-${activeTestimony * 100}%)` }}
+              >
+                {testimonies.map((testimony) => (
+                  <div key={testimony.id} className="w-full flex-shrink-0 px-4">
+                    <Card className="bg-slate-800/50 border-slate-700 hover:border-amber-500/30 transition-colors max-w-2xl mx-auto">
+                      <CardContent className="p-8">
+                        {/* Rating Stars */}
+                        <div className="flex gap-1 mb-6 justify-center">
+                          {[...Array(5)].map((_, i) => (
+                            <Star 
+                              key={i} 
+                              className={`w-5 h-5 ${i < testimony.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-600'}`}
+                            />
+                          ))}
+                        </div>
+                        
+                        {/* Quote */}
+                        <blockquote className="text-lg md:text-xl text-slate-200 text-center leading-relaxed mb-6 italic">
+                          &ldquo;{testimony.testimony}&rdquo;
+                        </blockquote>
+                        
+                        {/* Author */}
+                        <div className="flex flex-col items-center">
+                          {testimony.image ? (
+                            <img 
+                              src={testimony.image} 
+                              alt={testimony.name}
+                              className="w-16 h-16 rounded-full object-cover border-2 border-amber-500/30 mb-3"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-xl font-bold text-black mb-3">
+                              {testimony.name.charAt(0)}
+                            </div>
+                          )}
+                          <h4 className="text-lg font-semibold text-white">{testimony.name}</h4>
+                          {testimony.role && (
+                            <p className="text-slate-500 text-sm">{testimony.role}</p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Dots Navigation */}
+            <div className="flex justify-center gap-2 mt-8">
+              {testimonies.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setActiveTestimony(index)}
+                  className={`w-2.5 h-2.5 rounded-full transition-all ${
+                    activeTestimony === index 
+                      ? 'bg-amber-500 w-8' 
+                      : 'bg-slate-700 hover:bg-slate-600'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto mt-16 pt-16 border-t border-slate-800">
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold text-amber-500 mb-1">{testimonies.length}+</div>
+              <div className="text-slate-500 text-sm">Life Stories</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold text-amber-500 mb-1">500+</div>
+              <div className="text-slate-500 text-sm">Lives Changed</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold text-amber-500 mb-1">4.9</div>
+              <div className="text-slate-500 text-sm">Avg. Rating</div>
+            </div>
+          </div>
+        </div>
+      </section>
+      )}
 
       {/* Latest Sermons - Clean Cards */}
       {settings.features.sermonsEnabled && sermons.length > 0 && (

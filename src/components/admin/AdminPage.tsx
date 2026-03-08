@@ -164,6 +164,7 @@ const menuCategories = [
     items: [
       { id: 'sermons', label: 'Sermons', icon: BookOpen },
       { id: 'series', label: 'Sermon Series', icon: FolderOpen },
+      { id: 'testimonies', label: 'Testimonies', icon: MessageSquare },
       { id: 'media', label: 'Media Library', icon: Play },
     ]
   },
@@ -329,6 +330,8 @@ export function AdminPage() {
         return <EmailSubscriptionContent />;
       case 'media':
         return <MediaLibraryContent />;
+      case 'testimonies':
+        return <TestimoniesContent />;
       case 'programs':
         return <ProgramsContent />;
       case 'registrations':
@@ -6712,6 +6715,598 @@ interface Media {
   tags: string | null;
   folder: string | null;
   createdAt: string;
+}
+
+// Testimony interface
+interface Testimony {
+  id: string;
+  name: string;
+  role: string | null;
+  image: string | null;
+  testimony: string;
+  rating: number;
+  isApproved: boolean;
+  isFeatured: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Testimonies Content Component
+function TestimoniesContent() {
+  const [testimonies, setTestimonies] = useState<Testimony[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [editingTestimony, setEditingTestimony] = useState<Testimony | null>(null);
+  const [deletingTestimony, setDeletingTestimony] = useState<Testimony | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'approved' | 'pending'>('all');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    role: '',
+    image: '',
+    testimony: '',
+    rating: 5,
+    isApproved: true,
+    isFeatured: false,
+  });
+
+  useEffect(() => {
+    fetchTestimonies();
+  }, [filter]);
+
+  const fetchTestimonies = async () => {
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (filter === 'approved') params.append('approved', 'true');
+      
+      const res = await fetch(`/api/testimonies?${params.toString()}`);
+      const data = await res.json();
+      setTestimonies(data);
+    } catch (error) {
+      console.error('Error fetching testimonies:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleImageUpload = async (file: File) => {
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', 'image');
+      
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setFormData(prev => ({ ...prev, image: data.url }));
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.name || !formData.testimony) return;
+    
+    setIsSubmitting(true);
+    try {
+      if (editingTestimony) {
+        const res = await fetch('/api/testimonies', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: editingTestimony.id,
+            ...formData,
+          }),
+        });
+        if (res.ok) {
+          setIsDialogOpen(false);
+          setEditingTestimony(null);
+          resetForm();
+          fetchTestimonies();
+        }
+      } else {
+        const res = await fetch('/api/testimonies', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+        if (res.ok) {
+          setIsDialogOpen(false);
+          resetForm();
+          fetchTestimonies();
+        }
+      }
+    } catch (error) {
+      console.error('Error saving testimony:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletingTestimony) return;
+    
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/testimonies?id=${deletingTestimony.id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setIsDeleteDialogOpen(false);
+        setDeletingTestimony(null);
+        fetchTestimonies();
+      }
+    } catch (error) {
+      console.error('Error deleting testimony:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEdit = (testimony: Testimony) => {
+    setEditingTestimony(testimony);
+    setFormData({
+      name: testimony.name,
+      role: testimony.role || '',
+      image: testimony.image || '',
+      testimony: testimony.testimony,
+      rating: testimony.rating,
+      isApproved: testimony.isApproved,
+      isFeatured: testimony.isFeatured,
+    });
+    setIsDialogOpen(true);
+  };
+
+  const toggleApproval = async (testimony: Testimony) => {
+    try {
+      await fetch('/api/testimonies', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: testimony.id,
+          isApproved: !testimony.isApproved,
+        }),
+      });
+      fetchTestimonies();
+    } catch (error) {
+      console.error('Error toggling approval:', error);
+    }
+  };
+
+  const toggleFeatured = async (testimony: Testimony) => {
+    try {
+      await fetch('/api/testimonies', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: testimony.id,
+          isFeatured: !testimony.isFeatured,
+        }),
+      });
+      fetchTestimonies();
+    } catch (error) {
+      console.error('Error toggling featured:', error);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      role: '',
+      image: '',
+      testimony: '',
+      rating: 5,
+      isApproved: true,
+      isFeatured: false,
+    });
+  };
+
+  const StarRating = ({ rating, onChange }: { rating: number; onChange?: (rating: number) => void }) => (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          onClick={() => onChange?.(star)}
+          className={cn(
+            "transition-colors",
+            onChange ? "cursor-pointer hover:scale-110" : "cursor-default",
+            star <= rating ? "text-amber-400" : "text-slate-600"
+          )}
+        >
+          <Sparkles className="h-5 w-5" />
+        </button>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-white">Testimonies</h2>
+          <p className="text-slate-400">Manage testimonials for your homepage</p>
+        </div>
+        <div className="flex gap-3">
+          <Select value={filter} onValueChange={(v) => setFilter(v as 'all' | 'approved' | 'pending')}>
+            <SelectTrigger className="w-40 bg-slate-800 border-slate-700 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-slate-800 border-slate-700">
+              <SelectItem value="all">All Testimonies</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button 
+            onClick={() => {
+              resetForm();
+              setEditingTestimony(null);
+              setIsDialogOpen(true);
+            }}
+            className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-black font-semibold"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Testimony
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="bg-slate-900/50 border-slate-800">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                <MessageSquare className="h-5 w-5 text-amber-400" />
+              </div>
+              <div>
+                <p className="text-slate-400 text-xs">Total</p>
+                <p className="text-white font-semibold text-xl">{testimonies.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-slate-900/50 border-slate-800">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-slate-400 text-xs">Approved</p>
+                <p className="text-white font-semibold text-xl">{testimonies.filter(t => t.isApproved).length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-slate-900/50 border-slate-800">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                <Sparkles className="h-5 w-5 text-purple-400" />
+              </div>
+              <div>
+                <p className="text-slate-400 text-xs">Featured</p>
+                <p className="text-white font-semibold text-xl">{testimonies.filter(t => t.isFeatured).length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Testimonies Grid */}
+      {isLoading ? (
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+        </div>
+      ) : testimonies.length === 0 ? (
+        <Card className="bg-slate-900/50 border-slate-800">
+          <CardContent className="flex flex-col items-center justify-center h-64">
+            <MessageSquare className="h-12 w-12 text-slate-600 mb-4" />
+            <p className="text-slate-400">No testimonies found</p>
+            <Button 
+              onClick={() => {
+                resetForm();
+                setIsDialogOpen(true);
+              }}
+              variant="outline"
+              className="mt-4 border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+            >
+              Add your first testimony
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {testimonies.map((testimony) => (
+            <Card key={testimony.id} className={cn(
+              "bg-slate-900/50 border-slate-800 hover:border-slate-700 transition-all",
+              testimony.isFeatured && "border-amber-500/50 bg-amber-500/5"
+            )}>
+              <CardContent className="p-5">
+                {/* Header */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    {testimony.image ? (
+                      <img src={testimony.image} alt={testimony.name} className="h-12 w-12 rounded-full object-cover border-2 border-amber-500/30" />
+                    ) : (
+                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold text-lg">
+                        {testimony.name.charAt(0)}
+                      </div>
+                    )}
+                    <div>
+                      <h4 className="text-white font-medium">{testimony.name}</h4>
+                      {testimony.role && (
+                        <p className="text-slate-500 text-sm">{testimony.role}</p>
+                      )}
+                    </div>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="bg-slate-800 border-slate-700 text-white">
+                      <DropdownMenuItem onClick={() => handleEdit(testimony)} className="hover:bg-slate-700 cursor-pointer">
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => toggleApproval(testimony)} className="hover:bg-slate-700 cursor-pointer">
+                        {testimony.isApproved ? (
+                          <>
+                            <X className="h-4 w-4 mr-2" />
+                            Unapprove
+                          </>
+                        ) : (
+                          <>
+                            <Check className="h-4 w-4 mr-2" />
+                            Approve
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => toggleFeatured(testimony)} className="hover:bg-slate-700 cursor-pointer">
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        {testimony.isFeatured ? 'Unfeature' : 'Feature'}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="bg-slate-700" />
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          setDeletingTestimony(testimony);
+                          setIsDeleteDialogOpen(true);
+                        }}
+                        className="hover:bg-red-500/10 text-red-400 cursor-pointer"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {/* Rating */}
+                <div className="mb-3">
+                  <StarRating rating={testimony.rating} />
+                </div>
+
+                {/* Testimony Text */}
+                <p className="text-slate-300 text-sm leading-relaxed line-clamp-4 italic">
+                  &ldquo;{testimony.testimony}&rdquo;
+                </p>
+
+                {/* Status Badges */}
+                <div className="flex gap-2 mt-4">
+                  {testimony.isApproved ? (
+                    <Badge className="bg-emerald-500/20 text-emerald-400 border-0">
+                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                      Approved
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-amber-500/20 text-amber-400 border-0">
+                      <Clock className="h-3 w-3 mr-1" />
+                      Pending
+                    </Badge>
+                  )}
+                  {testimony.isFeatured && (
+                    <Badge className="bg-purple-500/20 text-purple-400 border-0">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      Featured
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Date */}
+                <p className="text-slate-600 text-xs mt-3">
+                  {new Date(testimony.createdAt).toLocaleDateString('en-US', {
+                    month: 'short', day: 'numeric', year: 'numeric'
+                  })}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Add/Edit Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-lg bg-slate-900 border-slate-800 text-white">
+          <DialogHeader>
+            <DialogTitle>{editingTestimony ? 'Edit Testimony' : 'Add New Testimony'}</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              {editingTestimony ? 'Update the testimony details below.' : 'Fill in the details for the new testimony.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* Image Upload */}
+            <div className="space-y-2">
+              <Label className="text-slate-300">Photo</Label>
+              <input
+                type="file"
+                id="testimony-image"
+                className="hidden"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageUpload(file);
+                }}
+              />
+              <div className="flex items-center gap-4">
+                {formData.image ? (
+                  <div className="relative">
+                    <img src={formData.image} alt="Preview" className="h-16 w-16 rounded-full object-cover border-2 border-amber-500/30" />
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, image: '' }))}
+                      className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5 text-white hover:bg-red-600"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor="testimony-image"
+                    className="h-16 w-16 rounded-full bg-slate-800 border-2 border-dashed border-slate-700 flex items-center justify-center cursor-pointer hover:border-amber-500 transition"
+                  >
+                    {uploadingImage ? (
+                      <Loader2 className="h-5 w-5 text-amber-500 animate-spin" />
+                    ) : (
+                      <Upload className="h-5 w-5 text-slate-500" />
+                    )}
+                  </label>
+                )}
+                <div className="flex-1">
+                  <Input
+                    value={formData.image}
+                    onChange={(e) => setFormData(prev => ({ ...prev, image: e.target.value }))}
+                    placeholder="Or paste image URL"
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Name */}
+            <div className="space-y-2">
+              <Label className="text-slate-300">Name *</Label>
+              <Input
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="John Doe"
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+            </div>
+
+            {/* Role */}
+            <div className="space-y-2">
+              <Label className="text-slate-300">Role / Title</Label>
+              <Input
+                value={formData.role}
+                onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
+                placeholder="Church Member, Pastor, Visitor..."
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+            </div>
+
+            {/* Rating */}
+            <div className="space-y-2">
+              <Label className="text-slate-300">Rating</Label>
+              <StarRating rating={formData.rating} onChange={(r) => setFormData(prev => ({ ...prev, rating: r }))} />
+            </div>
+
+            {/* Testimony */}
+            <div className="space-y-2">
+              <Label className="text-slate-300">Testimony *</Label>
+              <textarea
+                value={formData.testimony}
+                onChange={(e) => setFormData(prev => ({ ...prev, testimony: e.target.value }))}
+                placeholder="Share the testimony..."
+                rows={4}
+                className="w-full bg-slate-800 border border-slate-700 rounded-md p-3 text-white placeholder:text-slate-500 focus:border-amber-500 focus:outline-none resize-none"
+              />
+            </div>
+
+            {/* Toggles */}
+            <div className="flex gap-6">
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={formData.isApproved}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isApproved: checked }))}
+                />
+                <Label className="text-slate-300 text-sm">Approved</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={formData.isFeatured}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isFeatured: checked }))}
+                />
+                <Label className="text-slate-300 text-sm">Featured</Label>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="border-slate-700 text-slate-300 hover:text-white">
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmit}
+              disabled={isSubmitting || !formData.name || !formData.testimony}
+              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-black font-semibold"
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Check className="h-4 w-4 mr-2" />
+              )}
+              {editingTestimony ? 'Update' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md bg-slate-900 border-slate-800 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-red-400">Delete Testimony</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Are you sure you want to delete this testimony from {deletingTestimony?.name}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-end">
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="border-slate-700 text-slate-300">
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleDelete}
+              disabled={isSubmitting}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Trash2 className="h-4 w-4 mr-2" />
+              )}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }
 
 // Media Library Content Component

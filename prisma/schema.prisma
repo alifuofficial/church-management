@@ -595,3 +595,19 @@ model EmailVerificationSettings {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 }
+
+// Testimonies
+model Testimony {
+  id          String   @id @default(cuid())
+  name        String
+  role        String?  // Member, Visitor, etc.
+  image       String?  // URL to person's photo
+  testimony   String
+  rating      Int      @default(5) // 1-5 stars
+  isApproved  Boolean  @default(false)
+  isFeatured  Boolean  @default(false)
+  order       Int      @default(0) // For custom ordering
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
