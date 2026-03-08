@@ -25,6 +25,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Church, 
   Menu, 
@@ -44,8 +45,11 @@ import {
   Cross,
   UserPlus,
   LogIn,
-  ChevronDown,
-  X
+  Eye,
+  EyeOff,
+  Lock,
+  Mail as MailIcon,
+  Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -74,6 +78,7 @@ export function Navbar() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [activeTab, setActiveTab] = useState('signin');
+  const [showPassword, setShowPassword] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Filter nav items based on enabled features
@@ -104,7 +109,7 @@ export function Navbar() {
         setShowSignIn(false);
         setCurrentView(foundUser.role === 'ADMIN' ? 'admin' : 'dashboard');
       } else {
-        setError('User not found. Try a demo account below.');
+        setError('User not found. Please check your email or create a new account.');
       }
     } catch (err) {
       setError('Failed to sign in. Please try again.');
@@ -141,26 +146,6 @@ export function Navbar() {
       }
     } catch (err) {
       setError('Failed to create account. Please try again.');
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDemoLogin = async (role: 'ADMIN' | 'PASTOR' | 'MEMBER') => {
-    setIsLoading(true);
-    try {
-      const res = await fetch('/api/users');
-      const users = await res.json();
-      
-      const foundUser = users.find((u: { role: string }) => u.role === role);
-      
-      if (foundUser) {
-        setUser(foundUser);
-        setShowSignIn(false);
-        setCurrentView(role === 'ADMIN' ? 'admin' : 'dashboard');
-      }
-    } catch (err) {
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -477,164 +462,233 @@ export function Navbar() {
 
       {/* Sign In / Register Dialog */}
       <Dialog open={showSignIn} onOpenChange={setShowSignIn}>
-        <DialogContent className="sm:max-w-md bg-slate-900 border-slate-800 text-white">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border-slate-800/50 text-white p-0 gap-0 overflow-hidden">
+          {/* Decorative Header Background */}
+          <div className="relative bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent pt-8 pb-6 px-6">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNiIgc3Ryb2tlPSJyZ2JhKDI0NSAxNTggMTEgMC4xKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9nPjwvc3ZnPg==')] opacity-30" />
+            
+            {/* Icon */}
             <div className="flex justify-center mb-4">
               <div className="relative">
-                <div className="bg-gradient-to-br from-amber-500 to-orange-500 p-4 rounded-2xl shadow-lg shadow-amber-500/20">
-                  <Church className="h-8 w-8 text-white" />
+                <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-4 rounded-2xl shadow-2xl shadow-amber-500/30">
+                  {activeTab === 'signin' ? (
+                    <LogIn className="h-8 w-8 text-white" />
+                  ) : (
+                    <UserPlus className="h-8 w-8 text-white" />
+                  )}
                 </div>
-                <Sparkles className="h-4 w-4 text-amber-400 absolute -top-1 -right-1" />
+                <div className="absolute -top-1 -right-1 bg-gradient-to-br from-amber-400 to-orange-500 p-1.5 rounded-full shadow-lg">
+                  <Sparkles className="h-3 w-3 text-white" />
+                </div>
               </div>
             </div>
-            <DialogTitle className="text-center text-2xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
-              {activeTab === 'signin' ? 'Welcome Back' : 'Join Our Community'}
-            </DialogTitle>
-            <DialogDescription className="text-center text-slate-400">
-              {activeTab === 'signin' 
-                ? 'Sign in to access your account and connect with us' 
-                : 'Create an account to get started'}
-            </DialogDescription>
-          </DialogHeader>
-
-          {error && (
-            <Alert variant="destructive" className="bg-red-500/10 border-red-500/30 text-red-400">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className={cn(
-              "w-full bg-slate-800/50",
-              settings.features.registrationEnabled ? "grid grid-cols-2" : "grid grid-cols-1"
-            )}>
-              <TabsTrigger value="signin" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black font-semibold">
-                <LogIn className="h-4 w-4 mr-2" />
-                Sign In
-              </TabsTrigger>
-              {settings.features.registrationEnabled && (
-                <TabsTrigger value="signup" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black font-semibold">
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Register
-                </TabsTrigger>
-              )}
-            </TabsList>
-
-            <TabsContent value="signin" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="signin-email" className="text-slate-300">Email</Label>
-                <Input
-                  id="signin-email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-amber-500 h-11"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="signin-password" className="text-slate-300">Password</Label>
-                <Input
-                  id="signin-password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-amber-500 h-11"
-                />
-              </div>
-              <Button 
-                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-black font-semibold h-11 shadow-lg shadow-amber-500/20"
-                onClick={handleSignIn}
-                disabled={isLoading || !email}
-              >
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <LogIn className="h-4 w-4 mr-2" />}
-                Sign In
-              </Button>
-            </TabsContent>
-
-            {settings.features.registrationEnabled && (
-              <TabsContent value="signup" className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name" className="text-slate-300">Full Name</Label>
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    placeholder="John Doe"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-amber-500 h-11"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email" className="text-slate-300">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-amber-500 h-11"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password" className="text-slate-300">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-amber-500 h-11"
-                  />
-                </div>
-                <Button 
-                  className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-black font-semibold h-11 shadow-lg shadow-amber-500/20"
-                  onClick={handleSignUp}
-                  disabled={isLoading || !email || !name}
-                >
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <UserPlus className="h-4 w-4 mr-2" />}
-                  Create Account
-                </Button>
-              </TabsContent>
-            )}
-          </Tabs>
-
-          <div className="pt-4 border-t border-slate-800">
-            <p className="text-sm text-center text-slate-500 mb-3">
-              Quick demo access:
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleDemoLogin('ADMIN')}
-                disabled={isLoading}
-                className="border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-white hover:border-amber-500/50"
-              >
-                Admin
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleDemoLogin('PASTOR')}
-                disabled={isLoading}
-                className="border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-white hover:border-amber-500/50"
-              >
-                Pastor
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleDemoLogin('MEMBER')}
-                disabled={isLoading}
-                className="border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-white hover:border-amber-500/50"
-              >
-                Member
-              </Button>
+            
+            {/* Title */}
+            <div className="text-center">
+              <DialogTitle className="text-2xl font-bold">
+                <span className="bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                  {activeTab === 'signin' ? 'Welcome Back' : 'Join Our Community'}
+                </span>
+              </DialogTitle>
+              <DialogDescription className="text-slate-400 mt-2 text-sm">
+                {activeTab === 'signin' 
+                  ? 'Sign in to access your account and connect with us' 
+                  : 'Create an account to start your spiritual journey'}
+              </DialogDescription>
             </div>
           </div>
+
+          {/* Scrollable Content Area */}
+          <ScrollArea className="max-h-[60vh] overflow-y-auto">
+            <div className="px-6 pb-6 pt-2">
+              {/* Error Alert */}
+              {error && (
+                <Alert variant="destructive" className="bg-red-500/10 border-red-500/30 text-red-400 backdrop-blur-sm mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {/* Tabs */}
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className={cn(
+                  "w-full bg-slate-800/70 backdrop-blur-sm rounded-xl p-1 h-auto mb-6",
+                  settings.features.registrationEnabled ? "grid grid-cols-2" : "grid grid-cols-1"
+                )}>
+                  <TabsTrigger 
+                    value="signin" 
+                    className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-black data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/20 font-semibold py-2.5 transition-all duration-300"
+                  >
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Sign In
+                  </TabsTrigger>
+                  {settings.features.registrationEnabled && (
+                    <TabsTrigger 
+                      value="signup" 
+                      className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-black data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/20 font-semibold py-2.5 transition-all duration-300"
+                    >
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Register
+                    </TabsTrigger>
+                  )}
+                </TabsList>
+
+                {/* Sign In Form */}
+                <TabsContent value="signin" className="space-y-4 mt-0">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signin-email" className="text-slate-300 text-sm font-medium flex items-center gap-2">
+                        <MailIcon className="h-4 w-4 text-amber-500" />
+                        Email Address
+                      </Label>
+                      <Input
+                        id="signin-email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="bg-slate-800/50 border-slate-700/50 text-white placeholder:text-slate-500 focus:border-amber-500 focus:ring-amber-500/20 h-11 rounded-xl transition-all duration-300"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="signin-password" className="text-slate-300 text-sm font-medium flex items-center gap-2">
+                          <Lock className="h-4 w-4 text-amber-500" />
+                          Password
+                        </Label>
+                        <button 
+                          type="button"
+                          className="text-xs text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1"
+                        >
+                          <Shield className="h-3 w-3" />
+                          Forgot password?
+                        </button>
+                      </div>
+                      <div className="relative">
+                        <Input
+                          id="signin-password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="bg-slate-800/50 border-slate-700/50 text-white placeholder:text-slate-500 focus:border-amber-500 focus:ring-amber-500/20 h-11 rounded-xl transition-all duration-300 pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-black font-bold h-11 rounded-xl shadow-xl shadow-amber-500/25 hover:shadow-amber-500/40 transition-all duration-300"
+                    onClick={handleSignIn}
+                    disabled={isLoading || !email}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                        Signing In...
+                      </>
+                    ) : (
+                      <>
+                        <LogIn className="h-5 w-5 mr-2" />
+                        Sign In
+                      </>
+                    )}
+                  </Button>
+                </TabsContent>
+
+                {/* Sign Up Form */}
+                {settings.features.registrationEnabled && (
+                  <TabsContent value="signup" className="space-y-4 mt-0">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-name" className="text-slate-300 text-sm font-medium flex items-center gap-2">
+                          <User className="h-4 w-4 text-amber-500" />
+                          Full Name
+                        </Label>
+                        <Input
+                          id="signup-name"
+                          type="text"
+                          placeholder="John Doe"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="bg-slate-800/50 border-slate-700/50 text-white placeholder:text-slate-500 focus:border-amber-500 focus:ring-amber-500/20 h-11 rounded-xl transition-all duration-300"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-email" className="text-slate-300 text-sm font-medium flex items-center gap-2">
+                          <MailIcon className="h-4 w-4 text-amber-500" />
+                          Email Address
+                        </Label>
+                        <Input
+                          id="signup-email"
+                          type="email"
+                          placeholder="you@example.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="bg-slate-800/50 border-slate-700/50 text-white placeholder:text-slate-500 focus:border-amber-500 focus:ring-amber-500/20 h-11 rounded-xl transition-all duration-300"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-password" className="text-slate-300 text-sm font-medium flex items-center gap-2">
+                          <Lock className="h-4 w-4 text-amber-500" />
+                          Password
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            id="signup-password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Create a strong password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="bg-slate-800/50 border-slate-700/50 text-white placeholder:text-slate-500 focus:border-amber-500 focus:ring-amber-500/20 h-11 rounded-xl transition-all duration-300 pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-black font-bold h-11 rounded-xl shadow-xl shadow-amber-500/25 hover:shadow-amber-500/40 transition-all duration-300"
+                      onClick={handleSignUp}
+                      disabled={isLoading || !email || !name}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                          Creating Account...
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="h-5 w-5 mr-2" />
+                          Create Account
+                        </>
+                      )}
+                    </Button>
+                    
+                    <p className="text-xs text-center text-slate-500 px-2">
+                      By creating an account, you agree to our{' '}
+                      <span className="text-amber-400 hover:underline cursor-pointer">Terms of Service</span>
+                      {' '}and{' '}
+                      <span className="text-amber-400 hover:underline cursor-pointer">Privacy Policy</span>
+                    </p>
+                  </TabsContent>
+                )}
+              </Tabs>
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </>
