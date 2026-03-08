@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,20 +10,588 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// User roles: ADMIN, PASTOR, MEMBER, VISITOR
+enum UserRole {
+  ADMIN
+  PASTOR
+  MEMBER
+  VISITOR
 }
 
-model Post {
-  id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum EventStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+  CANCELLED
+}
+
+enum EventType {
+  SERVICE
+  BIBLE_STUDY
+  PRAYER_MEETING
+  YOUTH_NIGHT
+  FELLOWSHIP
+  CONFERENCE
+  WORKSHOP
+  COMMUNITY_OUTREACH
+  SPECIAL
+}
+
+enum PrayerStatus {
+  PENDING
+  IN_PROGRESS
+  ANSWERED
+  ARCHIVED
+}
+
+enum DonationStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum RegistrationStatus {
+  REGISTERED
+  CONFIRMED
+  CANCELLED
+  ATTENDED
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  password      String?
+  role          UserRole @default(VISITOR)
+  image         String?
+  phone         String?
+  address       String?
+  city          String?
+  state         String?
+  zipCode       String?
+  dateOfBirth   DateTime?
+  memberSince   DateTime @default(now())
+  isVerified    Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  emailOptIn    Boolean  @default(true)
+  smsOptIn      Boolean  @default(false)
+  bio           String?
+  
+  // Email verification
+  verificationCode     String?
+  verificationCodeExpires DateTime?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  createdEvents      Event[]             @relation("EventCreator")
+  registrations      Registration[]
+  prayerRequests     PrayerRequest[]
+  donations          Donation[]
+  smallGroupMembers  SmallGroupMember[]
+  sermonNotes        SermonNote[]
+  sermonBookmarks    SermonBookmark[]
+  notifications      Notification[]
+  leadingGroups      SmallGroup[]        @relation("GroupLeader")
+}
+
+model Event {
+  id               String       @id @default(cuid())
+  title            String
+  description      String?
+  type             EventType    @default(SERVICE)
+  status           EventStatus  @default(SCHEDULED)
+  startDate        DateTime
+  endDate          DateTime?
+  timezone         String       @default("America/New_York")
+  location         String?
+  address          String?
+  isOnline         Boolean      @default(false)
+  isInPerson       Boolean      @default(true)
+  capacity         Int?
+  registrationRequired Boolean @default(false)
+  registrationDeadline DateTime?
+  imageUrl         String?
+  
+  // Zoom Integration
+  zoomMeetingId    String?
+  zoomJoinUrl      String?
+  zoomStartUrl     String?
+  zoomPassword     String?
+  isRecurring      Boolean      @default(false)
+  recurrenceRule   String?      // RRULE format
+  
+  // Statistics
+  viewCount        Int          @default(0)
+  registrationCount Int         @default(0)
+  
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  createdById      String?
+  createdBy        User?        @relation("EventCreator", fields: [createdById], references: [id])
+  
+  registrations    Registration[]
+  eventSpeakers    EventSpeaker[]
+}
+
+model EventSpeaker {
+  id          String   @id @default(cuid())
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id])
+  name        String
+  title       String?
+  bio         String?
+  imageUrl    String?
+  order       Int      @default(0)
+}
+
+model Registration {
+  id              String           @id @default(cuid())
+  eventId         String
+  event           Event            @relation(fields: [eventId], references: [id])
+  userId          String
+  user            User             @relation(fields: [userId], references: [id])
+  status          RegistrationStatus @default(REGISTERED)
+  registeredAt    DateTime         @default(now())
+  confirmedAt     DateTime?
+  cancelledAt     DateTime?
+  attendedAt      DateTime?
+  notes           String?
+  customFields    String?          // JSON string for custom form fields
+  
+  // For Zoom
+  zoomJoinUrl     String?
+  reminderSent    Boolean          @default(false)
+  lastReminderSent DateTime?
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@unique([eventId, userId])
+}
+
+model Program {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  dayOfWeek   Int      // 0=Sunday, 6=Saturday
+  startTime   String   // HH:mm format
+  endTime     String?
+  timezone    String   @default("America/New_York")
+  location    String?
+  isOnline    Boolean  @default(false)
+  zoomLink    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Sermon {
+  id              String   @id @default(cuid())
+  title           String
+  description     String?
+  scripture       String?
+  speakerName     String
+  seriesId        String?
+  series          SermonSeries? @relation(fields: [seriesId], references: [id])
+  videoUrl        String?
+  audioUrl        String?
+  documentUrl     String?
+  thumbnailUrl    String?
+  duration        Int?     // in seconds
+  publishedAt     DateTime?
+  isFeatured      Boolean  @default(false)
+  viewCount       Int      @default(0)
+  downloadCount   Int      @default(0)
+  tags            String?  // comma-separated tags
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  notes           SermonNote[]
+  bookmarks       SermonBookmark[]
+}
+
+model SermonSeries {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  imageUrl    String?
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  sermons     Sermon[]
+}
+
+model SermonNote {
+  id          String   @id @default(cuid())
+  sermonId    String
+  sermon      Sermon   @relation(fields: [sermonId], references: [id])
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  content     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([sermonId, userId])
+}
+
+model SermonBookmark {
+  id          String   @id @default(cuid())
+  sermonId    String
+  sermon      Sermon   @relation(fields: [sermonId], references: [id])
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  timestamp   Int?     // seconds for video position
+  createdAt   DateTime @default(now())
+  
+  @@unique([sermonId, userId])
+}
+
+model PrayerRequest {
+  id           String       @id @default(cuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id])
+  title        String
+  request      String
+  isPublic     Boolean      @default(false)
+  isUrgent     Boolean      @default(false)
+  status       PrayerStatus @default(PENDING)
+  answeredAt   DateTime?
+  testimony    String?
+  prayerCount  Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  
+  responses    PrayerResponse[]
+}
+
+model PrayerResponse {
+  id              String   @id @default(cuid())
+  prayerRequestId String
+  prayerRequest   PrayerRequest @relation(fields: [prayerRequestId], references: [id])
+  responderName   String?
+  message         String
+  isPublic        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+}
+
+model Donation {
+  id              String         @id @default(cuid())
+  userId          String?
+  user            User?          @relation(fields: [userId], references: [id])
+  amount          Float
+  currency        String         @default("USD")
+  status          DonationStatus @default(PENDING)
+  paymentMethod   String?        // stripe, paypal, etc.
+  transactionId   String?
+  isRecurring     Boolean        @default(false)
+  recurringInterval String?      // monthly, weekly, etc.
+  campaignId      String?
+  isAnonymous     Boolean        @default(false)
+  donorName       String?
+  donorEmail      String?
+  notes           String?
+  receiptSent     Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model DonationCampaign {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String?  @unique
+  description String?
+  goal        Float?
+  raised      Float    @default(0)
+  startDate   DateTime?
+  endDate     DateTime?
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SmallGroup {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  type        String?  // age-based, interest-based, etc.
+  leaderId    String?
+  leader      User?    @relation("GroupLeader", fields: [leaderId], references: [id])
+  location    String?
+  meetingDay  String?
+  meetingTime String?
+  maxMembers  Int?
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  members     SmallGroupMember[]
+}
+
+model SmallGroupMember {
+  id          String     @id @default(cuid())
+  groupId     String
+  group       SmallGroup @relation(fields: [groupId], references: [id])
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
+  role        String     @default("member") // leader, co-leader, member
+  joinedAt    DateTime   @default(now())
+  
+  @@unique([groupId, userId])
+}
+
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  subject     String
+  body        String
+  type        String?  // welcome, event_reminder, etc.
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  title       String
+  message     String
+  type        String?  // event, prayer, donation, etc.
+  isRead      Boolean  @default(false)
+  readAt      DateTime?
+  actionUrl   String?
+  createdAt   DateTime @default(now())
+}
+
+model Setting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+model SmsNotificationTemplate {
+  id              String   @id @default(cuid())
+  name            String   // e.g., "Event Reminder", "Event Started"
+  triggerType     String   // event_reminder, event_started, event_registration, prayer_request, etc.
+  triggerOffset   Int      @default(0) // hours before/after event (negative = before)
+  isEnabled       Boolean  @default(true)
+  template        String   // SMS message template with {{placeholders}}
+  recipientType   String   @default("registrants") // all, registrants, members, admins
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  smsLogs         SmsLog[]
+}
+
+model SmsLog {
+  id              String   @id @default(cuid())
+  phone           String
+  message         String
+  status          String   @default("pending") // pending, sent, failed
+  templateId      String?
+  template        SmsNotificationTemplate? @relation(fields: [templateId], references: [id])
+  errorMessage    String?
+  sid             String?  // Twilio message SID
+  cost            Float?
+  createdAt       DateTime @default(now())
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  action      String
+  entityType  String
+  entityId    String?
+  details     String?  // JSON string
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+}
+
+model Media {
+  id          String   @id @default(cuid())
+  name        String
+  originalName String
+  url         String
+  type        String   // image, video, audio, document
+  mimeType    String
+  size        Int      // in bytes
+  width       Int?     // for images/videos
+  height      Int?     // for images/videos
+  duration    Int?     // for audio/video in seconds
+  alt         String?
+  description String?
+  tags        String?  // comma-separated tags
+  folder      String?  // for organization
+  isPublic    Boolean  @default(true)
+  uploadedBy  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Email Subscription Models
+model Subscriber {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  phone         String?
+  source        String?  // website, event, manual, etc.
+  isVerified    Boolean  @default(false)
+  isSubscribed  Boolean  @default(true)
+  preferences   String?  // JSON string for subscription preferences
+  subscribedAt  DateTime @default(now())
+  unsubscribedAt DateTime?
+  verificationToken String?
+  verifiedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  newsletterLogs NewsletterLog[]
+}
+
+model EmailSettings {
+  id              String   @id @default(cuid())
+  provider        String   @default("smtp") // smtp, mailchimp
+  isActive        Boolean  @default(true)
+  
+  // SMTP Settings
+  smtpHost        String?
+  smtpPort        Int?
+  smtpUser        String?
+  smtpPassword    String?
+  smtpFromEmail   String?
+  smtpFromName    String?
+  smtpSecure      Boolean  @default(true)
+  
+  // Mailchimp Settings
+  mailchimpApiKey String?
+  mailchimpServer String?
+  mailchimpListId String?
+  mailchimpFromEmail String?
+  mailchimpFromName  String?
+  
+  // Default settings
+  defaultFrequency String @default("weekly") // daily, weekly, monthly
+  includeUnsubscribeLink Boolean @default(true)
+  trackOpens      Boolean  @default(true)
+  trackClicks     Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Newsletter {
+  id            String   @id @default(cuid())
+  title         String
+  subject       String
+  content       String   // HTML content
+  plainText     String?  // Plain text version
+  frequency     String   @default("one_time") // one_time, daily, weekly, monthly
+  scheduledFor  DateTime?
+  status        String   @default("draft") // draft, scheduled, sending, sent, failed
+  
+  // Targeting
+  targetAll     Boolean  @default(true)
+  targetSegments String? // JSON array of segment names
+  
+  // Stats
+  totalRecipients Int    @default(0)
+  sentCount       Int    @default(0)
+  openedCount     Int    @default(0)
+  clickedCount    Int    @default(0)
+  bouncedCount    Int    @default(0)
+  unsubscribedCount Int  @default(0)
+  
+  sentAt        DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  createdById   String?
+  
+  logs          NewsletterLog[]
+}
+
+model NewsletterLog {
+  id            String   @id @default(cuid())
+  newsletterId  String?
+  newsletter    Newsletter? @relation(fields: [newsletterId], references: [id])
+  subscriberId  String?
+  subscriber    Subscriber? @relation(fields: [subscriberId], references: [id])
+  email         String
+  status        String   @default("pending") // pending, sent, delivered, opened, clicked, bounced, unsubscribed
+  sentAt        DateTime?
+  openedAt      DateTime?
+  clickedAt     DateTime?
+  bouncedAt     DateTime?
+  errorMessage  String?
+  trackingId    String?  // For tracking opens/clicks
+  
+  createdAt     DateTime @default(now())
+}
+
+// Social Login Settings
+model SocialLoginSettings {
+  id            String   @id @default(cuid())
+  
+  // Google OAuth
+  googleEnabled     Boolean  @default(false)
+  googleClientId    String?
+  googleClientSecret String?
+  googleRedirectUri String?
+  
+  // Facebook OAuth
+  facebookEnabled      Boolean  @default(false)
+  facebookAppId        String?
+  facebookAppSecret    String?
+  facebookRedirectUri  String?
+  
+  // Account linking
+  allowAccountLinking  Boolean  @default(true)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// OAuth Account for linking social logins to users
+model OAuthAccount {
+  id            String   @id @default(cuid())
+  userId        String
+  provider      String   // google, facebook
+  providerAccountId String
+  accessToken   String?
+  refreshToken  String?
+  expiresAt     DateTime?
+  tokenType     String?
+  scope         String?
+  idToken       String?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@unique([provider, providerAccountId])
+}
+
+// Email Verification Settings
+model EmailVerificationSettings {
+  id                    String   @id @default(cuid())
+  isEnabled             Boolean  @default(false)
+  codeLength            Int      @default(6)
+  codeExpirationMinutes Int      @default(10)
+  resendCooldownSeconds Int      @default(60)
+  maxAttempts           Int      @default(5)
+  
+  // Email template customization
+  emailSubject          String   @default("Verify Your Email Address")
+  emailFromName         String   @default("Grace Community Church")
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }
