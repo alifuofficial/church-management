@@ -6765,9 +6765,10 @@ function TestimoniesContent() {
       
       const res = await fetch(`/api/testimonies?${params.toString()}`);
       const data = await res.json();
-      setTestimonies(data);
+      setTestimonies(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching testimonies:', error);
+      setTestimonies([]);
     } finally {
       setIsLoading(false);
     }

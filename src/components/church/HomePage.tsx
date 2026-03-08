@@ -129,12 +129,13 @@ export function HomePage() {
         
         // Always fetch testimonies
         fetchPromises.push(
-          fetch('/api/testimonies?approved=true').then(res => res.json()).then(data => setTestimonies(data))
+          fetch('/api/testimonies?approved=true').then(res => res.json()).then(data => setTestimonies(Array.isArray(data) ? data : []))
         );
         
         await Promise.all(fetchPromises);
       } catch (error) {
         console.error('Error fetching data:', error);
+        setTestimonies([]);
       } finally {
         setIsLoading(false);
       }
