@@ -51,7 +51,7 @@ import {
   MoreHorizontal, Pencil, Trash2, Eye, Loader2, Download, Upload,
   Rocket, Wrench, Lock, Shield, AlertTriangle, Archive, LayoutDashboard,
   Smartphone, Send, TestTube, Pause, Play as PlayIcon, RefreshCw,
-  Image as ImageIcon, Music, File, FolderClosed, Grid, List, X, Check, Copy
+  Image as ImageIcon, Music, File, FolderClosed, Grid, List, X, Check, Copy, Type
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SmsContent } from './SmsContent';
@@ -5164,6 +5164,11 @@ function SettingsContent() {
     // Hero Settings
     heroBackgroundImage: '',
     heroBackgroundOverlay: true,
+    heroTitle: 'Find Your',
+    heroHighlightText: 'Spiritual Home',
+    heroSubtitle: '',
+    heroDescription: 'A community of faith, hope, and love. Join us on a journey of spiritual growth and meaningful connections.',
+    heroTitleSize: 'small' as 'small' | 'medium' | 'large',
     // Feature Flags
     features: {
       eventsEnabled: true,
@@ -5260,6 +5265,11 @@ function SettingsContent() {
           privateMessage: settings.privateMessage,
           heroBackgroundImage: settings.heroBackgroundImage,
           heroBackgroundOverlay: settings.heroBackgroundOverlay,
+          heroTitle: settings.heroTitle,
+          heroHighlightText: settings.heroHighlightText,
+          heroSubtitle: settings.heroSubtitle,
+          heroDescription: settings.heroDescription,
+          heroTitleSize: settings.heroTitleSize,
           features: settings.features,
         });
         setSaveMessage({ type: 'success', text: 'Settings saved successfully!' });
@@ -5754,11 +5764,83 @@ function SettingsContent() {
 
             <Separator className="bg-slate-800" />
 
+            {/* Hero Text Settings */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Type className="h-5 w-5 text-amber-400" />
+                <Label className="text-slate-300 font-medium">Hero Text Content</Label>
+              </div>
+              
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-slate-400 text-sm">Title (First Part)</Label>
+                  <Input
+                    value={settings.heroTitle}
+                    onChange={(e) => setSettings(prev => ({ ...prev, heroTitle: e.target.value }))}
+                    placeholder="Find Your"
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                  <p className="text-slate-500 text-xs">First part of the hero title (e.g., "Find Your")</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-400 text-sm">Highlight Text</Label>
+                  <Input
+                    value={settings.heroHighlightText}
+                    onChange={(e) => setSettings(prev => ({ ...prev, heroHighlightText: e.target.value }))}
+                    placeholder="Spiritual Home"
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                  <p className="text-slate-500 text-xs">Highlighted/colored text (e.g., "Spiritual Home")</p>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-slate-400 text-sm">Subtitle (Optional)</Label>
+                <Input
+                  value={settings.heroSubtitle}
+                  onChange={(e) => setSettings(prev => ({ ...prev, heroSubtitle: e.target.value }))}
+                  placeholder="at [Church Name]"
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+                <p className="text-slate-500 text-xs">Text after highlight, leave empty to auto-show church name</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-slate-400 text-sm">Description</Label>
+                <textarea
+                  value={settings.heroDescription}
+                  onChange={(e) => setSettings(prev => ({ ...prev, heroDescription: e.target.value }))}
+                  placeholder="A community of faith, hope, and love..."
+                  className="bg-slate-800 border-slate-700 text-white rounded-md p-3 min-h-[80px] resize-none w-full"
+                  rows={2}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-slate-400 text-sm">Title Size</Label>
+                <Select 
+                  value={settings.heroTitleSize || 'small'} 
+                  onValueChange={(value: 'small' | 'medium' | 'large') => setSettings(prev => ({ ...prev, heroTitleSize: value }))}
+                >
+                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                    <SelectValue placeholder="Select size" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    <SelectItem value="small">Small</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="large">Large</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Separator className="bg-slate-800" />
+
             {/* Preview */}
             <div className="space-y-3">
               <Label className="text-slate-300">Preview</Label>
               <div 
-                className="relative h-48 rounded-xl overflow-hidden border border-slate-700"
+                className="relative h-56 rounded-xl overflow-hidden border border-slate-700"
                 style={{
                   backgroundImage: settings.heroBackgroundImage ? `url(${settings.heroBackgroundImage})` : 'none',
                   backgroundSize: 'cover',
@@ -5771,8 +5853,23 @@ function SettingsContent() {
                 )}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center px-6">
-                    <h3 className="text-xl font-bold text-white mb-2">{settings.siteName}</h3>
-                    <p className="text-slate-300 text-sm">{settings.siteTagline}</p>
+                    <h3 className={cn(
+                      "font-bold text-white mb-1",
+                      settings.heroTitleSize === 'small' && "text-xl",
+                      settings.heroTitleSize === 'medium' && "text-2xl",
+                      settings.heroTitleSize === 'large' && "text-3xl"
+                    )}>
+                      {settings.heroTitle || 'Find Your'}{' '}
+                      <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
+                        {settings.heroHighlightText || 'Spiritual Home'}
+                      </span>
+                    </h3>
+                    <p className="text-amber-500 text-sm mb-1">
+                      {settings.heroSubtitle || `at ${settings.siteName}`}
+                    </p>
+                    <p className="text-slate-400 text-xs line-clamp-2 max-w-xs">
+                      {settings.heroDescription || 'A community of faith, hope, and love.'}
+                    </p>
                   </div>
                 </div>
               </div>

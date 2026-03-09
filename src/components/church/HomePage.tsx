@@ -5,6 +5,7 @@ import { useAppStore } from '@/store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import {
   Play,
   Calendar,
@@ -222,12 +223,17 @@ export function HomePage() {
               </div>
               
               {/* Main Heading */}
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6">
-                <span className="text-white">Find Your</span>
+              <h1 className={cn(
+                "font-bold leading-tight mb-6",
+                settings.heroTitleSize === 'small' && "text-3xl sm:text-4xl md:text-5xl lg:text-5xl",
+                settings.heroTitleSize === 'medium' && "text-4xl sm:text-5xl md:text-6xl lg:text-6xl",
+                (!settings.heroTitleSize || settings.heroTitleSize === 'large') && "text-4xl sm:text-5xl md:text-6xl lg:text-7xl"
+              )}>
+                <span className="text-white">{settings.heroTitle || 'Find Your'}</span>
                 <br />
                 <span className="relative">
                   <span className="bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 bg-clip-text text-transparent">
-                    Spiritual Home
+                    {settings.heroHighlightText || 'Spiritual Home'}
                   </span>
                   <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 300 12" fill="none">
                     <path d="M2 10C50 4 100 2 150 6C200 10 250 4 298 8" strokeWidth="3" strokeLinecap="round" className="text-amber-500/50" stroke="url(#paint0_linear)" />
@@ -243,12 +249,12 @@ export function HomePage() {
                 <br />
                 <span className="text-white">at</span>
                 <br />
-                <span className="text-amber-500">{settings.siteName || 'Our Church'}</span>
+                <span className="text-amber-500">{settings.heroSubtitle || settings.siteName || 'Our Church'}</span>
               </h1>
               
               {/* Description */}
               <p className="text-lg md:text-xl text-slate-400 mb-10 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                {settings.siteDescription || 'A community of faith, hope, and love. Join us on a journey of spiritual growth and meaningful connections.'}
+                {settings.heroDescription || settings.siteDescription || 'A community of faith, hope, and love. Join us on a journey of spiritual growth and meaningful connections.'}
               </p>
               
               {/* CTA Buttons */}

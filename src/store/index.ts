@@ -56,6 +56,11 @@ export interface SiteSettings {
   // Hero Settings
   heroBackgroundImage: string;
   heroBackgroundOverlay: boolean;
+  heroTitle: string;
+  heroHighlightText: string;
+  heroSubtitle: string;
+  heroDescription: string;
+  heroTitleSize: 'small' | 'medium' | 'large';
   // Feature Flags
   features: FeatureFlags;
 }
@@ -90,6 +95,11 @@ const defaultSettings: SiteSettings = {
   privateMessage: '',
   heroBackgroundImage: '',
   heroBackgroundOverlay: true,
+  heroTitle: 'Find Your',
+  heroHighlightText: 'Spiritual Home',
+  heroSubtitle: '',
+  heroDescription: 'A community of faith, hope, and love. Join us on a journey of spiritual growth and meaningful connections.',
+  heroTitleSize: 'small',
   features: {
     eventsEnabled: true,
     sermonsEnabled: true,
