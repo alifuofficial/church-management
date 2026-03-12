@@ -1,39 +1,25 @@
-# Church Management System - Production Dockerfile
-FROM node:20-alpine AS base
-
-# Install dependencies only when needed
-FROM base AS deps
-RUN apk add --no-cache libc6-compat
+# Use Node.js 22 with Bun
+FROM oven/bun:1 AS base
 WORKDIR /app
 
-# Install bun
-RUN npm install -g bun
-
-# Copy package files
-COPY package.json bun.lock* ./
-COPY prisma ./prisma/
+# Install OpenSSL for Prisma
+RUN apt-get update && apt-get install -y openssl libssl3 && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies
+FROM base AS deps
+COPY package.json bun.lock* ./
+COPY prisma ./prisma/
 RUN bun install --frozen-lockfile
 
 # Generate Prisma Client
-RUN bunx prisma generate
+RUN bun run db:generate
 
-# Rebuild the source code only when needed
+# Build the application
 FROM base AS builder
-WORKDIR /app
-
-# Install bun
-RUN npm install -g bun
-
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Set environment variable for standalone output
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
-
-# Build the application
+# Build
 RUN bun run build
 
 # Production image
@@ -46,7 +32,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy necessary files
+# Copy built files
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
@@ -54,8 +40,8 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
-# Create data directory for SQLite
-RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data
+# Create db directory
+RUN mkdir -p /app/db && chown -R nextjs:nodejs /app/db
 
 USER nextjs
 
@@ -64,4 +50,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["bun", "server.js"]
