@@ -1,0 +1,11 @@
+[phases.setup]
+aptPkgs = ["openssl", "libssl-dev", "libssl3"]
+
+[phases.install]
+cmds = ["bun install"]
+
+[phases.build]
+cmds = ["bun run db:generate", "bun run build"]
+
+[start]
+cmd = "bun run start"
