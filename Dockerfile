@@ -30,8 +30,8 @@ RUN npm run build
 FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 
-# Install curl for health check and openssl for prisma
-RUN apt-get update && apt-get install -y openssl libssl3 curl && rm -rf /var/lib/apt/lists/*
+# Install curl for health check, openssl for prisma, and gosu for step-down
+RUN apt-get update && apt-get install -y openssl libssl3 curl gosu && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -59,7 +59,8 @@ RUN mkdir -p /app/db && chown -R nextjs:nodejs /app/db
 HEALTHCHECK --interval=30s --timeout=3s \
   CMD curl -f http://localhost:${PORT:-3000}/api/health || exit 1
 
-USER nextjs
+# Ensure db and public/uploads are ready for nextjs user
+RUN mkdir -p /app/db /app/public/uploads && chown -R nextjs:nodejs /app/db /app/public/uploads
 
 EXPOSE 3000
 
