@@ -2,8 +2,8 @@
 FROM oven/bun:1 AS base
 WORKDIR /app
 
-# Install OpenSSL for Prisma
-RUN apt-get update && apt-get install -y openssl libssl3 && rm -rf /var/lib/apt/lists/*
+# Install OpenSSL and Curl for Prisma and Health Checks
+RUN apt-get update && apt-get install -y openssl libssl3 curl && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies
 FROM base AS deps
@@ -45,7 +45,7 @@ RUN mkdir -p /app/db && chown -R nextjs:nodejs /app/db
 
 # Add healthcheck
 HEALTHCHECK --interval=30s --timeout=3s \
-  CMD curl -f http://localhost:3000/api/health || exit 1
+  CMD curl -f http://localhost:${PORT:-3000}/api/health || exit 1
 
 USER nextjs
 
