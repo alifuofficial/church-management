@@ -5115,8 +5115,8 @@ function ComingSoonContent({ feature }: { feature: string }) {
 
 // Settings Content Component
 function SettingsContent() {
-  const { settings: globalSettings, setSettings: setGlobalSettings } = useAppStore();
-  const [activeTab, setActiveTab] = useState<'general' | 'logo' | 'seo' | 'api' | 'site' | 'features' | 'social' | 'verification'>('general');
+  const { user, settings: globalSettings, setSettings: setGlobalSettings } = useAppStore();
+  const [activeTab, setActiveTab] = useState<'general' | 'logo' | 'seo' | 'api' | 'site' | 'features' | 'social' | 'verification' | 'security'>('general');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -5175,6 +5175,14 @@ function SettingsContent() {
       notificationsEnabled: true,
     },
   });
+
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Load settings from database on mount
   useEffect(() => {
@@ -5312,6 +5320,48 @@ function SettingsContent() {
     }
   };
 
+  const handleUpdatePassword = async () => {
+    if (!passwordData.newPassword || !passwordData.confirmPassword) {
+      setPasswordMessage({ type: 'error', text: 'Please fill in all password fields.' });
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordMessage({ type: 'error', text: 'New passwords do not match.' });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 8) {
+      setPasswordMessage({ type: 'error', text: 'Password must be at least 8 characters long.' });
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    setPasswordMessage(null);
+
+    try {
+      const res = await fetch(`/api/users/${user?.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: passwordData.newPassword }),
+      });
+
+      if (res.ok) {
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        setPasswordMessage({ type: 'success', text: 'Password updated successfully!' });
+        setTimeout(() => setPasswordMessage(null), 5000);
+      } else {
+        const error = await res.json();
+        setPasswordMessage({ type: 'error', text: error.message || 'Failed to update password.' });
+      }
+    } catch (error) {
+      console.error('Error updating password:', error);
+      setPasswordMessage({ type: 'error', text: 'An unexpected error occurred.' });
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
   const tabs = [
     { id: 'general', label: 'Site Info', icon: Church, category: 'General' },
     { id: 'logo', label: 'Logo & Branding', icon: Sparkles, category: 'General' },
@@ -5321,6 +5371,7 @@ function SettingsContent() {
     { id: 'features', label: 'Features', icon: Layers, category: 'System' },
     { id: 'social', label: 'Social Login', icon: Users, category: 'Authentication' },
     { id: 'verification', label: 'Email Verification', icon: Mail, category: 'Authentication' },
+    { id: 'security', label: 'Password & Security', icon: Lock, category: 'Authentication' },
   ] as const;
 
   const categories = ['General', 'Authentication', 'Integrations', 'System'];
@@ -6592,8 +6643,68 @@ function SettingsContent() {
         <EmailVerificationSettings />
       )}
 
+      {/* Password & Security Tab */}
+      {activeTab === 'security' && (
+        <Card className="bg-slate-900/50 border-slate-800">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Lock className="h-5 w-5 text-purple-400" />
+              Password & Security
+            </CardTitle>
+            <CardDescription className="text-slate-400">
+              Update your administrative password.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-slate-300">New Password</Label>
+                <Input
+                  type="password"
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                  placeholder="At least 8 characters"
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-300">Confirm New Password</Label>
+                <Input
+                  type="password"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                  placeholder="Repeat new password"
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+
+              {passwordMessage && (
+                <div className={cn(
+                  "p-3 rounded-lg text-sm flex items-center gap-2",
+                  passwordMessage.type === 'success' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" : "bg-red-500/10 text-red-400 border border-red-500/30"
+                )}>
+                  {passwordMessage.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                  {passwordMessage.text}
+                </div>
+              )}
+
+              <div className="pt-2">
+                <Button 
+                  onClick={handleUpdatePassword} 
+                  disabled={isUpdatingPassword}
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  {isUpdatingPassword && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Update Password
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Save Button - only show for tabs that use the main settings state */}
-      {activeTab !== 'social' && activeTab !== 'verification' && (
+      {activeTab !== 'social' && activeTab !== 'verification' && activeTab !== 'security' && (
         <div className="flex items-center justify-end gap-3">
           {saveMessage && (
             <span className={cn(
