@@ -1,3 +1,4 @@
+```typescript
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -7,9 +8,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  allowedDevOrigins: [
-    "preview-chat-d20b5044-3d5c-49ff-8ae4-ac7df359ae8f.space.z.ai",
-  ],
 };
 
 export default nextConfig;
+```

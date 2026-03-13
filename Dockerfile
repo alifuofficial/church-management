@@ -43,6 +43,10 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 # Create db directory
 RUN mkdir -p /app/db && chown -R nextjs:nodejs /app/db
 
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD curl -f http://localhost:3000/api/health || exit 1
+
 USER nextjs
 
 EXPOSE 3000

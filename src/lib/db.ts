@@ -7,7 +7,7 @@ const globalForPrisma = globalThis as unknown as {
 // Always create a fresh PrismaClient to pick up schema changes
 // In development mode, we need to ensure the latest schema is loaded
 export const db = new PrismaClient({
-  log: ['query'],
+  log: process.env.NODE_ENV === 'development' ? ['query'] : [],
 })
 
 // Only cache in production
