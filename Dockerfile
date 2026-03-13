@@ -38,6 +38,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN groupadd --system --gid 1001 nodejs
 RUN useradd --system --uid 1001 --gid nodejs --create-home nextjs
+ENV HOME=/home/nextjs
 
 # Copy built files
 COPY --from=builder /app/public ./public
