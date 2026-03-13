@@ -41,7 +41,11 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # Create db directory
-RUN mkdir -p /app/db && chown -R nextjs:nodejs /app/db
+RUN mkdir -p /app/db
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh /app/
+RUN chmod +x /app/docker-entrypoint.sh
 
 # Add healthcheck
 HEALTHCHECK --interval=30s --timeout=3s \
@@ -54,4 +58,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["bun", "server.js"]
