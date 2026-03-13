@@ -59,8 +59,8 @@ RUN mkdir -p /app/db && chown -R nextjs:nodejs /app/db
 HEALTHCHECK --interval=30s --timeout=3s \
   CMD curl -f http://localhost:${PORT:-3000}/api/health || exit 1
 
-# Ensure db and public/uploads are ready for nextjs user
-RUN mkdir -p /app/db /app/public/uploads && chown -R nextjs:nodejs /app/db /app/public/uploads
+# Ensure directories are ready for nextjs user
+RUN mkdir -p /app/db /app/public && chown -R nextjs:nodejs /app/db /app/public
 
 EXPOSE 3000
 

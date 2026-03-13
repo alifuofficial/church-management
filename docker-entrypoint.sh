@@ -1,19 +1,29 @@
 #!/bin/bash
 set -e
 
-# Ensure the database and uploads directory exist with correct ownership
-mkdir -p /app/db /app/db/uploads
+# Ensure the database and canonical uploads directory exist with correct ownership
+mkdir -p /app/db /app/db/uploads/images
 chown -R nextjs:nodejs /app/db
 
-# Handle persistent uploads symlink with root privileges
-if [ ! -L /app/public/uploads ]; then
-  echo "Setting up persistent uploads symlink..."
-  # Use -f to force removal even if non-empty or permission-locked files exist (now running as root)
-  rm -rf /app/public/uploads
-  # Create symlink: public/uploads -> /app/db/uploads
-  ln -s /app/db/uploads /app/public/uploads
-  chown -h nextjs:nodejs /app/public/uploads
-fi
+# Ensure the public directory and base uploads directory exist
+mkdir -p /app/public/uploads
+chown nextjs:nodejs /app/public /app/public/uploads
+
+# Setup granular symlinks for individual upload paths
+# This avoids Permission Denied when trying to rm -rf a volume-mounted /app/public/uploads
+for type in "image" "images"; do
+  TARGET="/app/public/uploads/$type"
+  if [ ! -L "$TARGET" ]; then
+    echo "Setting up persistent symlink for $TARGET..."
+    # If it's a real directory (not a link), and it's not a mount point, try to remove it
+    if [ -d "$TARGET" ] && ! mountpoint -q "$TARGET"; then
+      rm -rf "$TARGET"
+    fi
+    # Link to the canonical persistent images folder
+    ln -sf /app/db/uploads/images "$TARGET"
+    chown -h nextjs:nodejs "$TARGET"
+  fi
+done
 
 # If the database file doesn't exist, initialize it
 if [ ! -f /app/db/church.db ]; then
