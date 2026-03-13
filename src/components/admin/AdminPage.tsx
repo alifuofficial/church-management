@@ -5293,7 +5293,7 @@ function SettingsContent() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('type', 'image');
+      formData.append('type', 'images');
       
       const res = await fetch('/api/upload', {
         method: 'POST',
@@ -6945,7 +6945,7 @@ function TestimoniesContent() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('type', 'image');
+      formData.append('type', 'images');
       
       const res = await fetch('/api/upload', {
         method: 'POST',
