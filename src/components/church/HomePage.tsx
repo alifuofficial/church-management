@@ -155,7 +155,19 @@ export function HomePage() {
   return (
     <div className="flex flex-col">
       {/* Hero Section - Modern & Creative */}
-      <section className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      <section className="relative min-h-screen flex items-center overflow-hidden">
+        {/* Background Layer */}
+        {settings.heroBackgroundImage ? (
+          <div className="absolute inset-0 z-0">
+            <div 
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
+              style={{ backgroundImage: `url(${settings.heroBackgroundImage})` }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-slate-950/90 backdrop-blur-[2px]" />
+          </div>
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 z-0" />
+        )}
         {/* Animated Background Mesh */}
         <div className="absolute inset-0 overflow-hidden">
           {/* Mesh Gradient Orbs */}
@@ -206,7 +218,7 @@ export function HomePage() {
               </div>
               
               {/* Main Heading */}
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">
                 <span className="text-white">Find Your</span>
                 <br />
                 <span className="relative">
@@ -231,7 +243,7 @@ export function HomePage() {
               </h1>
               
               {/* Description */}
-              <p className="text-lg md:text-xl text-slate-400 mb-10 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+              <p className="text-base md:text-lg text-slate-400 mb-10 max-w-xl mx-auto lg:mx-0 leading-relaxed">
                 {settings.siteDescription || 'A community of faith, hope, and love. Join us on a journey of spiritual growth and meaningful connections.'}
               </p>
               

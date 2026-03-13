@@ -52,6 +52,7 @@ export interface SiteSettings {
   allowRegistration: boolean;
   showLoginForm: boolean;
   privateMessage: string;
+  heroBackgroundImage: string;
   // Feature Flags
   features: FeatureFlags;
 }
@@ -84,6 +85,7 @@ const defaultSettings: SiteSettings = {
   allowRegistration: true,
   showLoginForm: true,
   privateMessage: '',
+  heroBackgroundImage: '',
   features: {
     eventsEnabled: true,
     sermonsEnabled: true,

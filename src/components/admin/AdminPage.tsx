@@ -5122,6 +5122,7 @@ function SettingsContent() {
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingFavicon, setUploadingFavicon] = useState(false);
+  const [uploadingHero, setUploadingHero] = useState(false);
   const [settings, setSettings] = useState({
     siteName: 'Grace Community Church',
     siteTagline: 'Welcome Home',
@@ -5263,6 +5264,7 @@ function SettingsContent() {
           allowRegistration: settings.allowRegistration,
           showLoginForm: settings.showLoginForm,
           privateMessage: settings.privateMessage,
+          heroBackgroundImage: settings.heroBackgroundImage,
           features: settings.features,
         });
         setSaveMessage({ type: 'success', text: 'Settings saved successfully!' });
@@ -5278,12 +5280,14 @@ function SettingsContent() {
     }
   };
 
-  // Handle file upload for logo/favicon
-  const handleFileUpload = async (file: File, type: 'logo' | 'favicon') => {
+  // Handle file upload for logo/favicon/hero
+  const handleFileUpload = async (file: File, type: 'logo' | 'favicon' | 'hero') => {
     if (type === 'logo') {
       setUploadingLogo(true);
-    } else {
+    } else if (type === 'favicon') {
       setUploadingFavicon(true);
+    } else {
+      setUploadingHero(true);
     }
     
     try {
@@ -5300,10 +5304,12 @@ function SettingsContent() {
         const data = await res.json();
         if (type === 'logo') {
           setSettings(prev => ({ ...prev, logoUrl: data.url }));
-        } else {
+        } else if (type === 'favicon') {
           setSettings(prev => ({ ...prev, faviconUrl: data.url }));
+        } else {
+          setSettings(prev => ({ ...prev, heroBackgroundImage: data.url }));
         }
-        setSaveMessage({ type: 'success', text: `${type === 'logo' ? 'Logo' : 'Favicon'} uploaded successfully! Click "Save Changes" to apply.` });
+        setSaveMessage({ type: 'success', text: `${type.charAt(0).toUpperCase() + type.slice(1)} uploaded successfully! Click "Save Changes" to apply.` });
         setTimeout(() => setSaveMessage(null), 5000);
       } else {
         setSaveMessage({ type: 'error', text: 'Failed to upload file' });
@@ -5314,8 +5320,10 @@ function SettingsContent() {
     } finally {
       if (type === 'logo') {
         setUploadingLogo(false);
-      } else {
+      } else if (type === 'favicon') {
         setUploadingFavicon(false);
+      } else {
+        setUploadingHero(false);
       }
     }
   };
@@ -5516,7 +5524,7 @@ function SettingsContent() {
               </div>
             )}
             
-            <div className="grid gap-6 md:grid-cols-2">
+             <div className="grid gap-6 md:grid-cols-3">
               {/* Logo Upload */}
               <div className="space-y-4">
                 <Label className="text-slate-300">Church Logo</Label>
@@ -5532,27 +5540,26 @@ function SettingsContent() {
                 />
                 <label
                   htmlFor="logo-upload"
-                  className="border-2 border-dashed border-slate-700 rounded-lg p-8 text-center hover:border-amber-500 transition cursor-pointer block relative"
+                  className="border-2 border-dashed border-slate-700 rounded-lg p-6 text-center hover:border-amber-500 transition cursor-pointer block relative"
                 >
                   {uploadingLogo ? (
                     <div className="flex flex-col items-center justify-center">
-                      <Loader2 className="h-12 w-12 text-amber-500 animate-spin mb-3" />
-                      <p className="text-amber-400 text-sm">Uploading...</p>
+                      <Loader2 className="h-8 w-8 text-amber-500 animate-spin mb-2" />
+                      <p className="text-amber-400 text-xs">Uploading...</p>
                     </div>
                   ) : settings.logoUrl ? (
                     <>
-                      <img src={settings.logoUrl} alt="Logo" className="h-24 mx-auto mb-4 object-contain" />
-                      <p className="text-amber-400 text-sm font-medium">Click to change logo</p>
+                      <img src={settings.logoUrl} alt="Logo" className="h-20 mx-auto mb-2 object-contain" />
+                      <p className="text-amber-400 text-xs font-medium">Change logo</p>
                     </>
                   ) : (
                     <>
-                      <div className="w-24 h-24 mx-auto mb-4 rounded-xl bg-amber-500/20 flex items-center justify-center">
-                        <Church className="h-12 w-12 text-amber-400" />
+                      <div className="w-16 h-16 mx-auto mb-2 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                        <Church className="h-8 w-8 text-amber-400" />
                       </div>
-                      <p className="text-slate-400 text-sm">Click to upload or drag and drop</p>
+                      <p className="text-slate-400 text-xs text-center">Upload logo</p>
                     </>
                   )}
-                  <p className="text-slate-500 text-xs mt-1">PNG, JPG, SVG or WebP (max 50MB)</p>
                 </label>
                 <div className="space-y-2">
                   <Label className="text-slate-400 text-xs">Or enter URL manually</Label>
@@ -5560,7 +5567,7 @@ function SettingsContent() {
                     value={settings.logoUrl}
                     onChange={(e) => setSettings(prev => ({ ...prev, logoUrl: e.target.value }))}
                     placeholder="https://example.com/logo.png"
-                    className="bg-slate-800 border-slate-700 text-white"
+                    className="bg-slate-800 border-slate-700 text-white text-sm"
                   />
                 </div>
               </div>
@@ -5580,27 +5587,26 @@ function SettingsContent() {
                 />
                 <label
                   htmlFor="favicon-upload"
-                  className="border-2 border-dashed border-slate-700 rounded-lg p-8 text-center hover:border-amber-500 transition cursor-pointer block relative"
+                  className="border-2 border-dashed border-slate-700 rounded-lg p-6 text-center hover:border-amber-500 transition cursor-pointer block relative"
                 >
                   {uploadingFavicon ? (
                     <div className="flex flex-col items-center justify-center">
-                      <Loader2 className="h-12 w-12 text-amber-500 animate-spin mb-3" />
-                      <p className="text-amber-400 text-sm">Uploading...</p>
+                      <Loader2 className="h-8 w-8 text-amber-500 animate-spin mb-2" />
+                      <p className="text-amber-400 text-xs">Uploading...</p>
                     </div>
                   ) : settings.faviconUrl ? (
                     <>
-                      <img src={settings.faviconUrl} alt="Favicon" className="h-16 w-16 mx-auto mb-4 object-contain" />
-                      <p className="text-amber-400 text-sm font-medium">Click to change favicon</p>
+                      <img src={settings.faviconUrl} alt="Favicon" className="h-16 w-16 mx-auto mb-2 object-contain" />
+                      <p className="text-amber-400 text-xs font-medium">Change favicon</p>
                     </>
                   ) : (
                     <>
-                      <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-slate-700 flex items-center justify-center">
-                        <Sparkles className="h-8 w-8 text-slate-400" />
+                      <div className="w-16 h-16 mx-auto mb-2 rounded-lg bg-slate-700 flex items-center justify-center">
+                        <Sparkles className="h-6 w-6 text-slate-400" />
                       </div>
-                      <p className="text-slate-400 text-sm">Click to upload favicon</p>
+                      <p className="text-slate-400 text-xs text-center">Upload favicon</p>
                     </>
                   )}
-                  <p className="text-slate-500 text-xs mt-1">ICO, PNG (32x32 or 64x64)</p>
                 </label>
                 <div className="space-y-2">
                   <Label className="text-slate-400 text-xs">Or enter URL manually</Label>
@@ -5608,7 +5614,56 @@ function SettingsContent() {
                     value={settings.faviconUrl}
                     onChange={(e) => setSettings(prev => ({ ...prev, faviconUrl: e.target.value }))}
                     placeholder="https://example.com/favicon.ico"
-                    className="bg-slate-800 border-slate-700 text-white"
+                    className="bg-slate-800 border-slate-700 text-white text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Hero Image Upload */}
+              <div className="space-y-4">
+                <Label className="text-slate-300">Hero Background</Label>
+                <input
+                  type="file"
+                  id="hero-upload"
+                  className="hidden"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileUpload(file, 'hero');
+                  }}
+                />
+                <label
+                  htmlFor="hero-upload"
+                  className="border-2 border-dashed border-slate-700 rounded-lg p-6 text-center hover:border-amber-500 transition cursor-pointer block relative h-[140px] flex flex-col items-center justify-center overflow-hidden"
+                >
+                  {uploadingHero ? (
+                    <div className="flex flex-col items-center justify-center">
+                      <Loader2 className="h-8 w-8 text-amber-500 animate-spin mb-2" />
+                      <p className="text-amber-400 text-xs">Uploading...</p>
+                    </div>
+                  ) : settings.heroBackgroundImage ? (
+                    <div className="relative w-full h-full group">
+                      <img src={settings.heroBackgroundImage} alt="Hero" className="w-full h-full object-cover rounded-md" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                         <p className="text-white text-xs font-medium">Change Hero Image</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-16 h-16 mx-auto mb-2 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                        <ImageIcon className="h-8 w-8 text-blue-400" />
+                      </div>
+                      <p className="text-slate-400 text-xs text-center">Upload hero image</p>
+                    </>
+                  )}
+                </label>
+                <div className="space-y-2">
+                  <Label className="text-slate-400 text-xs">Or enter URL manually</Label>
+                  <Input
+                    value={settings.heroBackgroundImage || ''}
+                    onChange={(e) => setSettings(prev => ({ ...prev, heroBackgroundImage: e.target.value }))}
+                    placeholder="https://example.com/hero.jpg"
+                    className="bg-slate-800 border-slate-700 text-white text-sm"
                   />
                 </div>
               </div>
