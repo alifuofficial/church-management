@@ -35,9 +35,14 @@ interface VerificationSettings {
   resendCooldownSeconds: number;
 }
 
-export function AuthForm() {
+interface AuthFormProps {
+  initialMode?: 'signin' | 'signup';
+  onClose?: () => void;
+}
+
+export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
   const { setUser, setCurrentView } = useAppStore();
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
   const [signupStep, setSignupStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -224,6 +229,7 @@ export function AuthForm() {
           } else {
             setUser(user);
             setCurrentView('dashboard');
+            if (onClose) onClose();
           }
         } else {
           const data = await res.json();
@@ -261,6 +267,7 @@ export function AuthForm() {
           
           setUser(user);
           setCurrentView(user.role === 'ADMIN' ? 'admin' : 'dashboard');
+          if (onClose) onClose();
         } else {
           setError('Invalid email or password');
         }
@@ -294,6 +301,7 @@ export function AuthForm() {
       if (res.ok) {
         setUser(data.user);
         setCurrentView('dashboard');
+        if (onClose) onClose();
       } else {
         setVerificationError(data.error || 'Invalid verification code');
       }
@@ -347,6 +355,7 @@ export function AuthForm() {
       if (user) {
         setUser(user);
         setCurrentView(role === 'ADMIN' ? 'admin' : 'dashboard');
+        if (onClose) onClose();
       }
     } catch (err) {
       console.error(err);
@@ -595,8 +604,8 @@ export function AuthForm() {
                         required
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email Address</Label>
+                    <div className="space-y-2 text-left">
+                      <Label htmlFor="signup-email" className="text-slate-700 dark:text-slate-300">Email Address (required for login and communication)</Label>
                       <Input
                         id="signup-email"
                         type="email"
@@ -604,6 +613,7 @@ export function AuthForm() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
+                        className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
                       />
                     </div>
                     <div className="space-y-2">
@@ -656,14 +666,15 @@ export function AuthForm() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-city">City / Region</Label>
+                    <div className="space-y-2 text-left">
+                      <Label htmlFor="signup-city" className="text-slate-700 dark:text-slate-300">City / Region</Label>
                       <Input
                         id="signup-city"
                         placeholder="Nairobi / Addis Ababa"
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
                         required
+                        className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
                       />
                     </div>
                     <div className="space-y-2">
