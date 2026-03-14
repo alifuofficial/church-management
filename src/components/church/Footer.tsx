@@ -275,7 +275,10 @@ export function Footer() {
       <div className="border-t border-slate-800 py-6">
         <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-slate-400">
-            © {new Date().getFullYear()} {settings.siteName || 'Digital Church'}. All rights reserved.
+            © {new Date().getFullYear()} {settings.siteName || 'Digital Church'}. All rights reserved. 
+            <span className="ml-2 pl-2 border-l border-slate-800">
+              Developed by <a href="https://t.me/dmalifu" target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:text-amber-400 font-medium">AlifXperience</a>
+            </span>
           </p>
           <div className="flex gap-6 text-sm text-slate-400">
             <button onClick={() => setCurrentView('about')} className="hover:text-amber-500 transition-colors">
