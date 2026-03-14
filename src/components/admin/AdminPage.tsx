@@ -51,7 +51,7 @@ import {
   MoreHorizontal, Pencil, Trash2, Eye, Loader2, Download, Upload,
   Rocket, Wrench, Lock, Shield, AlertTriangle, Archive, LayoutDashboard,
   Smartphone, Send, TestTube, Pause, Play as PlayIcon, RefreshCw,
-  Image as ImageIcon, Music, File, FolderClosed, Grid, List, X, Check, Copy
+  Image as ImageIcon, Music, File, FolderClosed, Grid, List, X, Check, Copy, ShieldCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SmsContent } from './SmsContent';
