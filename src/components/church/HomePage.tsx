@@ -207,161 +207,91 @@ export function HomePage() {
           </div>
         </div>
         
-        <div className="container mx-auto px-4 relative z-10 py-20 lg:py-0">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center min-h-[80vh]">
-            {/* Left Content */}
-            <div className="text-center lg:text-left order-2 lg:order-1">
+        <div className="container mx-auto px-4 relative z-10 py-32 lg:py-0">
+          <div className="flex flex-col items-center justify-center min-h-[85vh] text-center">
+            {/* Enhanced Hero Content */}
+            <div className="max-w-4xl mx-auto">
               {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 mb-8 animate-fade-in-up">
-                <Sparkles className="w-4 h-4 text-amber-400" />
-                <span className="text-amber-400 text-sm font-medium">Welcome Home</span>
+              <div className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-amber-500/10 border border-amber-500/20 mb-10 animate-fade-in-up">
+                <Sparkles className="w-5 h-5 text-amber-400" />
+                <span className="text-amber-400 text-sm md:text-base font-semibold tracking-wider uppercase">Welcome to our Sanctuary</span>
               </div>
               
-              {/* Main Heading */}
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">
+              {/* Main Heading - More Creative & Larger */}
+              <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[1.1] mb-8 tracking-tight">
                 <span className="text-white">Find Your</span>
                 <br />
-                <span className="relative">
-                  <span className="bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 bg-clip-text text-transparent">
+                <span className="relative inline-block mt-2">
+                  <span className="bg-gradient-to-r from-amber-400 via-orange-500 to-amber-600 bg-clip-text text-transparent animate-gradient-text">
                     Spiritual Home
                   </span>
-                  <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 300 12" fill="none">
-                    <path d="M2 10C50 4 100 2 150 6C200 10 250 4 298 8" strokeWidth="3" strokeLinecap="round" className="text-amber-500/50" stroke="url(#paint0_linear)" />
-                    <defs>
-                      <linearGradient id="paint0_linear" x1="0" y1="0" x2="300" y2="0">
-                        <stop stopColor="#f59e0b" stopOpacity="0.2" />
-                        <stop offset="0.5" stopColor="#f59e0b" stopOpacity="0.6" />
-                        <stop offset="1" stopColor="#f59e0b" stopOpacity="0.2" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
+                  <div className="absolute -bottom-4 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-amber-500/50 to-transparent rounded-full blur-sm" />
                 </span>
                 <br />
-                <span className="text-white">at</span>
-                <br />
-                <span className="text-amber-500">{settings.siteName || 'Our Church'}</span>
+                <span className="text-white/90 text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mt-4 block">
+                  at <span className="text-amber-500">{settings.siteName || 'Our Church'}</span>
+                </span>
               </h1>
               
-              {/* Description */}
-              <p className="text-base md:text-lg text-slate-400 mb-10 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                {settings.siteDescription || 'A community of faith, hope, and love. Join us on a journey of spiritual growth and meaningful connections.'}
+              {/* Description - Larger & Clearer */}
+              <p className="text-lg md:text-2xl text-slate-400/90 mb-12 max-w-2xl mx-auto leading-relaxed font-medium">
+                {settings.siteDescription || 'A community where faith meets fellowship. Join us on a journey of spiritual discovery and authentic connection.'}
               </p>
               
-              {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-12">
+              {/* CTA Buttons - Balanced & Premium */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
                 <Button 
                   size="lg" 
-                  className="group relative bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-black font-semibold px-8 py-6 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-amber-500/25"
+                  className="group relative bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-black font-bold px-10 py-8 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(245,158,11,0.4)] text-lg"
                   onClick={() => setCurrentView('events')}
                 >
-                  <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+                  <Play className="mr-3 h-6 w-6 group-hover:scale-110 transition-transform" />
                   Join Our Service
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-2 transition-transform" />
                 </Button>
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="group border-2 border-slate-700 text-white hover:bg-slate-800/50 hover:border-amber-500/30 px-8 py-6 rounded-2xl backdrop-blur-sm transition-all duration-300"
+                  className="group border-2 border-slate-700 text-white hover:bg-slate-800/50 hover:border-amber-500/40 px-10 py-8 rounded-2xl backdrop-blur-md transition-all duration-300 text-lg"
                   onClick={() => setCurrentView('about')}
                 >
-                  <Compass className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
-                  Explore Faith
+                  <Compass className="mr-3 h-6 w-6 group-hover:rotate-45 transition-transform" />
+                  Explore Our Vision
                 </Button>
               </div>
-              
-              {/* Social Proof */}
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6">
-                {/* Members Count */}
-                <div className="flex items-center gap-3">
-                  <div className="flex -space-x-3">
+
+              {/* Enhanced Social Proof */}
+              <div className="mt-20 flex flex-col sm:flex-row items-center justify-center gap-12 opacity-80">
+                <div className="flex items-center gap-4">
+                  <div className="flex -space-x-4">
                     {[...Array(4)].map((_, i) => (
                       <div 
                         key={i} 
-                        className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 border-2 border-slate-900 flex items-center justify-center text-xs font-bold text-black"
+                        className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 border-2 border-slate-900 flex items-center justify-center text-sm font-bold text-amber-500 shadow-xl"
                       >
                         {String.fromCharCode(65 + i)}
                       </div>
                     ))}
                   </div>
-                  <div>
-                    <p className="text-white font-semibold">500+</p>
-                    <p className="text-slate-500 text-sm">Active Members</p>
+                  <div className="text-left">
+                    <p className="text-white font-bold text-xl">500+</p>
+                    <p className="text-slate-500 text-xs font-semibold uppercase tracking-widest">Active Members</p>
                   </div>
                 </div>
                 
-                {/* Divider */}
-                <div className="hidden sm:block w-px h-12 bg-slate-800" />
+                <div className="hidden sm:block w-px h-12 bg-slate-800/50" />
                 
-                {/* Rating */}
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
+                <div className="flex items-center gap-4">
+                  <div className="flex gap-1.5">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />
+                      <Star key={i} className="w-5 h-5 text-amber-400 fill-amber-400" />
                     ))}
                   </div>
-                  <div>
-                    <p className="text-white font-semibold">4.9/5</p>
-                    <p className="text-slate-500 text-sm">Community Rating</p>
+                  <div className="text-left">
+                    <p className="text-white font-bold text-xl">4.9/5</p>
+                    <p className="text-slate-500 text-xs font-semibold uppercase tracking-widest">Community Rating</p>
                   </div>
                 </div>
-              </div>
-            </div>
-            
-            {/* Right Content - Creative Card Layout */}
-            <div className="order-1 lg:order-2 relative">
-              {/* Main Feature Card */}
-              <div className="relative">
-                {/* Glassmorphism Card */}
-                <div className="relative bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-3xl p-8 border border-slate-700/50 shadow-2xl">
-                  {/* Decorative Corner */}
-                  <div className="absolute -top-px -right-px w-24 h-24 bg-gradient-to-bl from-amber-500/20 to-transparent rounded-tr-3xl" />
-                  
-                  {/* Church Icon */}
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mb-6 shadow-lg shadow-amber-500/25">
-                    <Church className="w-10 h-10 text-black" />
-                  </div>
-                  
-                  {/* Card Content */}
-                  <h3 className="text-2xl font-bold text-white mb-3">Join Us This Sunday</h3>
-                  <p className="text-slate-400 mb-6">Experience worship, community, and spiritual growth with us.</p>
-                  
-                  {/* Service Times */}
-                  <div className="space-y-3 mb-6">
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-slate-800/50 border border-slate-700/50">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                          <Clock className="w-5 h-5 text-amber-400" />
-                        </div>
-                        <div>
-                          <p className="text-white font-medium">First Service</p>
-                          <p className="text-slate-500 text-sm">8:00 AM</p>
-                        </div>
-                      </div>
-                      <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-400 border-0">Live</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-slate-800/50 border border-slate-700/50">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                          <Video className="w-5 h-5 text-amber-400" />
-                        </div>
-                        <div>
-                          <p className="text-white font-medium">Second Service</p>
-                          <p className="text-slate-500 text-sm">10:30 AM</p>
-                        </div>
-                      </div>
-                      <Badge variant="secondary" className="bg-amber-500/10 text-amber-400 border-0">Online</Badge>
-                    </div>
-                  </div>
-                  
-                  {/* Action Button */}
-                  <Button className="w-full bg-slate-700 hover:bg-slate-600 text-white rounded-xl py-6 group">
-                    <MapPin className="mr-2 h-4 w-4" />
-                    Get Directions
-                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </div>
-                
-                {/* Floating Decorative Cards Removed */}
               </div>
             </div>
           </div>
