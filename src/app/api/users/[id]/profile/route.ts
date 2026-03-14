@@ -29,6 +29,9 @@ export async function PUT(
     if (body.interests !== undefined) updateData.interests = body.interests;
     if (body.emailOptIn !== undefined) updateData.emailOptIn = body.emailOptIn;
     if (body.smsOptIn !== undefined) updateData.smsOptIn = body.smsOptIn;
+    if (body.acceptedTerms !== undefined) updateData.acceptedTerms = body.acceptedTerms;
+    if (body.acceptedPrivacy !== undefined) updateData.acceptedPrivacy = body.acceptedPrivacy;
+    if (body.acceptedStatementOfFaith !== undefined) updateData.acceptedStatementOfFaith = body.acceptedStatementOfFaith;
 
     const user = await db.user.update({
       where: { id },

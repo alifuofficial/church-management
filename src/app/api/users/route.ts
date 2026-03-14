@@ -70,8 +70,12 @@ export async function POST(request: NextRequest) {
 
     const { password: _, ...userWithoutPassword } = user;
     return NextResponse.json(userWithoutPassword);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating user:', error);
+    if (error.code === 'P2002') {
+      const field = error.meta?.target?.includes('email') ? 'Email' : 'Username';
+      return NextResponse.json({ error: `${field} already in use` }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
   }
 }
