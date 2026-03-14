@@ -160,10 +160,10 @@ export function HomePage() {
         {settings.heroBackgroundImage ? (
           <div className="absolute inset-0 z-0">
             <div 
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 opacity-60"
               style={{ backgroundImage: `url(${settings.heroBackgroundImage})` }}
             />
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-slate-950/90 backdrop-blur-[2px]" />
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-950/80 via-slate-900/70 to-slate-950/80 backdrop-blur-[1px]" />
           </div>
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 z-0" />
@@ -190,10 +190,10 @@ export function HomePage() {
           ))}
           
           {/* Decorative Lines */}
-          <svg className="absolute inset-0 w-full h-full opacity-10" xmlns="http://www.w3.org/2000/svg">
+          <svg className="absolute inset-0 w-full h-full opacity-5" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-                <path d="M 60 0 L 0 0 0 60" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-amber-500" />
+                <path d="M 60 0 L 0 0 0 60" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-amber-500/30" />
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#grid)" />
@@ -361,18 +361,7 @@ export function HomePage() {
                   </Button>
                 </div>
                 
-                {/* Floating Decorative Cards */}
-                <div className="absolute -top-6 -left-6 bg-gradient-to-br from-rose-500 to-pink-500 rounded-2xl p-4 shadow-xl animate-float-slow hidden md:block">
-                  <Heart className="w-8 h-8 text-white" />
-                </div>
-                
-                <div className="absolute -bottom-4 -right-4 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl p-4 shadow-xl animate-float hidden md:block">
-                  <Users className="w-8 h-8 text-white" />
-                </div>
-                
-                <div className="absolute top-1/2 -right-8 -translate-y-1/2 bg-gradient-to-br from-violet-500 to-purple-500 rounded-xl p-3 shadow-xl animate-float-slower hidden lg:block">
-                  <BookOpen className="w-6 h-6 text-white" />
-                </div>
+                {/* Floating Decorative Cards Removed */}
               </div>
             </div>
           </div>
@@ -415,12 +404,12 @@ export function HomePage() {
       </section>
 
       {/* Features - Clean Grid */}
-      <section className="py-20 bg-slate-950">
+      <section className="py-32 bg-slate-950">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">What We Offer</h2>
-            <p className="text-slate-400 max-w-lg mx-auto">
-              Experience church in a fresh, modern way with our comprehensive digital ministry
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6">Our Ministries & Features</h2>
+            <p className="text-slate-400 max-w-2xl mx-auto text-lg leading-relaxed">
+              Experience church in a fresh, modern way with our comprehensive digital ministry and community resources.
             </p>
           </div>
 
@@ -660,20 +649,20 @@ export function HomePage() {
 
       {/* Latest Sermons - Clean Cards */}
       {settings.features.sermonsEnabled && sermons.length > 0 && (
-      <section className="py-20 bg-slate-900">
+      <section className="py-32 bg-slate-900">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-12">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-16">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">Latest Messages</h2>
-              <p className="text-slate-400">Grow in your faith with our latest sermons</p>
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">Spiritual Growth & Messages</h2>
+              <p className="text-slate-400 text-lg">Deepen your faith with our latest curated sermons and teachings.</p>
             </div>
             <Button 
               variant="outline" 
               onClick={() => setCurrentView('sermons')}
-              className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800"
+              className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 px-8"
             >
-              View All
-              <ChevronRight className="ml-1 h-4 w-4" />
+              View All Sermons
+              <ChevronRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
 
@@ -732,11 +721,11 @@ export function HomePage() {
 
       {/* Weekly Schedule - Simple List */}
       {settings.features.eventsEnabled && programs.length > 0 && (
-      <section className="py-20 bg-slate-950">
+      <section className="py-32 bg-slate-950">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Weekly Schedule</h2>
-            <p className="text-slate-400">Join us throughout the week</p>
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6">Weekly Ministry Schedule</h2>
+            <p className="text-slate-400 text-lg max-w-2xl mx-auto">Join our community gatherings and services held throughout the week.</p>
           </div>
 
           {isLoading ? (

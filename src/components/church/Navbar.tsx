@@ -163,15 +163,15 @@ export function Navbar() {
           >
             <div className="relative">
               {settings.logoUrl ? (
-                <img src={settings.logoUrl} alt={settings.siteName} className="h-8 w-8 object-contain" />
+                <img src={settings.logoUrl} alt={settings.siteName} className="h-10 w-10 object-contain" />
               ) : (
                 <div className="relative">
-                  <Church className="h-8 w-8 text-amber-500 group-hover:scale-110 transition-transform" />
-                  <Sparkles className="h-3 w-3 text-amber-400 absolute -top-1 -right-1 animate-pulse" />
+                  <Church className="h-10 w-10 text-amber-500 group-hover:scale-110 transition-transform" />
+                  <Sparkles className="h-4 w-4 text-amber-400 absolute -top-1 -right-1 animate-pulse" />
                 </div>
               )}
             </div>
-            <span className="bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent group-hover:from-amber-400 group-hover:to-orange-400 transition-all">
+            <span className="hidden sm:inline-block bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent group-hover:from-amber-400 group-hover:to-orange-400 transition-all">
               {settings.siteName || 'Voice of Hope'}
             </span>
           </button>
