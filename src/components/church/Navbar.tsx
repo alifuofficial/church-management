@@ -400,6 +400,7 @@ export function Navbar() {
       </nav>
 
       {/* Sign In / Register Dialog */}
+      <Dialog open={showSignIn} onOpenChange={setShowSignIn}>
         <DialogContent className="sm:max-w-md bg-transparent border-0 text-white p-0 gap-0 overflow-visible">
           <AuthForm 
             initialMode={activeTab} 
