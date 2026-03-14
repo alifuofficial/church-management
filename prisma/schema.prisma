@@ -67,7 +67,6 @@ model User {
   image         String?
   phone         String?
   address       String?
-  city          String?
   state         String?
   zipCode       String?
   dateOfBirth   DateTime?
