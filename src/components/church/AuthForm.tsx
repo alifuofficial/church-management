@@ -21,7 +21,7 @@ import {
   Church, AlertCircle, Loader2, Globe, Facebook, Mail, 
   ArrowLeft, RefreshCw, CheckCircle2, User, MapPin, 
   Heart, Shield, ChevronRight, ChevronLeft, X, Smartphone,
-  Sparkles
+  Sparkles, Lock, Mail as MailIcon, Key, Info, LogIn, AtSign, Clock
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -387,56 +387,63 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
   // Verification screen
   if (showVerification) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
+      <div className="w-full max-w-lg mx-auto overflow-hidden rounded-3xl border border-slate-800/50 bg-slate-950/80 backdrop-blur-xl shadow-2xl relative p-1">
+        {/* Premium Gradient Backgrounds */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-amber-500/10 rounded-full blur-[80px]" />
+          <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-orange-600/10 rounded-full blur-[80px]" />
+        </div>
+
+        <Card className="bg-transparent border-0 shadow-none relative z-10 overflow-hidden">
+          <CardHeader className="text-center pb-2 pt-8">
             <div className="flex justify-center mb-4">
-              <div className="bg-amber-600 p-3 rounded-full">
-                <Mail className="h-8 w-8 text-white" />
+              <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-4 rounded-2xl shadow-lg shadow-amber-500/20">
+                <MailIcon className="h-8 w-8 text-white" />
               </div>
             </div>
-            <CardTitle className="text-2xl">Verify Your Email</CardTitle>
-            <CardDescription>
-              We sent a {verificationSettings?.codeLength || 6}-digit code to<br />
-              <span className="font-medium text-foreground">{pendingEmail}</span>
+            <CardTitle className="text-2xl font-bold text-white">Verify Your Email</CardTitle>
+            <CardDescription className="text-slate-400 mt-2">
+              We've sent a <span className="text-amber-500 font-bold">{verificationSettings?.codeLength || 6}</span>-digit code to<br />
+              <span className="font-medium text-white underline decoration-amber-500/30 underline-offset-4">{pendingEmail}</span>
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          
+          <CardContent className="space-y-6 pt-6 pb-10 px-8">
             {verificationError && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="bg-red-500/10 border-red-500/20 text-red-400 rounded-xl">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{verificationError}</AlertDescription>
               </Alert>
             )}
             
-            <div className="space-y-2">
-              <Label htmlFor="verification-code">Verification Code</Label>
+            <div className="space-y-3 text-center">
+              <Label htmlFor="verification-code" className="text-slate-300 font-medium">Verification Code</Label>
               <Input
                 id="verification-code"
                 type="text"
                 inputMode="numeric"
-                placeholder="Enter 6-digit code"
+                placeholder="000000"
                 value={verificationCode}
                 onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, verificationSettings?.codeLength || 6))}
-                className="text-center text-2xl tracking-widest h-14"
+                className="text-center text-3xl font-bold tracking-[0.5em] h-16 bg-slate-900/40 border-slate-800 focus:border-amber-500/50 focus:ring-amber-500/20 text-white placeholder:text-slate-800 rounded-2xl backdrop-blur-md transition-all duration-300"
                 maxLength={verificationSettings?.codeLength || 6}
               />
             </div>
             
             <Button 
               onClick={handleVerifyCode}
-              className="w-full bg-amber-600 hover:bg-amber-700"
+              className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-black font-bold h-14 rounded-2xl shadow-xl shadow-amber-500/20 transition-all duration-300 transform active:scale-[0.98]"
               disabled={isVerifying || verificationCode.length !== (verificationSettings?.codeLength || 6)}
             >
               {isVerifying ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="h-5 w-5 animate-spin mr-2" />
               ) : (
-                <CheckCircle2 className="h-4 w-4 mr-2" />
+                <CheckCircle2 className="h-5 w-5 mr-2" />
               )}
-              Verify Email
+              Verify Email Address
             </Button>
             
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center justify-between gap-4">
               <Button
                 variant="ghost"
                 size="sm"
@@ -447,10 +454,10 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                   setVerificationCode('');
                   setVerificationError('');
                 }}
-                className="text-muted-foreground"
+                className="text-slate-500 hover:text-white hover:bg-slate-900 rounded-xl px-4 transition-colors"
               >
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Back
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Change Email
               </Button>
               
               <Button
@@ -458,20 +465,22 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                 size="sm"
                 onClick={handleResendCode}
                 disabled={resendCooldown > 0 || isResending}
-                className="text-muted-foreground"
+                className="text-slate-500 hover:text-white hover:bg-slate-900 rounded-xl px-4 transition-colors"
               >
                 {isResending ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-1" />
                 ) : (
                   <RefreshCw className="h-4 w-4 mr-1" />
                 )}
-                {resendCooldown > 0 ? `Resend (${resendCooldown}s)` : 'Resend Code'}
+                {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
               </Button>
             </div>
             
-            <p className="text-xs text-center text-muted-foreground">
-              Code expires in {verificationSettings?.codeExpirationMinutes || 10} minutes
-            </p>
+            <div className="pt-4 border-t border-slate-800/50">
+              <p className="text-[10px] text-center text-slate-600 uppercase tracking-widest font-medium">
+                Code expires in {verificationSettings?.codeExpirationMinutes || 10} minutes
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -521,9 +530,19 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
             setSignupStep(1);
             setError('');
           }}>
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-900/50 p-1 rounded-xl border border-slate-800/50">
+              <TabsTrigger 
+                value="signin"
+                className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-black font-semibold transition-all duration-300"
+              >
+                Sign In
+              </TabsTrigger>
+              <TabsTrigger 
+                value="signup"
+                className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-black font-semibold transition-all duration-300"
+              >
+                Sign Up
+              </TabsTrigger>
             </TabsList>
 
             {error && (
@@ -535,37 +554,49 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
 
             <TabsContent value="signin">
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
-                  <Input
-                    id="signin-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={signInEmail}
-                    onChange={(e) => setSignInEmail(e.target.value)}
-                    required
-                  />
+                <div className="space-y-3">
+                  <Label htmlFor="signin-email" className="text-white font-medium flex items-center gap-2 mb-1">
+                    <MailIcon className="h-4 w-4 text-amber-500" />
+                    Email
+                  </Label>
+                  <div className="relative group">
+                    <Input
+                      id="signin-email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={signInEmail}
+                      onChange={(e) => setSignInEmail(e.target.value)}
+                      required
+                      className="bg-slate-900/40 border-slate-800 focus:border-amber-500/50 focus:ring-amber-500/20 text-white placeholder:text-slate-600 h-12 rounded-xl backdrop-blur-md transition-all duration-300 group-hover:border-slate-700"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
-                  <Input
-                    id="signin-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={signInPassword}
-                    onChange={(e) => setSignInPassword(e.target.value)}
-                    required
-                  />
+                <div className="space-y-3">
+                  <Label htmlFor="signin-password" className="text-white font-medium flex items-center gap-2 mb-1">
+                    <Lock className="h-4 w-4 text-amber-500" />
+                    Password
+                  </Label>
+                  <div className="relative group">
+                    <Input
+                      id="signin-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={signInPassword}
+                      onChange={(e) => setSignInPassword(e.target.value)}
+                      required
+                      className="bg-slate-900/40 border-slate-800 focus:border-amber-500/50 focus:ring-amber-500/20 text-white placeholder:text-slate-600 h-12 rounded-xl backdrop-blur-md transition-all duration-300 group-hover:border-slate-700"
+                    />
+                  </div>
                 </div>
                 
-                <Button 
-                  type="submit" 
-                  className="w-full bg-amber-600 hover:bg-amber-700"
-                  disabled={isLoading || !settingsLoaded}
-                >
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                  Sign In
-                </Button>
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-black font-bold h-12 rounded-xl shadow-lg shadow-amber-500/20 transition-all duration-300 transform active:scale-[0.98]"
+                    disabled={isLoading || !settingsLoaded}
+                  >
+                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <LogIn className="h-5 w-5 mr-2" />}
+                    Sign In
+                  </Button>
 
                 {hasSocialLogin && (
                   <div className="space-y-3 mt-6">
@@ -610,27 +641,34 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
 
             <TabsContent value="signup">
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Step 1: Basic Information */}
-                {signupStep === 1 && (
-                  <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-lg">
-                        <User className="h-5 w-5 text-amber-600" />
+                  <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 p-2.5 rounded-xl border border-amber-500/20">
+                        <User className="h-5 w-5 text-amber-500" />
                       </div>
-                      <h3 className="font-semibold text-lg">Basic Personal Information</h3>
+                      <h3 className="font-bold text-lg text-white">Basic Personal Information</h3>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-name">Full Name</Label>
+
+                    <div className="space-y-3">
+                      <Label htmlFor="signup-name" className="text-white font-medium flex items-center gap-2 mb-1">
+                        <User className="h-4 w-4 text-amber-500/70" />
+                        Full Name
+                      </Label>
                       <Input
                         id="signup-name"
                         placeholder="John Doe"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         required
+                        className="bg-slate-900/40 border-slate-800 focus:border-amber-500/50 focus:ring-amber-500/20 text-white placeholder:text-slate-600 h-12 rounded-xl backdrop-blur-md transition-all duration-300"
                       />
                     </div>
-                    <div className="space-y-2 text-left">
-                      <Label htmlFor="signup-email" className="text-slate-700 dark:text-slate-300">Email Address (required for login and communication)</Label>
+
+                    <div className="space-y-3">
+                      <Label htmlFor="signup-email" className="text-white font-medium flex items-center gap-2 mb-1">
+                        <MailIcon className="h-4 w-4 text-amber-500/70" />
+                        Email Address
+                      </Label>
                       <Input
                         id="signup-email"
                         type="email"
@@ -638,49 +676,63 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                        className="bg-slate-900/40 border-slate-800 focus:border-amber-500/50 focus:ring-amber-500/20 text-white placeholder:text-slate-600 h-12 rounded-xl backdrop-blur-md transition-all duration-300"
                       />
+                      <p className="text-[10px] text-slate-500 ml-1">Required for login and communication</p>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-username">Username</Label>
-                      <Input
-                        id="signup-username"
-                        placeholder="johndoe"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password">Password</Label>
-                      <Input
-                        id="signup-password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                      />
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                        <Label htmlFor="signup-username" className="text-white font-medium flex items-center gap-2 mb-1">
+                          <AtSign className="h-4 w-4 text-amber-500/70" />
+                          Username
+                        </Label>
+                        <Input
+                          id="signup-username"
+                          placeholder="johndoe"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          required
+                          className="bg-slate-900/40 border-slate-800 focus:border-amber-500/50 focus:ring-amber-500/20 text-white placeholder:text-slate-600 h-12 rounded-xl backdrop-blur-md transition-all duration-300"
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <Label htmlFor="signup-password" className="text-white font-medium flex items-center gap-2 mb-1">
+                          <Key className="h-4 w-4 text-amber-500/70" />
+                          Password
+                        </Label>
+                        <Input
+                          id="signup-password"
+                          type="password"
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          className="bg-slate-900/40 border-slate-800 focus:border-amber-500/50 focus:ring-amber-500/20 text-white placeholder:text-slate-600 h-12 rounded-xl backdrop-blur-md transition-all duration-300"
+                        />
+                      </div>
                     </div>
                   </div>
-                )}
-
                 {/* Step 2: Location Information */}
                 {signupStep === 2 && (
-                  <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-lg">
-                        <MapPin className="h-5 w-5 text-amber-600" />
+                  <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 p-2.5 rounded-xl border border-amber-500/20">
+                        <MapPin className="h-5 w-5 text-amber-500" />
                       </div>
-                      <h3 className="font-semibold text-lg">Location Information</h3>
+                      <h3 className="font-bold text-lg text-white">Location Information</h3>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-country">Country</Label>
+
+                    <div className="space-y-3">
+                      <Label htmlFor="signup-country" className="text-white font-medium flex items-center gap-2 mb-1">
+                        <Globe className="h-4 w-4 text-amber-500/70" />
+                        Country
+                      </Label>
                       <Select value={country} onValueChange={setCountry}>
-                        <SelectTrigger id="signup-country">
+                        <SelectTrigger id="signup-country" className="bg-slate-900/40 border-slate-800 focus:ring-amber-500/20 text-white h-12 rounded-xl backdrop-blur-md">
                           <SelectValue placeholder="Select Country" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-slate-900 border-slate-800 text-white">
                           <SelectItem value="USA">United States</SelectItem>
                           <SelectItem value="UK">United Kingdom</SelectItem>
                           <SelectItem value="Canada">Canada</SelectItem>
@@ -691,24 +743,32 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2 text-left">
-                      <Label htmlFor="signup-city" className="text-slate-700 dark:text-slate-300">City / Region</Label>
+
+                    <div className="space-y-3">
+                      <Label htmlFor="signup-city" className="text-white font-medium flex items-center gap-2 mb-1">
+                        <MapPin className="h-4 w-4 text-amber-500/70" />
+                        City / Region
+                      </Label>
                       <Input
                         id="signup-city"
                         placeholder="Nairobi / Addis Ababa"
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
                         required
-                        className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                        className="bg-slate-900/40 border-slate-800 focus:border-amber-500/50 focus:ring-amber-500/20 text-white placeholder:text-slate-600 h-12 rounded-xl backdrop-blur-md transition-all duration-300"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-timezone">Time Zone</Label>
+
+                    <div className="space-y-3">
+                      <Label htmlFor="signup-timezone" className="text-white font-medium flex items-center gap-2 mb-1">
+                        <Clock className="h-4 w-4 text-amber-500/70" />
+                        Time Zone
+                      </Label>
                       <Select value={timezone} onValueChange={setTimezone}>
-                        <SelectTrigger id="signup-timezone">
+                        <SelectTrigger id="signup-timezone" className="bg-slate-900/40 border-slate-800 focus:ring-amber-500/20 text-white h-12 rounded-xl backdrop-blur-md">
                           <SelectValue placeholder="Select Time Zone" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-slate-900 border-slate-800 text-white">
                           <SelectItem value="UTC+3">UTC+3 (East Africa Time)</SelectItem>
                           <SelectItem value="UTC+1">UTC+1 (West Africa Time)</SelectItem>
                           <SelectItem value="UTC+0">UTC (Greenwich Mean Time)</SelectItem>
@@ -722,20 +782,24 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
 
                 {/* Step 3: Faith Information */}
                 {signupStep === 3 && (
-                  <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-lg">
-                        <Church className="h-5 w-5 text-amber-600" />
+                  <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 p-2.5 rounded-xl border border-amber-500/20">
+                        <Church className="h-5 w-5 text-amber-500" />
                       </div>
-                      <h3 className="font-semibold text-lg">Church / Faith Information</h3>
+                      <h3 className="font-bold text-lg text-white">Church / Faith Information</h3>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-denomination">Denomination (Optional)</Label>
+
+                    <div className="space-y-3">
+                      <Label htmlFor="signup-denomination" className="text-white font-medium flex items-center gap-2 mb-1">
+                        <Info className="h-4 w-4 text-amber-500/70" />
+                        Denomination (Optional)
+                      </Label>
                       <Select value={denomination} onValueChange={setDenomination}>
-                        <SelectTrigger id="signup-denomination">
+                        <SelectTrigger id="signup-denomination" className="bg-slate-900/40 border-slate-800 focus:ring-amber-500/20 text-white h-12 rounded-xl backdrop-blur-md">
                           <SelectValue placeholder="Select Denomination" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-slate-900 border-slate-800 text-white">
                           <SelectItem value="Baptist">Baptist</SelectItem>
                           <SelectItem value="Anglican">Anglican</SelectItem>
                           <SelectItem value="Lutheran">Lutheran</SelectItem>
@@ -744,19 +808,32 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-3 pt-2">
-                      <Label>Are you a Christian?</Label>
-                      <div className="space-y-2">
+
+                    <div className="space-y-4 pt-2">
+                      <Label className="text-white font-medium flex items-center gap-2 mb-2">
+                        <Heart className="h-4 w-4 text-amber-500/70" />
+                        Are you a Christian?
+                      </Label>
+                      <div className="grid grid-cols-1 gap-2">
                         {['Yes', 'Exploring Faith', 'New Believer'].map((option) => (
-                          <div key={option} className="flex items-center space-x-2">
+                          <div 
+                            key={option} 
+                            className={`flex items-center space-x-3 p-3 rounded-xl border transition-all duration-300 cursor-pointer ${
+                              faithStatus === option 
+                                ? 'bg-amber-500/10 border-amber-500/50 shadow-[0_0_15px_-5px_rgba(245,158,11,0.2)]' 
+                                : 'bg-slate-900/40 border-slate-800 hover:border-slate-700'
+                            }`}
+                            onClick={() => setFaithStatus(option)}
+                          >
                             <Checkbox 
                               id={`faith-${option}`} 
                               checked={faithStatus === option}
                               onCheckedChange={() => setFaithStatus(option)}
+                              className="border-slate-700 data-[state=checked]:bg-amber-500 data-[state=checked]:text-black"
                             />
                             <Label 
                               htmlFor={`faith-${option}`}
-                              className="text-sm font-normal cursor-pointer"
+                              className="text-sm font-medium text-slate-200 cursor-pointer flex-1"
                             >
                               {option}
                             </Label>
@@ -764,13 +841,18 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                         ))}
                       </div>
                     </div>
-                    <div className="space-y-2 pt-2">
-                      <Label htmlFor="signup-localchurch">Local Church Name (Optional)</Label>
+
+                    <div className="space-y-3 pt-2">
+                      <Label htmlFor="signup-localchurch" className="text-white font-medium flex items-center gap-2 mb-1">
+                        <Church className="h-4 w-4 text-amber-500/70" />
+                        Local Church Name (Optional)
+                      </Label>
                       <Input
                         id="signup-localchurch"
                         placeholder="Grace Community Church"
                         value={localChurch}
                         onChange={(e) => setLocalChurch(e.target.value)}
+                        className="bg-slate-900/40 border-slate-800 focus:border-amber-500/50 focus:ring-amber-500/20 text-white placeholder:text-slate-600 h-12 rounded-xl backdrop-blur-md transition-all duration-300"
                       />
                     </div>
                   </div>
@@ -778,27 +860,38 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
 
                 {/* Step 4: Interests */}
                 {signupStep === 4 && (
-                  <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-lg">
-                        <Heart className="h-5 w-5 text-amber-600" />
+                  <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 p-2.5 rounded-xl border border-amber-500/20">
+                        <Heart className="h-5 w-5 text-amber-500" />
                       </div>
-                      <h3 className="font-semibold text-lg">Interests or Ministries</h3>
+                      <h3 className="font-bold text-lg text-white">Interests or Ministries</h3>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Select the areas you are interested in:
+                    
+                    <p className="text-sm text-slate-400 mb-4 px-1">
+                      Choose the areas where you'd like to grow or serve:
                     </p>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {signUpMinistries.map((ministry) => (
-                        <div key={ministry.id} className="flex items-center space-x-2 p-3 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                        <div 
+                          key={ministry.id} 
+                          className={`flex items-center space-x-3 p-3 rounded-xl border transition-all duration-300 cursor-pointer ${
+                            interests.includes(ministry.label)
+                              ? 'bg-amber-500/10 border-amber-500/50 shadow-[0_0_15px_-5px_rgba(245,158,11,0.2)]' 
+                              : 'bg-slate-900/40 border-slate-800 hover:border-slate-700'
+                          }`}
+                          onClick={() => toggleInterest(ministry.label)}
+                        >
                           <Checkbox 
                             id={`interest-${ministry.id}`} 
                             checked={interests.includes(ministry.label)}
                             onCheckedChange={() => toggleInterest(ministry.label)}
+                            className="border-slate-700 data-[state=checked]:bg-amber-500 data-[state=checked]:text-black"
                           />
                           <Label 
                             htmlFor={`interest-${ministry.id}`}
-                            className="text-sm font-normal cursor-pointer flex-1"
+                            className="text-sm font-medium text-slate-200 cursor-pointer flex-1"
                           >
                             {ministry.label}
                           </Label>
@@ -810,98 +903,78 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
 
                 {/* Step 5: Agreements */}
                 {signupStep === 5 && (
-                  <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-lg">
-                        <Shield className="h-5 w-5 text-amber-600" />
+                  <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 p-2.5 rounded-xl border border-amber-500/20">
+                        <Shield className="h-5 w-5 text-amber-500" />
                       </div>
-                      <h3 className="font-semibold text-lg">Agreement and Consent</h3>
+                      <h3 className="font-bold text-lg text-white">Agreement and Consent</h3>
                     </div>
                     
-                    <div className="space-y-4">
-                      <div className="flex items-start space-x-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-                        <Checkbox 
-                          id="terms" 
-                          checked={acceptedTerms}
-                          onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
-                          className="mt-1"
-                        />
-                        <div className="grid gap-1.5 leading-none">
-                          <Label htmlFor="terms" className="text-sm font-medium leading-none cursor-pointer">
-                            I accept the Terms of Use
-                          </Label>
-                          <p className="text-xs text-muted-foreground">
-                            I agree to follow the community guidelines and rules.
-                          </p>
+                    <div className="space-y-3">
+                      {[
+                        { id: 'terms', label: 'Terms of Use', desc: 'Accept our community guidelines.', state: acceptedTerms, setState: setAcceptedTerms },
+                        { id: 'privacy', label: 'Privacy Policy', desc: 'Confirm data usage and protection.', state: acceptedPrivacy, setState: setAcceptedPrivacy },
+                        { id: 'faith-statement', label: 'Statement of Faith', desc: 'Align with our core beliefs.', state: acceptedStatementOfFaith, setState: setAcceptedStatementOfFaith }
+                      ].map((item) => (
+                        <div 
+                          key={item.id}
+                          className={`flex items-start space-x-4 p-4 rounded-2xl border transition-all duration-300 cursor-pointer ${
+                            item.state 
+                              ? 'bg-amber-500/10 border-amber-500/50 shadow-[0_0_15px_-5px_rgba(245,158,11,0.2)]' 
+                              : 'bg-slate-900/40 border-slate-800 hover:border-slate-700'
+                          }`}
+                          onClick={() => item.setState(!item.state)}
+                        >
+                          <Checkbox 
+                            id={item.id} 
+                            checked={item.state}
+                            onCheckedChange={(checked) => item.setState(checked as boolean)}
+                            className="mt-1 border-slate-700 data-[state=checked]:bg-amber-500 data-[state=checked]:text-black"
+                          />
+                          <div className="grid gap-1.5 leading-none">
+                            <Label htmlFor={item.id} className="text-sm font-bold text-white cursor-pointer">
+                              I accept the {item.label}
+                            </Label>
+                            <p className="text-xs text-slate-500">
+                              {item.desc}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-
-                      <div className="flex items-start space-x-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-                        <Checkbox 
-                          id="privacy" 
-                          checked={acceptedPrivacy}
-                          onCheckedChange={(checked) => setAcceptedPrivacy(checked as boolean)}
-                          className="mt-1"
-                        />
-                        <div className="grid gap-1.5 leading-none">
-                          <Label htmlFor="privacy" className="text-sm font-medium leading-none cursor-pointer">
-                            I accept the Privacy Policy
-                          </Label>
-                          <p className="text-xs text-muted-foreground">
-                            I understand how my data will be used and protected.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start space-x-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-                        <Checkbox 
-                          id="faith-statement" 
-                          checked={acceptedStatementOfFaith}
-                          onCheckedChange={(checked) => setAcceptedStatementOfFaith(checked as boolean)}
-                          className="mt-1"
-                        />
-                        <div className="grid gap-1.5 leading-none">
-                          <Label htmlFor="faith-statement" className="text-sm font-medium leading-none cursor-pointer">
-                            I agree with the Statement of Faith
-                          </Label>
-                          <p className="text-xs text-muted-foreground">
-                            I align with the core spiritual beliefs of this church.
-                          </p>
-                        </div>
-                      </div>
+                      ))}
                     </div>
                   </div>
                 )}
 
                 {/* Footer buttons */}
-                <div className="flex items-center gap-3 pt-4">
+                <div className="flex items-center gap-4 pt-8">
                   {signupStep > 1 && (
                     <Button 
                       type="button" 
                       variant="outline" 
-                      className="flex-1"
+                      className="flex-1 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-900 h-12 rounded-xl transition-all duration-300"
                       onClick={handlePrevStep}
                     >
                       <ChevronLeft className="h-4 w-4 mr-2" />
-                      Previous
+                      Back
                     </Button>
                   )}
                   
                   <Button 
                     type="submit" 
-                    className={`flex-[2] bg-amber-600 hover:bg-amber-700 ${signupStep === 1 ? 'w-full' : ''}`}
+                    className={`flex-[2] bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-black font-bold h-12 rounded-xl shadow-lg shadow-amber-500/20 transition-all duration-300 transform active:scale-[0.98] ${signupStep === 1 ? 'w-full' : ''}`}
                     disabled={isLoading || !settingsLoaded}
                   >
-                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
                     {signupStep === 5 ? (
                       <>
-                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        <CheckCircle2 className="h-5 w-5 mr-2" />
                         Complete Registration
                       </>
                     ) : (
                       <>
-                        Next Step
-                        <ChevronRight className="h-4 w-4 ml-2" />
+                        Continue
+                        <ChevronRight className="h-5 w-5 ml-2" />
                       </>
                     )}
                   </Button>
