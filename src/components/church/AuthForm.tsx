@@ -9,7 +9,19 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { Church, AlertCircle, Loader2, Globe, Facebook, Mail, ArrowLeft, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { 
+  Church, AlertCircle, Loader2, Globe, Facebook, Mail, 
+  ArrowLeft, RefreshCw, CheckCircle2, User, MapPin, 
+  Heart, Shield, ChevronRight, ChevronLeft 
+} from 'lucide-react';
 
 interface SocialLoginSettings {
   googleEnabled: boolean;
@@ -26,16 +38,41 @@ interface VerificationSettings {
 export function AuthForm() {
   const { setUser, setCurrentView } = useAppStore();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [signupStep, setSignupStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [socialSettings, setSocialSettings] = useState<SocialLoginSettings | null>(null);
   const [verificationSettings, setVerificationSettings] = useState<VerificationSettings | null>(null);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   
-  // Form state
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  // Sign in state
+  const [signInEmail, setSignInEmail] = useState('');
+  const [signInPassword, setSignInPassword] = useState('');
+
+  // Signup Form state
+  // Step 1: Basic
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  
+  // Step 2: Location
+  const [country, setCountry] = useState('');
+  const [city, setCity] = useState('');
+  const [timezone, setTimezone] = useState('');
+  
+  // Step 3: Faith
+  const [denomination, setDenomination] = useState('');
+  const [faithStatus, setFaithStatus] = useState('');
+  const [localChurch, setLocalChurch] = useState('');
+  
+  // Step 4: Interests
+  const [interests, setInterests] = useState<string[]>([]);
+  
+  // Step 5: Agreements
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
+  const [acceptedStatementOfFaith, setAcceptedStatementOfFaith] = useState(false);
   
   // Verification state
   const [showVerification, setShowVerification] = useState(false);
@@ -63,7 +100,6 @@ export function AuthForm() {
         if (verificationRes.ok) {
           const data = await verificationRes.json();
           setVerificationSettings(data);
-          console.log('Email verification settings loaded:', data.isEnabled ? 'ENABLED' : 'DISABLED');
         }
       } catch (error) {
         console.error('Error fetching settings:', error);
@@ -82,9 +118,44 @@ export function AuthForm() {
     }
   }, [resendCooldown]);
 
+  const toggleInterest = (interest: string) => {
+    setInterests(prev => 
+      prev.includes(interest) 
+        ? prev.filter(i => i !== interest) 
+        : [...prev, interest]
+    );
+  };
+
+  const handleNextStep = () => {
+    if (signupStep === 1) {
+      if (!name || !email || !username || !password) {
+        setError('Please fill in all basic information');
+        return;
+      }
+    }
+    if (signupStep === 2) {
+      if (!country || !city || !timezone) {
+        setError('Please fill in all location information');
+        return;
+      }
+    }
+    setError('');
+    setSignupStep(prev => prev + 1);
+  };
+
+  const handlePrevStep = () => {
+    setError('');
+    setSignupStep(prev => prev - 1);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (mode === 'signup' && signupStep < 5) {
+      handleNextStep();
+      return;
+    }
+
     // Wait for settings to load
     if (!settingsLoaded) {
       setError('Please wait while settings load...');
@@ -96,6 +167,13 @@ export function AuthForm() {
 
     try {
       if (mode === 'signup') {
+        // Final validation
+        if (!acceptedTerms || !acceptedPrivacy || !acceptedStatementOfFaith) {
+          setError('Please accept all agreements to continue');
+          setIsLoading(false);
+          return;
+        }
+
         // Create new user
         const res = await fetch('/api/users', {
           method: 'POST',
@@ -104,6 +182,17 @@ export function AuthForm() {
             email,
             password,
             name,
+            username,
+            country,
+            city,
+            timezone,
+            denomination,
+            faithStatus,
+            localChurch,
+            interests: interests.join(','),
+            acceptedTerms,
+            acceptedPrivacy,
+            acceptedStatementOfFaith,
             role: 'MEMBER',
           }),
         });
@@ -113,7 +202,6 @@ export function AuthForm() {
           
           // Check if email verification is enabled
           const isVerificationEnabled = verificationSettings?.isEnabled === true;
-          console.log('Email verification enabled:', isVerificationEnabled);
           
           if (isVerificationEnabled) {
             // Send verification code
@@ -125,30 +213,15 @@ export function AuthForm() {
             
             const sendData = await sendRes.json();
             
-            // Always show verification screen when verification is enabled
             setPendingUserId(user.id);
             setPendingEmail(user.email);
             setShowVerification(true);
             setResendCooldown(verificationSettings?.resendCooldownSeconds || 60);
             
-            if (sendRes.ok) {
-              // Show dev code if available (for testing)
-              if (sendData._devCode) {
-                setVerificationCode(sendData._devCode);
-              }
-            } else {
-              // Show error but still show verification screen
-              // Show dev code if available (for testing)
-              if (sendData._devCode) {
-                setVerificationCode(sendData._devCode);
-                setVerificationError('Email not sent. Use the code shown for testing.');
-              } else {
-                setVerificationError(sendData.error || 'Failed to send verification email. You can try resending the code.');
-              }
+            if (sendRes.ok && sendData._devCode) {
+              setVerificationCode(sendData._devCode);
             }
           } else {
-            // No verification required, log in directly
-            console.log('No verification required, going to dashboard');
             setUser(user);
             setCurrentView('dashboard');
           }
@@ -157,16 +230,14 @@ export function AuthForm() {
           setError(data.error || 'Failed to create account');
         }
       } else {
-        // Sign in - check if user exists and is verified
+        // Sign in
         const res = await fetch('/api/users');
         const users = await res.json();
         
-        const user = users.find((u: { email: string }) => u.email === email);
+        const user = users.find((u: { email: string }) => u.email === signInEmail);
         
         if (user) {
-          // Check if verification is enabled and user is not verified
           if (verificationSettings?.isEnabled && !user.isVerified) {
-            // Resend verification code
             const sendRes = await fetch('/api/auth/send-verification', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -175,37 +246,23 @@ export function AuthForm() {
             
             const sendData = await sendRes.json();
             
-            // Show verification screen
             setPendingUserId(user.id);
             setPendingEmail(user.email);
             setShowVerification(true);
             setResendCooldown(verificationSettings.resendCooldownSeconds || 60);
             
-            // Show dev code if available
             if (sendData._devCode) {
               setVerificationCode(sendData._devCode);
             }
             
-            if (!sendRes.ok && !sendData._devCode) {
-              setVerificationError(sendData.error || 'Please verify your email to continue.');
-            }
             setIsLoading(false);
             return;
           }
           
           setUser(user);
-          setCurrentView('dashboard');
+          setCurrentView(user.role === 'ADMIN' ? 'admin' : 'dashboard');
         } else {
-          // For demo, create a temporary user
-          const tempUser = {
-            id: 'temp-' + Date.now(),
-            email,
-            name: email.split('@')[0],
-            role: 'VISITOR',
-            image: null,
-          };
-          setUser(tempUser);
-          setCurrentView('home');
+          setError('Invalid email or password');
         }
       }
     } catch (err) {
@@ -265,18 +322,11 @@ export function AuthForm() {
       
       if (res.ok) {
         setResendCooldown(verificationSettings?.resendCooldownSeconds || 60);
-        // Show dev code if available
         if (data._devCode) {
           setVerificationCode(data._devCode);
         }
       } else {
-        // Show dev code if available even on error
-        if (data._devCode) {
-          setVerificationCode(data._devCode);
-          setVerificationError('Email not sent. Use the code shown for testing.');
-        } else {
-          setVerificationError(data.error || 'Failed to resend code');
-        }
+        setVerificationError(data.error || 'Failed to resend code');
       }
     } catch (error) {
       console.error('Error resending code:', error);
@@ -314,6 +364,14 @@ export function AuthForm() {
   };
 
   const hasSocialLogin = socialSettings?.googleEnabled || socialSettings?.facebookEnabled;
+
+  const signUpMinistries = [
+    { id: 'bible_study', label: 'Bible Study' },
+    { id: 'prayer_groups', label: 'Prayer Groups' },
+    { id: 'evangelism', label: 'Evangelism' },
+    { id: 'online_fellowship', label: 'Online Fellowship' },
+    { id: 'volunteering', label: 'Volunteering' },
+  ];
 
   // Verification screen
   if (showVerification) {
@@ -410,8 +468,8 @@ export function AuthForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4 py-12">
+      <Card className="w-full max-w-lg">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <div className="bg-amber-600 p-3 rounded-full">
@@ -420,85 +478,52 @@ export function AuthForm() {
           </div>
           <CardTitle className="text-2xl">Digital Church</CardTitle>
           <CardDescription>
-            {mode === 'signin' ? 'Sign in to your account' : 'Create a new account'}
+            {mode === 'signin' ? 'Sign in to your account' : `Create a new account (Step ${signupStep} of 5)`}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs value={mode} onValueChange={(v) => setMode(v as 'signin' | 'signup')}>
-            <TabsList className="grid w-full grid-cols-2 mb-4">
+          <Tabs value={mode} onValueChange={(v) => {
+            setMode(v as 'signin' | 'signup');
+            setSignupStep(1);
+            setError('');
+          }}>
+            <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
 
             {error && (
-              <Alert variant="destructive" className="mb-4">
+              <Alert variant="destructive" className="mb-6">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
 
-            {/* Social Login Buttons */}
-            {hasSocialLogin && (
-              <div className="space-y-3 mb-4">
-                {socialSettings?.googleEnabled && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleGoogleLogin}
-                  >
-                    <Globe className="h-5 w-5 mr-2" />
-                    Continue with Google
-                  </Button>
-                )}
-                {socialSettings?.facebookEnabled && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleFacebookLogin}
-                  >
-                    <Facebook className="h-5 w-5 mr-2" />
-                    Continue with Facebook
-                  </Button>
-                )}
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <Separator className="w-full" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">
-                      Or continue with
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
             <TabsContent value="signin">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="signin-email">Email</Label>
                   <Input
-                    id="email"
+                    id="signin-email"
                     type="email"
                     placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={signInEmail}
+                    onChange={(e) => setSignInEmail(e.target.value)}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="signin-password">Password</Label>
                   <Input
-                    id="password"
+                    id="signin-password"
                     type="password"
                     placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={signInPassword}
+                    onChange={(e) => setSignInPassword(e.target.value)}
                     required
                   />
                 </div>
+                
                 <Button 
                   type="submit" 
                   className="w-full bg-amber-600 hover:bg-amber-700"
@@ -507,65 +532,349 @@ export function AuthForm() {
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                   Sign In
                 </Button>
+
+                {hasSocialLogin && (
+                  <div className="space-y-3 mt-6">
+                    <div className="relative mb-4">
+                      <div className="absolute inset-0 flex items-center">
+                        <Separator className="w-full" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-card px-2 text-muted-foreground">
+                          Or continue with
+                        </span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {socialSettings?.googleEnabled && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full"
+                          onClick={handleGoogleLogin}
+                        >
+                          <Globe className="h-5 w-5 mr-2" />
+                          Google
+                        </Button>
+                      )}
+                      {socialSettings?.facebookEnabled && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full"
+                          onClick={handleFacebookLogin}
+                        >
+                          <Facebook className="h-5 w-5 mr-2" />
+                          Facebook
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </form>
             </TabsContent>
 
             <TabsContent value="signup">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name">Name</Label>
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    placeholder="John Doe"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                
-                {verificationSettings?.isEnabled && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Mail className="h-3 w-3" />
-                    You&apos;ll need to verify your email after registration
-                  </p>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Step 1: Basic Information */}
+                {signupStep === 1 && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-lg">
+                        <User className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <h3 className="font-semibold text-lg">Basic Personal Information</h3>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-name">Full Name</Label>
+                      <Input
+                        id="signup-name"
+                        placeholder="John Doe"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-email">Email Address</Label>
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        placeholder="john@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-username">Username</Label>
+                      <Input
+                        id="signup-username"
+                        placeholder="johndoe"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-password">Password</Label>
+                      <Input
+                        id="signup-password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
                 )}
-                
-                <Button 
-                  type="submit" 
-                  className="w-full bg-amber-600 hover:bg-amber-700"
-                  disabled={isLoading || !settingsLoaded}
-                >
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                  Create Account
-                </Button>
+
+                {/* Step 2: Location Information */}
+                {signupStep === 2 && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-lg">
+                        <MapPin className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <h3 className="font-semibold text-lg">Location Information</h3>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-country">Country</Label>
+                      <Select value={country} onValueChange={setCountry}>
+                        <SelectTrigger id="signup-country">
+                          <SelectValue placeholder="Select Country" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="USA">United States</SelectItem>
+                          <SelectItem value="UK">United Kingdom</SelectItem>
+                          <SelectItem value="Canada">Canada</SelectItem>
+                          <SelectItem value="Nigeria">Nigeria</SelectItem>
+                          <SelectItem value="Kenya">Kenya</SelectItem>
+                          <SelectItem value="Ethiopia">Ethiopia</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-city">City / Region</Label>
+                      <Input
+                        id="signup-city"
+                        placeholder="Nairobi / Addis Ababa"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-timezone">Time Zone</Label>
+                      <Select value={timezone} onValueChange={setTimezone}>
+                        <SelectTrigger id="signup-timezone">
+                          <SelectValue placeholder="Select Time Zone" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="UTC+3">UTC+3 (East Africa Time)</SelectItem>
+                          <SelectItem value="UTC+1">UTC+1 (West Africa Time)</SelectItem>
+                          <SelectItem value="UTC+0">UTC (Greenwich Mean Time)</SelectItem>
+                          <SelectItem value="UTC-5">UTC-5 (Eastern Time)</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 3: Faith Information */}
+                {signupStep === 3 && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-lg">
+                        <Church className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <h3 className="font-semibold text-lg">Church / Faith Information</h3>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-denomination">Denomination (Optional)</Label>
+                      <Select value={denomination} onValueChange={setDenomination}>
+                        <SelectTrigger id="signup-denomination">
+                          <SelectValue placeholder="Select Denomination" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Baptist">Baptist</SelectItem>
+                          <SelectItem value="Anglican">Anglican</SelectItem>
+                          <SelectItem value="Lutheran">Lutheran</SelectItem>
+                          <SelectItem value="Pentecostal">Pentecostal</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-3 pt-2">
+                      <Label>Are you a Christian?</Label>
+                      <div className="space-y-2">
+                        {['Yes', 'Exploring Faith', 'New Believer'].map((option) => (
+                          <div key={option} className="flex items-center space-x-2">
+                            <Checkbox 
+                              id={`faith-${option}`} 
+                              checked={faithStatus === option}
+                              onCheckedChange={() => setFaithStatus(option)}
+                            />
+                            <Label 
+                              htmlFor={`faith-${option}`}
+                              className="text-sm font-normal cursor-pointer"
+                            >
+                              {option}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-2 pt-2">
+                      <Label htmlFor="signup-localchurch">Local Church Name (Optional)</Label>
+                      <Input
+                        id="signup-localchurch"
+                        placeholder="Grace Community Church"
+                        value={localChurch}
+                        onChange={(e) => setLocalChurch(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 4: Interests */}
+                {signupStep === 4 && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-lg">
+                        <Heart className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <h3 className="font-semibold text-lg">Interests or Ministries</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Select the areas you are interested in:
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {signUpMinistries.map((ministry) => (
+                        <div key={ministry.id} className="flex items-center space-x-2 p-3 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                          <Checkbox 
+                            id={`interest-${ministry.id}`} 
+                            checked={interests.includes(ministry.label)}
+                            onCheckedChange={() => toggleInterest(ministry.label)}
+                          />
+                          <Label 
+                            htmlFor={`interest-${ministry.id}`}
+                            className="text-sm font-normal cursor-pointer flex-1"
+                          >
+                            {ministry.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 5: Agreements */}
+                {signupStep === 5 && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-lg">
+                        <Shield className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <h3 className="font-semibold text-lg">Agreement and Consent</h3>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-start space-x-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                        <Checkbox 
+                          id="terms" 
+                          checked={acceptedTerms}
+                          onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
+                          className="mt-1"
+                        />
+                        <div className="grid gap-1.5 leading-none">
+                          <Label htmlFor="terms" className="text-sm font-medium leading-none cursor-pointer">
+                            I accept the Terms of Use
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            I agree to follow the community guidelines and rules.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start space-x-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                        <Checkbox 
+                          id="privacy" 
+                          checked={acceptedPrivacy}
+                          onCheckedChange={(checked) => setAcceptedPrivacy(checked as boolean)}
+                          className="mt-1"
+                        />
+                        <div className="grid gap-1.5 leading-none">
+                          <Label htmlFor="privacy" className="text-sm font-medium leading-none cursor-pointer">
+                            I accept the Privacy Policy
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            I understand how my data will be used and protected.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start space-x-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                        <Checkbox 
+                          id="faith-statement" 
+                          checked={acceptedStatementOfFaith}
+                          onCheckedChange={(checked) => setAcceptedStatementOfFaith(checked as boolean)}
+                          className="mt-1"
+                        />
+                        <div className="grid gap-1.5 leading-none">
+                          <Label htmlFor="faith-statement" className="text-sm font-medium leading-none cursor-pointer">
+                            I agree with the Statement of Faith
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            I align with the core spiritual beliefs of this church.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Footer buttons */}
+                <div className="flex items-center gap-3 pt-4">
+                  {signupStep > 1 && (
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={handlePrevStep}
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-2" />
+                      Previous
+                    </Button>
+                  )}
+                  
+                  <Button 
+                    type="submit" 
+                    className={`flex-[2] bg-amber-600 hover:bg-amber-700 ${signupStep === 1 ? 'w-full' : ''}`}
+                    disabled={isLoading || !settingsLoaded}
+                  >
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    {signupStep === 5 ? (
+                      <>
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Complete Registration
+                      </>
+                    ) : (
+                      <>
+                        Next Step
+                        <ChevronRight className="h-4 w-4 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                </div>
               </form>
             </TabsContent>
           </Tabs>
 
-          <div className="mt-6 pt-6 border-t">
+          <div className="mt-8 pt-8 border-t">
             <p className="text-sm text-center text-muted-foreground mb-4">
               Demo accounts (any password works):
             </p>
@@ -575,6 +884,7 @@ export function AuthForm() {
                 size="sm"
                 onClick={() => handleDemoLogin('ADMIN')}
                 disabled={isLoading}
+                className="text-xs"
               >
                 Admin
               </Button>
@@ -583,6 +893,7 @@ export function AuthForm() {
                 size="sm"
                 onClick={() => handleDemoLogin('PASTOR')}
                 disabled={isLoading}
+                className="text-xs"
               >
                 Pastor
               </Button>
@@ -591,15 +902,12 @@ export function AuthForm() {
                 size="sm"
                 onClick={() => handleDemoLogin('MEMBER')}
                 disabled={isLoading}
+                className="text-xs"
               >
                 Member
               </Button>
             </div>
           </div>
-
-          <p className="text-xs text-center text-muted-foreground mt-4">
-            By continuing, you agree to our Terms of Service and Privacy Policy.
-          </p>
         </CardContent>
       </Card>
     </div>

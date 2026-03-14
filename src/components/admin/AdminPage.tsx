@@ -97,6 +97,14 @@ interface Member {
   image: string | null;
   createdAt: string;
   isActive: boolean;
+  username?: string;
+  country?: string;
+  city?: string;
+  timezone?: string;
+  denomination?: string;
+  faithStatus?: string;
+  localChurch?: string;
+  interests?: string;
 }
 
 interface Event {
@@ -1378,22 +1386,81 @@ function MembersContent({ members, searchQuery, setSearchQuery, formatDate }: {
                 </div>
               </div>
               <Separator className="bg-slate-800" />
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-slate-400 text-sm">Role</p>
-                  <Badge variant="outline" className="border-slate-600 text-slate-300 mt-1">
-                    {selectedMember.role}
-                  </Badge>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Account Info</p>
+                    <div className="mt-2 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-400">Username</span>
+                        <span className="text-white font-medium">{selectedMember.username || 'Not set'}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-400">Role</span>
+                        <Badge variant="outline" className="border-slate-600 text-slate-300">
+                          {selectedMember.role}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-400">Status</span>
+                        <Badge className={selectedMember.isActive ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"}>
+                          {selectedMember.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Location & Faith</p>
+                    <div className="mt-2 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-400">Country</span>
+                        <span className="text-white">{selectedMember.country || 'Not set'}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-400">City</span>
+                        <span className="text-white">{selectedMember.city || 'Not set'}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-400">Denomination</span>
+                        <span className="text-white">{selectedMember.denomination || 'Not set'}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-400">Faith Status</span>
+                        <span className="text-amber-400">{selectedMember.faithStatus || 'Not set'}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-slate-400 text-sm">Status</p>
-                  <Badge className={selectedMember.isActive ? "bg-emerald-500/20 text-emerald-400 mt-1" : "bg-red-500/20 text-red-400 mt-1"}>
-                    {selectedMember.isActive ? 'Active' : 'Inactive'}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-slate-400 text-sm">Member Since</p>
-                  <p className="text-white">{formatDate(selectedMember.createdAt)}</p>
+
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Church & Interests</p>
+                    <div className="mt-2 space-y-2">
+                      <div className="text-sm">
+                        <p className="text-slate-400">Local Church</p>
+                        <p className="text-white font-medium">{selectedMember.localChurch || 'Not set'}</p>
+                      </div>
+                      <div className="text-sm">
+                        <p className="text-slate-400">Interests</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {selectedMember.interests ? selectedMember.interests.split(',').map((interest, i) => (
+                            <Badge key={i} variant="secondary" className="bg-slate-800 text-slate-300 text-[10px]">
+                              {interest.trim()}
+                            </Badge>
+                          )) : <span className="text-slate-500 text-xs italic">No interests listed</span>}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Metadata</p>
+                    <div className="mt-2 space-y-2 text-sm text-slate-400">
+                      <p>Joined: <span className="text-slate-300">{formatDate(selectedMember.createdAt)}</span></p>
+                      <p>Timezone: <span className="text-slate-300">{selectedMember.timezone || 'Not set'}</span></p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

@@ -28,6 +28,16 @@ export interface User {
   emailOptIn: boolean;
   smsOptIn: boolean;
   bio?: string | null;
+  username?: string | null;
+  country?: string | null;
+  timezone?: string | null;
+  denomination?: string | null;
+  faithStatus?: string | null;
+  localChurch?: string | null;
+  interests?: string | null;
+  acceptedTerms?: boolean;
+  acceptedPrivacy?: boolean;
+  acceptedStatementOfFaith?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

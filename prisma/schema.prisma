@@ -77,6 +77,25 @@ model User {
   emailOptIn    Boolean  @default(true)
   smsOptIn      Boolean  @default(false)
   bio           String?
+  username      String?  @unique
+  
+  // Location Information
+  country       String?
+  city          String?
+  timezone      String?
+  
+  // Church / Faith Information
+  denomination  String?
+  faithStatus   String?  // Yes, Exploring Faith, New Believer
+  localChurch   String?
+  
+  // Interests or Ministries
+  interests     String?  // comma-separated
+  
+  // Agreement and Consent
+  acceptedTerms            Boolean @default(false)
+  acceptedPrivacy          Boolean @default(false)
+  acceptedStatementOfFaith Boolean @default(false)
   
   // Email verification
   verificationCode     String?

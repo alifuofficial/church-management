@@ -49,12 +49,22 @@ export async function POST(request: NextRequest) {
     const user = await db.user.create({
       data: {
         email: body.email,
+        username: body.username,
         name: body.name,
         password: hashedPassword,
         role: body.role || 'VISITOR',
         phone: body.phone,
         city: body.city,
         state: body.state,
+        country: body.country,
+        timezone: body.timezone,
+        denomination: body.denomination,
+        faithStatus: body.faithStatus,
+        localChurch: body.localChurch,
+        interests: body.interests,
+        acceptedTerms: body.acceptedTerms || false,
+        acceptedPrivacy: body.acceptedPrivacy || false,
+        acceptedStatementOfFaith: body.acceptedStatementOfFaith || false,
       },
     });
 

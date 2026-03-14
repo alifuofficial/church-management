@@ -15,8 +15,17 @@ import {
   Calendar, Heart, DollarSign, BookOpen, Users, Clock, MapPin, Video,
   CheckCircle2, TrendingUp, Bell, Settings, Camera, Edit3, Lock, Eye,
   EyeOff, Sparkles, Star, Gift, MessageSquare, ChevronRight, Loader2,
-  Shield, User, Mail, Phone, Globe, Award, Zap
+  Shield, User, Mail, Phone, Globe, Award, Zap, MapPin as MapPinIcon,
+  Heart as HeartIcon, Church, ShieldCheck
 } from 'lucide-react';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface Registration {
   id: string;
@@ -66,6 +75,14 @@ export function DashboardPage() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileName, setProfileName] = useState(user?.name || '');
   const [profileImage, setProfileImage] = useState(user?.image || '');
+  const [username, setUsername] = useState(user?.username || '');
+  const [country, setCountry] = useState(user?.country || '');
+  const [city, setCity] = useState(user?.city || '');
+  const [timezone, setTimezone] = useState(user?.timezone || '');
+  const [denomination, setDenomination] = useState(user?.denomination || '');
+  const [faithStatus, setFaithStatus] = useState(user?.faithStatus || '');
+  const [localChurch, setLocalChurch] = useState(user?.localChurch || '');
+  const [interests, setInterests] = useState(user?.interests || '');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   
   // Password change state
@@ -85,6 +102,14 @@ export function DashboardPage() {
     if (user) {
       setProfileName(user.name || '');
       setProfileImage(user.image || '');
+      setUsername(user.username || '');
+      setCountry(user.country || '');
+      setCity(user.city || '');
+      setTimezone(user.timezone || '');
+      setDenomination(user.denomination || '');
+      setFaithStatus(user.faithStatus || '');
+      setLocalChurch(user.localChurch || '');
+      setInterests(user.interests || '');
       fetchDashboardData();
     }
   }, [user]);
@@ -121,12 +146,23 @@ export function DashboardPage() {
       const res = await fetch(`/api/users/${user.id}/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: profileName, image: profileImage }),
+        body: JSON.stringify({ 
+          name: profileName, 
+          image: profileImage,
+          username,
+          country,
+          city,
+          timezone,
+          denomination,
+          faithStatus,
+          localChurch,
+          interests
+        }),
       });
       
       if (res.ok) {
         const updatedUser = await res.json();
-        setUser({ ...user, name: updatedUser.name, image: updatedUser.image });
+        setUser({ ...user, ...updatedUser });
         setIsEditingProfile(false);
       }
     } catch (error) {
@@ -278,14 +314,25 @@ export function DashboardPage() {
                     </>
                   ) : (
                     <div className="w-full mt-4 space-y-4">
-                      <div className="space-y-2">
-                        <Label className="text-slate-300 text-xs">Display Name</Label>
-                        <Input
-                          value={profileName}
-                          onChange={(e) => setProfileName(e.target.value)}
-                          className="bg-slate-800/50 border-slate-700 text-white text-center"
-                          placeholder="Your name"
-                        />
+                      <div className="grid grid-cols-1 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-slate-300 text-xs text-left block">Full Name</Label>
+                          <Input
+                            value={profileName}
+                            onChange={(e) => setProfileName(e.target.value)}
+                            className="bg-slate-800/50 border-slate-700 text-white"
+                            placeholder="Your name"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-slate-300 text-xs text-left block">Username</Label>
+                          <Input
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            className="bg-slate-800/50 border-slate-700 text-white"
+                            placeholder="username"
+                          />
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <Label className="text-slate-300 text-xs">Profile Photo</Label>
@@ -338,6 +385,118 @@ export function DashboardPage() {
                             />
                           </TabsContent>
                         </Tabs>
+                      </div>
+
+                      {/* Expanded Fields */}
+                      <div className="space-y-4 pt-4 border-t border-slate-700/50">
+                        <div className="grid grid-cols-2 gap-3 text-left">
+                          <div className="space-y-1.5">
+                            <Label className="text-slate-300 text-[10px] uppercase font-semibold">Country</Label>
+                            <Select value={country} onValueChange={setCountry}>
+                              <SelectTrigger className="bg-slate-800/50 border-slate-700 text-white h-9 text-xs">
+                                <SelectValue placeholder="Country" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="USA">United States</SelectItem>
+                                <SelectItem value="UK">United Kingdom</SelectItem>
+                                <SelectItem value="Canada">Canada</SelectItem>
+                                <SelectItem value="Nigeria">Nigeria</SelectItem>
+                                <SelectItem value="Kenya">Kenya</SelectItem>
+                                <SelectItem value="Ethiopia">Ethiopia</SelectItem>
+                                <SelectItem value="Other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-slate-300 text-[10px] uppercase font-semibold">City</Label>
+                            <Input
+                              value={city}
+                              onChange={(e) => setCity(e.target.value)}
+                              className="bg-slate-800/50 border-slate-700 text-white h-9 text-xs"
+                              placeholder="City"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5 text-left">
+                          <Label className="text-slate-300 text-[10px] uppercase font-semibold">Timezone</Label>
+                          <Select value={timezone} onValueChange={setTimezone}>
+                            <SelectTrigger className="bg-slate-800/50 border-slate-700 text-white h-9 text-xs">
+                              <SelectValue placeholder="Select Timezone" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="UTC+3">UTC+3 (EAT)</SelectItem>
+                              <SelectItem value="UTC+1">UTC+1 (WAT)</SelectItem>
+                              <SelectItem value="UTC+0">UTC (GMT)</SelectItem>
+                              <SelectItem value="UTC-5">UTC-5 (EST)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-1.5 text-left">
+                          <Label className="text-slate-300 text-[10px] uppercase font-semibold">Denomination</Label>
+                          <Select value={denomination} onValueChange={setDenomination}>
+                            <SelectTrigger className="bg-slate-800/50 border-slate-700 text-white h-9 text-xs">
+                              <SelectValue placeholder="Denomination" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Baptist">Baptist</SelectItem>
+                              <SelectItem value="Anglican">Anglican</SelectItem>
+                              <SelectItem value="Lutheran">Lutheran</SelectItem>
+                              <SelectItem value="Pentecostal">Pentecostal</SelectItem>
+                              <SelectItem value="Other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-1.5 text-left">
+                          <Label className="text-slate-300 text-[10px] uppercase font-semibold">Local Church</Label>
+                          <Input
+                            value={localChurch}
+                            onChange={(e) => setLocalChurch(e.target.value)}
+                            className="bg-slate-800/50 border-slate-700 text-white h-9 text-xs"
+                            placeholder="Local church name"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5 text-left">
+                          <Label className="text-slate-300 text-[10px] uppercase font-semibold">Faith Status</Label>
+                          <div className="grid grid-cols-1 gap-2 p-2 bg-slate-900/30 rounded-lg">
+                            {['Yes', 'Exploring Faith', 'New Believer'].map((opt) => (
+                              <div key={opt} className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id={`edit-faith-${opt}`}
+                                  checked={faithStatus === opt}
+                                  onCheckedChange={() => setFaithStatus(opt)}
+                                />
+                                <Label htmlFor={`edit-faith-${opt}`} className="text-xs text-slate-400 cursor-pointer font-normal">{opt}</Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5 text-left">
+                          <Label className="text-slate-300 text-[10px] uppercase font-semibold">Interests</Label>
+                          <div className="grid grid-cols-1 gap-1.5 p-2 bg-slate-900/30 rounded-lg max-h-32 overflow-y-auto">
+                            {['Bible Study', 'Prayer Groups', 'Evangelism', 'Online Fellowship', 'Volunteering'].map((opt) => (
+                              <div key={opt} className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id={`edit-interest-${opt}`}
+                                  checked={interests.split(',').includes(opt)}
+                                  onCheckedChange={(checked) => {
+                                    const current = interests.split(',').filter(i => i);
+                                    if (checked) {
+                                      setInterests([...current, opt].join(','));
+                                    } else {
+                                      setInterests(current.filter(i => i !== opt).join(','));
+                                    }
+                                  }}
+                                />
+                                <Label htmlFor={`edit-interest-${opt}`} className="text-xs text-slate-400 cursor-pointer font-normal">{opt}</Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                       <div className="flex gap-2">
                         <Button 
