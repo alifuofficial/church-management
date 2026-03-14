@@ -20,8 +20,10 @@ import {
 import { 
   Church, AlertCircle, Loader2, Globe, Facebook, Mail, 
   ArrowLeft, RefreshCw, CheckCircle2, User, MapPin, 
-  Heart, Shield, ChevronRight, ChevronLeft 
+  Heart, Shield, ChevronRight, ChevronLeft, X, Smartphone,
+  Sparkles
 } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface SocialLoginSettings {
   googleEnabled: boolean;
@@ -477,20 +479,43 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4 py-12">
-      <Card className="w-full max-w-lg">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="bg-amber-600 p-3 rounded-full">
-              <Church className="h-8 w-8 text-white" />
+    <div className="w-full max-w-lg mx-auto overflow-hidden rounded-3xl border border-slate-800/50 bg-slate-950/80 backdrop-blur-xl shadow-2xl relative">
+      {/* Premium Gradient Backgrounds */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-amber-500/10 rounded-full blur-[80px]" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-orange-600/10 rounded-full blur-[80px]" />
+      </div>
+
+      <Card className="bg-transparent border-0 shadow-none relative z-10 overflow-hidden">
+        <CardHeader className="text-center pb-2 pt-6 relative">
+          {onClose && (
+            <button 
+              onClick={onClose}
+              className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
+          <div className="flex justify-center mb-3">
+            <div className="relative">
+              <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-3 rounded-2xl shadow-lg shadow-amber-500/20">
+                <Church className="h-7 w-7 text-white" />
+              </div>
+              <div className="absolute -top-1 -right-1 bg-amber-400 rounded-full p-1 animate-pulse">
+                <Sparkles className="h-3 w-3 text-white" />
+              </div>
             </div>
           </div>
-          <CardTitle className="text-2xl">Digital Church</CardTitle>
-          <CardDescription>
-            {mode === 'signin' ? 'Sign in to your account' : `Create a new account (Step ${signupStep} of 5)`}
+          <CardTitle className="text-xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent italic">
+            Digital Sanctuary
+          </CardTitle>
+          <CardDescription className="text-slate-500 text-sm mt-1">
+            {mode === 'signin' ? 'Welcome back to our community' : `Member Registration • Step ${signupStep} of 5`}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        
+        <ScrollArea className="max-h-[75vh] overflow-y-auto">
+          <CardContent className="pt-2 pb-8 px-6">
           <Tabs value={mode} onValueChange={(v) => {
             setMode(v as 'signin' | 'signup');
             setSignupStep(1);
@@ -885,41 +910,9 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
             </TabsContent>
           </Tabs>
 
-          <div className="mt-8 pt-8 border-t">
-            <p className="text-sm text-center text-muted-foreground mb-4">
-              Demo accounts (any password works):
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleDemoLogin('ADMIN')}
-                disabled={isLoading}
-                className="text-xs"
-              >
-                Admin
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleDemoLogin('PASTOR')}
-                disabled={isLoading}
-                className="text-xs"
-              >
-                Pastor
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleDemoLogin('MEMBER')}
-                disabled={isLoading}
-                className="text-xs"
-              >
-                Member
-              </Button>
-            </div>
-          </div>
+          {/* Demo Accounts Removed for Production */}
         </CardContent>
+        </ScrollArea>
       </Card>
     </div>
   );
