@@ -105,6 +105,9 @@ interface Member {
   faithStatus?: string;
   localChurch?: string;
   interests?: string;
+  acceptedTerms?: boolean;
+  acceptedPrivacy?: boolean;
+  acceptedStatementOfFaith?: boolean;
 }
 
 interface Event {
@@ -1459,6 +1462,16 @@ function MembersContent({ members, searchQuery, setSearchQuery, formatDate }: {
                     <div className="mt-2 space-y-2 text-sm text-slate-400">
                       <p>Joined: <span className="text-slate-300">{formatDate(selectedMember.createdAt)}</span></p>
                       <p>Timezone: <span className="text-slate-300">{selectedMember.timezone || 'Not set'}</span></p>
+                      <div className="pt-2 space-y-1">
+                        <div className="flex items-center gap-1.5 text-[10px]">
+                          {selectedMember.acceptedTerms ? <ShieldCheck className="h-3 w-3 text-emerald-400" /> : <div className="h-3 w-3 rounded-full border border-slate-600" />}
+                          <span className={selectedMember.acceptedTerms ? "text-slate-300" : "text-slate-500"}>Terms Accepted</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[10px]">
+                          {selectedMember.acceptedPrivacy ? <ShieldCheck className="h-3 w-3 text-emerald-400" /> : <div className="h-3 w-3 rounded-full border border-slate-600" />}
+                          <span className={selectedMember.acceptedPrivacy ? "text-slate-300" : "text-slate-500"}>Privacy Accepted</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

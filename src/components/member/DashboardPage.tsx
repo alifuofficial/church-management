@@ -15,8 +15,7 @@ import {
   Calendar, Heart, DollarSign, BookOpen, Users, Clock, MapPin, Video,
   CheckCircle2, TrendingUp, Bell, Settings, Camera, Edit3, Lock, Eye,
   EyeOff, Sparkles, Star, Gift, MessageSquare, ChevronRight, Loader2,
-  Shield, User, Mail, Phone, Globe, Award, Zap, MapPin as MapPinIcon,
-  Heart as HeartIcon, Church, ShieldCheck
+  Shield, User, Mail, Phone, Globe, Award, Zap, Church, ShieldCheck
 } from 'lucide-react';
 import { 
   Select, 
@@ -83,6 +82,9 @@ export function DashboardPage() {
   const [faithStatus, setFaithStatus] = useState(user?.faithStatus || '');
   const [localChurch, setLocalChurch] = useState(user?.localChurch || '');
   const [interests, setInterests] = useState(user?.interests || '');
+  const [acceptedTerms, setAcceptedTerms] = useState(user?.acceptedTerms || false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(user?.acceptedPrivacy || false);
+  const [acceptedStatementOfFaith, setAcceptedStatementOfFaith] = useState(user?.acceptedStatementOfFaith || false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   
   // Password change state
@@ -110,6 +112,9 @@ export function DashboardPage() {
       setFaithStatus(user.faithStatus || '');
       setLocalChurch(user.localChurch || '');
       setInterests(user.interests || '');
+      setAcceptedTerms(user.acceptedTerms || false);
+      setAcceptedPrivacy(user.acceptedPrivacy || false);
+      setAcceptedStatementOfFaith(user.acceptedStatementOfFaith || false);
       fetchDashboardData();
     }
   }, [user]);
@@ -156,7 +161,10 @@ export function DashboardPage() {
           denomination,
           faithStatus,
           localChurch,
-          interests
+          interests,
+          acceptedTerms,
+          acceptedPrivacy,
+          acceptedStatementOfFaith
         }),
       });
       
@@ -495,6 +503,36 @@ export function DashboardPage() {
                                 <Label htmlFor={`edit-interest-${opt}`} className="text-xs text-slate-400 cursor-pointer font-normal">{opt}</Label>
                               </div>
                             ))}
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 text-left pt-2 border-t border-slate-700/30">
+                          <Label className="text-slate-300 text-[10px] uppercase font-semibold">Agreements</Label>
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox 
+                                id="edit-terms" 
+                                checked={acceptedTerms}
+                                onCheckedChange={(v) => setAcceptedTerms(!!v)}
+                              />
+                              <Label htmlFor="edit-terms" className="text-xs text-slate-400 font-normal">Terms of Use</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox 
+                                id="edit-privacy" 
+                                checked={acceptedPrivacy}
+                                onCheckedChange={(v) => setAcceptedPrivacy(!!v)}
+                              />
+                              <Label htmlFor="edit-privacy" className="text-xs text-slate-400 font-normal">Privacy Policy</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox 
+                                id="edit-faith-agree" 
+                                checked={acceptedStatementOfFaith}
+                                onCheckedChange={(v) => setAcceptedStatementOfFaith(!!v)}
+                              />
+                              <Label htmlFor="edit-faith-agree" className="text-xs text-slate-400 font-normal">Statement of Faith</Label>
+                            </div>
                           </div>
                         </div>
                       </div>
