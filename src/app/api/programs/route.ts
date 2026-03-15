@@ -1,5 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { z } from 'zod';
+
+const programSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().optional().nullable(),
+  dayOfWeek: z.union([z.number(), z.string()]),
+  startTime: z.string().min(1),
+  endTime: z.string().optional().nullable(),
+  timezone: z.string().optional(),
+  location: z.string().optional().nullable(),
+  isOnline: z.boolean().optional(),
+  zoomLink: z.string().optional().nullable(),
+  isActive: z.boolean().optional(),
+});
 
 // GET - List all programs
 export async function GET(request: NextRequest) {
@@ -30,7 +46,15 @@ export async function GET(request: NextRequest) {
 // POST - Create a new program
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const validation = programSchema.safeParse(await request.json());
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Invalid input', details: validation.error.format() }, { status: 400 });
+    }
     const {
       name,
       description,
@@ -42,14 +66,7 @@ export async function POST(request: NextRequest) {
       isOnline,
       zoomLink,
       isActive,
-    } = body;
-
-    if (!name || dayOfWeek === undefined || !startTime) {
-      return NextResponse.json(
-        { error: 'Name, day of week, and start time are required' },
-        { status: 400 }
-      );
-    }
+    } = validation.data;
 
     const program = await db.program.create({
       data: {

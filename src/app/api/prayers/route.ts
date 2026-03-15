@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { z } from 'zod';
+
+const prayerSchema = z.object({
+  title: z.string().min(1),
+  request: z.string().min(1),
+  isUrgent: z.boolean().optional(),
+});
 
 // GET - Fetch prayer requests
 // - Admins/Pastors can see all prayers
@@ -7,34 +16,23 @@ import { db } from '@/lib/db';
 // Authentication is done via userId parameter (from client-side auth)
 export async function GET(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
     const status = searchParams.get('status');
     const limit = parseInt(searchParams.get('limit') || '50');
 
-    // userId is required for authentication
-    if (!userId) {
-      return NextResponse.json({ error: 'Authentication required - userId is required' }, { status: 401 });
-    }
-
-    // Fetch user to get role
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: { role: true }
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    const isAdmin = user.role === 'ADMIN' || user.role === 'PASTOR';
+    const isAdmin = session.user.role === 'ADMIN' || session.user.role === 'PASTOR';
 
     const where: Record<string, unknown> = {};
     
     // IMPORTANT: Non-admin users can only see their own prayer requests
     // Admins can see ALL prayers (no userId filter for admins)
     if (!isAdmin) {
-      where.userId = userId;
+      where.userId = session.user.id;
     }
     
     if (status) {
@@ -65,28 +63,21 @@ export async function GET(request: NextRequest) {
 // POST - Create a new prayer request (Authenticated users)
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const userId = body.userId;
-    
-    // userId is required
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized - userId is required' }, { status: 401 });
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify user exists
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: { id: true }
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    const validation = prayerSchema.safeParse(await request.json());
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Invalid input', details: validation.error.format() }, { status: 400 });
     }
+    const body = validation.data;
     
     // Create prayer request (always private)
     const prayer = await db.prayerRequest.create({
       data: {
-        userId: userId,
+        userId: session.user.id,
         title: body.title,
         request: body.request,
         isPublic: false, // Always private

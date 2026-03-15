@@ -1,5 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { z } from 'zod';
+
+const testimonySchema = z.object({
+  name: z.string().min(1),
+  role: z.string().optional().nullable(),
+  image: z.string().optional().nullable(),
+  testimony: z.string().min(1),
+  rating: z.number().min(1).max(5).optional(),
+  isApproved: z.boolean().optional(),
+  isFeatured: z.boolean().optional(),
+  order: z.number().optional(),
+});
 
 // GET - Retrieve all testimonies
 export async function GET(request: NextRequest) {
@@ -36,12 +50,16 @@ export async function GET(request: NextRequest) {
 // POST - Create a new testimony
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { name, role, image, testimony, rating, isApproved, isFeatured, order } = body;
-    
-    if (!name || !testimony) {
-      return NextResponse.json({ error: 'Name and testimony are required' }, { status: 400 });
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const validation = testimonySchema.safeParse(await request.json());
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Invalid input', details: validation.error.format() }, { status: 400 });
+    }
+    const { name, role, image, testimony, rating, isApproved, isFeatured, order } = validation.data;
     
     const newTestimony = await db.testimony.create({
       data: {
@@ -66,6 +84,11 @@ export async function POST(request: NextRequest) {
 // PUT - Update a testimony
 export async function PUT(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { id, ...data } = body;
     
@@ -91,6 +114,11 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete a testimony
 export async function DELETE(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     

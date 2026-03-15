@@ -1,5 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { z } from 'zod';
+
+const campaignSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().optional().nullable(),
+  goal: z.union([z.number(), z.string()]).optional().nullable(),
+  raised: z.union([z.number(), z.string()]).optional().nullable(),
+  startDate: z.string().optional().nullable(),
+  endDate: z.string().optional().nullable(),
+  imageUrl: z.string().optional().nullable(),
+  isActive: z.boolean().optional(),
+});
 
 // Helper function to generate a slug from name
 function generateSlug(name: string): string {
@@ -57,8 +71,8 @@ export async function GET(request: NextRequest) {
         _count: true,
       });
 
-      const statsMap = new Map(
-        donationStats.map(s => [s.campaignId, { total: s._sum.amount || 0, count: s._count }])
+      const statsMap = new Map<string, { total: number; count: number }>(
+        donationStats.map(s => [s.campaignId as string, { total: s._sum.amount || 0, count: s._count }])
       );
 
       campaignsStats = campaigns.map(c => ({
@@ -96,8 +110,16 @@ export async function GET(request: NextRequest) {
 // POST /api/campaigns - Create a new campaign
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { name, description, goal, raised, startDate, endDate, imageUrl, isActive } = body;
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const validation = campaignSchema.safeParse(await request.json());
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Invalid input', details: validation.error.format() }, { status: 400 });
+    }
+    const { name, description, goal, raised, startDate, endDate, imageUrl, isActive } = validation.data;
 
     if (!name) {
       return NextResponse.json({ error: 'Campaign name is required' }, { status: 400 });

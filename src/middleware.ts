@@ -29,7 +29,8 @@ export default withAuth(
           path.startsWith("/api/auth") ||
           path.startsWith("/api/public") ||
           path.startsWith("/_next") ||
-          path.includes("favicon.ico")
+          path.includes("favicon.ico") ||
+          (['/api/events', '/api/sermons', '/api/settings', '/api/campaigns', '/api/testimonies'].some(p => path.startsWith(p)) && req.method === 'GET')
         ) {
           return true;
         }
@@ -49,5 +50,13 @@ export const config = {
     "/api/users/:path*",
     "/api/donations/:path*",
     "/api/newsletters/:path*",
+    "/api/events/:path*",
+    "/api/sermons/:path*",
+    "/api/upload/:path*",
+    "/api/campaigns/:path*",
+    "/api/groups/:path*",
+    "/api/programs/:path*",
+    "/api/prayers/:path*",
+    "/api/testimonies/:path*",
   ],
 };
