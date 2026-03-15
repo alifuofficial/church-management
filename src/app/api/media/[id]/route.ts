@@ -3,6 +3,18 @@ import { db } from '@/lib/db';
 import { unlink } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { z } from 'zod';
+
+const mediaUpdateSchema = z.object({
+  name: z.string().optional(),
+  description: z.string().optional(),
+  tags: z.string().optional(),
+  folder: z.string().optional(),
+  alt: z.string().optional(),
+  isPublic: z.boolean().optional(),
+});
 
 // GET - Get single media
 export async function GET(
@@ -33,18 +45,28 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'PASTOR')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
     const body = await request.json();
+    const validatedData = mediaUpdateSchema.safeParse(body);
+
+    if (!validatedData.success) {
+      return NextResponse.json({ error: 'Invalid data', details: validatedData.error.errors }, { status: 400 });
+    }
     
     const media = await db.media.update({
       where: { id },
       data: {
-        name: body.name,
-        description: body.description,
-        tags: body.tags,
-        folder: body.folder,
-        alt: body.alt,
-        isPublic: body.isPublic,
+        name: validatedData.data.name,
+        description: validatedData.data.description,
+        tags: validatedData.data.tags,
+        folder: validatedData.data.folder,
+        alt: validatedData.data.alt,
+        isPublic: validatedData.data.isPublic,
       },
     });
 
@@ -61,6 +83,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await getServerSession(authOptions);
+    if (session?.user?.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
     
     const media = await db.media.findUnique({

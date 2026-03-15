@@ -1,9 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { z } from 'zod';
+
+const socialSettingsSchema = z.object({
+  googleEnabled: z.boolean().optional(),
+  googleClientId: z.string().optional(),
+  googleClientSecret: z.string().optional(),
+  googleRedirectUri: z.string().optional(),
+  facebookEnabled: z.boolean().optional(),
+  facebookAppId: z.string().optional(),
+  facebookAppSecret: z.string().optional(),
+  facebookRedirectUri: z.string().optional(),
+  allowAccountLinking: z.boolean().optional(),
+});
 
 // GET - Get social login settings
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    
     // @ts-expect-error - Prisma client may need regeneration
     let settings = await db.socialLoginSettings?.findFirst();
 
@@ -19,11 +36,11 @@ export async function GET() {
       });
     }
 
-    // Mask sensitive data
+    // Mask sensitive data if not admin
     const maskedSettings = {
       ...settings,
-      googleClientSecret: settings?.googleClientSecret ? '••••••••' : null,
-      facebookAppSecret: settings?.facebookAppSecret ? '••••••••' : null,
+      googleClientSecret: settings?.googleClientSecret ? (session?.user?.role === 'ADMIN' ? settings.googleClientSecret : '••••••••') : null,
+      facebookAppSecret: settings?.facebookAppSecret ? (session?.user?.role === 'ADMIN' ? settings.facebookAppSecret : '••••••••') : null,
     };
 
     return NextResponse.json(maskedSettings);
@@ -39,7 +56,18 @@ export async function GET() {
 // PUT - Update social login settings
 export async function PUT(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (session?.user?.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
+    const validatedData = socialSettingsSchema.safeParse(body);
+    
+    if (!validatedData.success) {
+      return NextResponse.json({ error: 'Invalid data', details: validatedData.error.errors }, { status: 400 });
+    }
+
     const {
       googleEnabled,
       googleClientId,
@@ -50,7 +78,7 @@ export async function PUT(request: NextRequest) {
       facebookAppSecret,
       facebookRedirectUri,
       allowAccountLinking,
-    } = body;
+    } = validatedData.data;
 
     // Get existing settings
     // @ts-expect-error - Prisma client may need regeneration
@@ -87,14 +115,7 @@ export async function PUT(request: NextRequest) {
       });
     }
 
-    // Mask sensitive data in response
-    const maskedSettings = {
-      ...settings,
-      googleClientSecret: settings?.googleClientSecret ? '••••••••' : null,
-      facebookAppSecret: settings?.facebookAppSecret ? '••••••••' : null,
-    };
-
-    return NextResponse.json(maskedSettings);
+    return NextResponse.json(settings);
   } catch (error) {
     console.error('Error updating social login settings:', error);
     return NextResponse.json(

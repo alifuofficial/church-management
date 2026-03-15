@@ -3,6 +3,17 @@ import { db } from '@/lib/db';
 import { writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { z } from 'zod';
+
+const mediaSchema = z.object({
+  name: z.string().optional(),
+  description: z.string().optional(),
+  tags: z.string().optional(),
+  folder: z.string().optional(),
+  alt: z.string().optional(),
+});
 
 // Media API - CRUD operations for media library
 // GET - List all media with filters
@@ -61,6 +72,11 @@ export async function GET(request: NextRequest) {
 // POST - Upload new media
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'PASTOR')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const name = formData.get('name') as string;
@@ -71,6 +87,19 @@ export async function POST(request: NextRequest) {
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    }
+
+    // Validate metadata using Zod
+    const validatedMetadata = mediaSchema.safeParse({
+      name,
+      description,
+      tags,
+      folder,
+      alt,
+    });
+
+    if (!validatedMetadata.success) {
+      return NextResponse.json({ error: 'Invalid metadata', details: validatedMetadata.error.errors }, { status: 400 });
     }
 
     // Validate file size (max 50MB)
@@ -109,16 +138,16 @@ export async function POST(request: NextRequest) {
     // Create media record in database
     const media = await db.media.create({
       data: {
-        name: name || file.name,
+        name: validatedMetadata.data.name || file.name,
         originalName: file.name,
         url: publicUrl,
         type,
         mimeType,
         size: file.size,
-        description,
-        tags,
-        folder,
-        alt,
+        description: validatedMetadata.data.description,
+        tags: validatedMetadata.data.tags,
+        folder: validatedMetadata.data.folder,
+        alt: validatedMetadata.data.alt,
       },
     });
 
