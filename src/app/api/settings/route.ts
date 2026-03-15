@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // GET - Retrieve all settings
 export async function GET() {
@@ -27,6 +29,11 @@ export async function GET() {
 // POST - Save settings
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
     const body = await request.json();
     
     // Update or create each setting
@@ -52,6 +59,11 @@ export async function POST(request: NextRequest) {
 // DELETE - Clear all settings
 export async function DELETE() {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
     await db.setting.deleteMany();
     
     return NextResponse.json({ success: true, message: 'All settings cleared' });

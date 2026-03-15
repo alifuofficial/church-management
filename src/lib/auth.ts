@@ -88,5 +88,5 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
-  secret: process.env.NEXTAUTH_SECRET || "digital-church-secret-key-2024",
+  secret: process.env.NEXTAUTH_SECRET,
 };
