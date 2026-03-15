@@ -24,6 +24,14 @@ export interface FeatureFlags {
   notificationsEnabled: boolean;
 }
 
+export interface LanguageSettings {
+  enabled: boolean;
+  showInNavbar: boolean;
+  showInFooter: boolean;
+  defaultLanguage: string;
+  availableLanguages: string[];
+}
+
 export interface SiteSettings {
   siteName: string;
   siteTagline: string;
@@ -55,6 +63,8 @@ export interface SiteSettings {
   heroBackgroundImage: string;
   // Feature Flags
   features: FeatureFlags;
+  // Language Settings
+  language: LanguageSettings;
 }
 
 const defaultSettings: SiteSettings = {
@@ -97,6 +107,13 @@ const defaultSettings: SiteSettings = {
     registrationEnabled: true,
     memberDashboardEnabled: true,
     notificationsEnabled: true,
+  },
+  language: {
+    enabled: false,
+    showInNavbar: true,
+    showInFooter: true,
+    defaultLanguage: 'en',
+    availableLanguages: ['en', 'es', 'fr', 'de', 'pt', 'zh', 'ja', 'ko', 'ar', 'hi'],
   },
 };
 

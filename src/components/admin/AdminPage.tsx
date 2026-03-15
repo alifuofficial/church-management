@@ -5403,7 +5403,7 @@ function ComingSoonContent({ feature }: { feature: string }) {
 // Settings Content Component
 function SettingsContent() {
   const { user, settings: globalSettings, setSettings: setGlobalSettings } = useAppStore();
-  const [activeTab, setActiveTab] = useState<'general' | 'logo' | 'seo' | 'api' | 'site' | 'features' | 'social' | 'verification' | 'security'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'logo' | 'seo' | 'api' | 'site' | 'features' | 'social' | 'verification' | 'security' | 'language'>('general');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -5463,6 +5463,14 @@ function SettingsContent() {
       registrationEnabled: true,
       memberDashboardEnabled: true,
       notificationsEnabled: true,
+    },
+    // Language Settings
+    language: {
+      enabled: false,
+      showInNavbar: true,
+      showInFooter: true,
+      defaultLanguage: 'en',
+      availableLanguages: ['en', 'es', 'fr', 'de', 'pt', 'zh', 'ja', 'ko', 'ar', 'hi'],
     },
   });
 
@@ -5648,6 +5656,7 @@ function SettingsContent() {
   const tabs = [
     { id: 'general', label: 'Site Info', icon: Church, category: 'General' },
     { id: 'logo', label: 'Logo & Branding', icon: Sparkles, category: 'General' },
+    { id: 'language', label: 'Language', icon: Globe, category: 'General' },
     { id: 'seo', label: 'SEO', icon: FileText, category: 'General' },
     { id: 'api', label: 'API Keys', icon: Settings, category: 'Integrations' },
     { id: 'site', label: 'Site Status', icon: Activity, category: 'System' },
