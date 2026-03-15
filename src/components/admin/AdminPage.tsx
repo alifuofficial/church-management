@@ -5319,6 +5319,7 @@ function SettingsContent() {
 
       console.log('handleSave - Response status:', res.status);
       if (res.ok) {
+        setGlobalSettings(settingsToSave);
         setSaveMessage({ type: 'success', text: 'Settings saved successfully!' });
         setTimeout(() => setSaveMessage(null), 3000);
       } else {

@@ -15,6 +15,7 @@ import { DashboardPage } from '@/components/member/DashboardPage';
 import { ProfilePage } from '@/components/member/ProfilePage';
 import { AdminPage } from '@/components/admin/AdminPage';
 import { ComingSoonPage, MaintenancePage, PrivateModePage } from '@/components/church/SiteStatusPages';
+import { DynamicFavicon } from '@/components/church/DynamicFavicon';
 import { Loader2 } from 'lucide-react';
 
 export default function Home() {
@@ -90,9 +91,12 @@ export default function Home() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
-        <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
-      </div>
+      <>
+        <DynamicFavicon />
+        <div className="min-h-screen flex items-center justify-center bg-slate-900">
+          <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+        </div>
+      </>
     );
   }
 
@@ -103,6 +107,7 @@ export default function Home() {
     if (settings.siteMode === 'coming_soon') {
       return (
         <>
+          <DynamicFavicon />
           <ComingSoonPage settings={settings} onAdminLogin={handleLoginClick} />
           {showAuth && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -125,6 +130,7 @@ export default function Home() {
     if (settings.siteMode === 'maintenance') {
       return (
         <>
+          <DynamicFavicon />
           <MaintenancePage settings={settings} onAdminLogin={handleLoginClick} />
           {showAuth && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -147,6 +153,7 @@ export default function Home() {
     if (settings.siteMode === 'private' && !isAuthenticated) {
       return (
         <>
+          <DynamicFavicon />
           <PrivateModePage 
             settings={settings} 
             onLogin={handleLoginClick}
@@ -197,28 +204,31 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
-      <main className="flex-1">
-        {renderContent()}
-      </main>
-      <Footer />
-      
-      {/* Auth Modal */}
-      {showAuth && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="relative w-full max-w-md">
-            <button 
-              onClick={() => setShowAuth(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white z-10"
-            >
-              ✕
-            </button>
-            <AuthForm />
+    <>
+      <DynamicFavicon />
+      <div className="min-h-screen flex flex-col bg-background">
+        <Navbar />
+        <main className="flex-1">
+          {renderContent()}
+        </main>
+        <Footer />
+        
+        {/* Auth Modal */}
+        {showAuth && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="relative w-full max-w-md">
+              <button 
+                onClick={() => setShowAuth(false)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-white z-10"
+              >
+                ✕
+              </button>
+              <AuthForm />
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 }
 
