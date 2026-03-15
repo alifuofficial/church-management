@@ -21,6 +21,7 @@ import { Loader2 } from 'lucide-react';
 export default function Home() {
   const { 
     currentView, 
+    setCurrentView,
     isAuthenticated, 
     user, 
     settings, 
@@ -82,6 +83,14 @@ export default function Home() {
 
   // Check if user is admin
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+  const isAdminOrPastor = user?.role === 'ADMIN' || user?.role === 'PASTOR' || user?.role === 'SUPER_ADMIN';
+
+  // Redirect non-admin users away from admin page
+  useEffect(() => {
+    if (currentView === 'admin' && !isAdminOrPastor) {
+      setCurrentView('home');
+    }
+  }, [currentView, isAdminOrPastor, setCurrentView]);
 
   // Handle login button click
   const handleLoginClick = () => {
