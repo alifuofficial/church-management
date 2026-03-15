@@ -17,6 +17,8 @@ const commonLanguages = [
   { code: 'ko', name: 'Korean', flag: '🇰🇷' },
   { code: 'ar', name: 'Arabic', flag: '🇸🇦' },
   { code: 'hi', name: 'Hindi', flag: '🇮🇳' },
+  { code: 'am', name: 'Amharic', flag: '🇪🇹' },
+  { code: 'om', name: 'Afaan Oromoo', flag: '🇪🇹' },
   { code: 'it', name: 'Italian', flag: '🇮🇹' },
   { code: 'ru', name: 'Russian', flag: '🇷🇺' },
   { code: 'nl', name: 'Dutch', flag: '🇳🇱' },
@@ -27,6 +29,9 @@ const commonLanguages = [
   { code: 'id', name: 'Indonesian', flag: '🇮🇩' },
   { code: 'ms', name: 'Malay', flag: '🇲🇾' },
   { code: 'fil', name: 'Filipino', flag: '🇵🇭' },
+  { code: 'sw', name: 'Swahili', flag: '🇰🇪' },
+  { code: 'yo', name: 'Yoruba', flag: '🇳🇬' },
+  { code: 'ha', name: 'Hausa', flag: '🇳🇬' },
 ];
 
 interface GoogleTranslateProps {
@@ -38,34 +43,14 @@ export function GoogleTranslate({ variant = 'navbar' }: GoogleTranslateProps) {
   const [currentLang, setCurrentLang] = useState('en');
   const [isOpen, setIsOpen] = useState(false);
 
-  // Don't render if language feature is disabled
-  if (!settings.language?.enabled) {
-    return null;
-  }
-
+  const isEnabled = settings.language?.enabled;
   const showInLocation = variant === 'navbar' 
-    ? settings.language.showInNavbar 
-    : settings.language.showInFooter;
+    ? settings.language?.showInNavbar 
+    : settings.language?.showInFooter;
 
-  if (!showInLocation) {
-    return null;
-  }
-
-  const availableLangs = settings.language.availableLanguages?.length 
+  const availableLangs = settings.language?.availableLanguages?.length 
     ? commonLanguages.filter(l => settings.language.availableLanguages.includes(l.code))
     : commonLanguages;
-
-  const handleLanguageChange = (langCode: string) => {
-    setCurrentLang(langCode);
-    setIsOpen(false);
-    
-    // Set Google Translate cookie
-    document.cookie = `googtrans=/en/${langCode}; path=/`;
-    document.cookie = `googtrans=/en/${langCode}; path=/; domain=.${window.location.hostname}`;
-    
-    // Reload the page to apply translation
-    window.location.reload();
-  };
 
   // Detect current language from cookie
   useEffect(() => {
@@ -82,7 +67,7 @@ export function GoogleTranslate({ variant = 'navbar' }: GoogleTranslateProps) {
 
   // Load Google Translate script
   useEffect(() => {
-    if (!settings.language?.enabled) return;
+    if (!isEnabled) return;
 
     // Check if script already exists
     if (document.getElementById(GOOGLE_TRANSLATE_SCRIPT_ID)) {
@@ -119,7 +104,24 @@ export function GoogleTranslate({ variant = 'navbar' }: GoogleTranslateProps) {
         existingScript.remove();
       }
     };
-  }, [settings.language?.enabled, availableLangs]);
+  }, [isEnabled, availableLangs]);
+
+  const handleLanguageChange = (langCode: string) => {
+    setCurrentLang(langCode);
+    setIsOpen(false);
+    
+    // Set Google Translate cookie
+    document.cookie = `googtrans=/en/${langCode}; path=/`;
+    document.cookie = `googtrans=/en/${langCode}; path=/; domain=.${window.location.hostname}`;
+    
+    // Reload the page to apply translation
+    window.location.reload();
+  };
+
+  // Don't render if language feature is disabled
+  if (!isEnabled || !showInLocation) {
+    return null;
+  }
 
   const currentLanguage = commonLanguages.find(l => l.code === currentLang) || commonLanguages[0];
 
@@ -182,24 +184,3 @@ export function GoogleTranslate({ variant = 'navbar' }: GoogleTranslateProps) {
     </div>
   );
 }
-
-// Style override to hide Google's default widget
-export const GoogleTranslateStyles = () => (
-  <style jsx global>{`
-    .goog-te-banner-frame,
-    .goog-te-gadget,
-    .skiptranslate {
-      display: none !important;
-    }
-    body {
-      top: 0 !important;
-    }
-    .goog-te-menu-frame {
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-    }
-    .goog-te-menu2-item div,
-    .goog-te-menu2-item-selected div {
-      font-family: inherit !important;
-    }
-  `}</style>
-);

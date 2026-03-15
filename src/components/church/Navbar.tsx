@@ -53,6 +53,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AuthForm } from './AuthForm';
+import { GoogleTranslate } from './GoogleTranslate';
 
 interface NavItem {
   view: ViewType;
@@ -137,6 +138,11 @@ export function Navbar() {
                 </Button>
               );
             })}
+          </div>
+
+          {/* Language Switcher */}
+          <div className="hidden lg:block">
+            <GoogleTranslate variant="navbar" />
           </div>
 
           {/* Right Side Actions */}

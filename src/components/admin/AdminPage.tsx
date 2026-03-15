@@ -5510,6 +5510,14 @@ function SettingsContent() {
               memberDashboardEnabled: data.features?.memberDashboardEnabled !== false && data.features?.memberDashboardEnabled !== 'false',
               notificationsEnabled: data.features?.notificationsEnabled !== false && data.features?.notificationsEnabled !== 'false',
             },
+            // Parse language settings
+            language: {
+              enabled: data.language?.enabled === 'true' || data.language?.enabled === true,
+              showInNavbar: data.language?.showInNavbar !== false && data.language?.showInNavbar !== 'false',
+              showInFooter: data.language?.showInFooter !== false && data.language?.showInFooter !== 'false',
+              defaultLanguage: data.language?.defaultLanguage || 'en',
+              availableLanguages: data.language?.availableLanguages || ['en', 'es', 'fr', 'de', 'pt', 'zh', 'ja', 'ko', 'ar', 'hi'],
+            },
           }));
         }
       } catch (error) {
@@ -6079,6 +6087,235 @@ function SettingsContent() {
                 <p className="text-emerald-400 text-sm">{settings.siteUrl}</p>
                 <p className="text-slate-400 text-sm mt-1">{settings.metaDescription}</p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Language Settings */}
+      {activeTab === 'language' && (
+        <Card className="bg-slate-900/50 border-slate-800">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Globe className="h-5 w-5 text-blue-400" />
+              Language & Translation
+            </CardTitle>
+            <CardDescription className="text-slate-400">
+              Enable multilingual support using Google Translate. Visitors can translate your site into their preferred language.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {saveMessage && (
+              <div className={cn(
+                "p-3 rounded-lg flex items-center gap-2",
+                saveMessage.type === 'success' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" : "bg-red-500/10 text-red-400 border border-red-500/30"
+              )}>
+                {saveMessage.type === 'success' ? <Check className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                {saveMessage.text}
+              </div>
+            )}
+            
+            <div className="flex items-center justify-between p-4 rounded-lg bg-slate-800/50">
+              <div>
+                <h4 className="text-white font-medium">Enable Translation</h4>
+                <p className="text-slate-400 text-sm">Allow visitors to translate your website using Google Translate</p>
+              </div>
+              <button
+                onClick={() => setSettings(prev => ({ 
+                  ...prev, 
+                  language: { ...prev.language, enabled: !prev.language.enabled } 
+                }))}
+                className={cn(
+                  "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                  settings.language.enabled ? "bg-amber-500" : "bg-slate-600"
+                )}
+              >
+                <span className={cn(
+                  "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                  settings.language.enabled ? "translate-x-6" : "translate-x-1"
+                )} />
+              </button>
+            </div>
+
+            {settings.language.enabled && (
+              <>
+                <div className="space-y-4">
+                  <h4 className="text-white font-medium">Display Options</h4>
+                  
+                  <div className="flex items-center justify-between p-4 rounded-lg border border-slate-700">
+                    <div>
+                      <p className="text-white">Show in Navigation Bar</p>
+                      <p className="text-slate-400 text-sm">Display language switcher in the main navigation</p>
+                    </div>
+                    <button
+                      onClick={() => setSettings(prev => ({ 
+                        ...prev, 
+                        language: { ...prev.language, showInNavbar: !prev.language.showInNavbar } 
+                      }))}
+                      className={cn(
+                        "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                        settings.language.showInNavbar ? "bg-amber-500" : "bg-slate-600"
+                      )}
+                    >
+                      <span className={cn(
+                        "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                        settings.language.showInNavbar ? "translate-x-6" : "translate-x-1"
+                      )} />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 rounded-lg border border-slate-700">
+                    <div>
+                      <p className="text-white">Show in Footer</p>
+                      <p className="text-slate-400 text-sm">Display language switcher in the website footer</p>
+                    </div>
+                    <button
+                      onClick={() => setSettings(prev => ({ 
+                        ...prev, 
+                        language: { ...prev.language, showInFooter: !prev.language.showInFooter } 
+                      }))}
+                      className={cn(
+                        "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                        settings.language.showInFooter ? "bg-amber-500" : "bg-slate-600"
+                      )}
+                    >
+                      <span className={cn(
+                        "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                        settings.language.showInFooter ? "translate-x-6" : "translate-x-1"
+                      )} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Default Language</Label>
+                  <Select 
+                    value={settings.language.defaultLanguage} 
+                    onValueChange={(value) => setSettings(prev => ({ 
+                      ...prev, 
+                      language: { ...prev.language, defaultLanguage: value } 
+                    }))}
+                  >
+                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                      <SelectValue placeholder="Select default language" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="es">Spanish</SelectItem>
+                      <SelectItem value="fr">French</SelectItem>
+                      <SelectItem value="de">German</SelectItem>
+                      <SelectItem value="pt">Portuguese</SelectItem>
+                      <SelectItem value="zh-CN">Chinese</SelectItem>
+                      <SelectItem value="ja">Japanese</SelectItem>
+                      <SelectItem value="ko">Korean</SelectItem>
+                      <SelectItem value="ar">Arabic</SelectItem>
+                      <SelectItem value="hi">Hindi</SelectItem>
+                      <SelectItem value="am">Amharic</SelectItem>
+                      <SelectItem value="om">Afaan Oromoo</SelectItem>
+                      <SelectItem value="it">Italian</SelectItem>
+                      <SelectItem value="ru">Russian</SelectItem>
+                      <SelectItem value="nl">Dutch</SelectItem>
+                      <SelectItem value="pl">Polish</SelectItem>
+                      <SelectItem value="tr">Turkish</SelectItem>
+                      <SelectItem value="vi">Vietnamese</SelectItem>
+                      <SelectItem value="th">Thai</SelectItem>
+                      <SelectItem value="id">Indonesian</SelectItem>
+                      <SelectItem value="ms">Malay</SelectItem>
+                      <SelectItem value="fil">Filipino</SelectItem>
+                      <SelectItem value="sw">Swahili</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-slate-500 text-xs">This is the language your content is written in</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Available Languages</Label>
+                  <p className="text-slate-400 text-sm mb-2">Select which languages visitors can translate to</p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    {[
+                      { code: 'en', name: 'English', flag: 'US' },
+                      { code: 'es', name: 'Spanish', flag: 'ES' },
+                      { code: 'fr', name: 'French', flag: 'FR' },
+                      { code: 'de', name: 'German', flag: 'DE' },
+                      { code: 'pt', name: 'Portuguese', flag: 'BR' },
+                      { code: 'zh-CN', name: 'Chinese', flag: 'CN' },
+                      { code: 'ja', name: 'Japanese', flag: 'JP' },
+                      { code: 'ko', name: 'Korean', flag: 'KR' },
+                      { code: 'ar', name: 'Arabic', flag: 'SA' },
+                      { code: 'hi', name: 'Hindi', flag: 'IN' },
+                      { code: 'am', name: 'Amharic', flag: 'ET' },
+                      { code: 'om', name: 'Afaan Oromoo', flag: 'ET' },
+                      { code: 'it', name: 'Italian', flag: 'IT' },
+                      { code: 'ru', name: 'Russian', flag: 'RU' },
+                      { code: 'nl', name: 'Dutch', flag: 'NL' },
+                      { code: 'pl', name: 'Polish', flag: 'PL' },
+                      { code: 'tr', name: 'Turkish', flag: 'TR' },
+                      { code: 'vi', name: 'Vietnamese', flag: 'VN' },
+                      { code: 'th', name: 'Thai', flag: 'TH' },
+                      { code: 'id', name: 'Indonesian', flag: 'ID' },
+                      { code: 'ms', name: 'Malay', flag: 'MY' },
+                      { code: 'fil', name: 'Filipino', flag: 'PH' },
+                      { code: 'sw', name: 'Swahili', flag: 'KE' },
+                    ].map((lang) => (
+                      <button
+                        key={lang.code}
+                        onClick={() => {
+                          const currentLanguages = settings.language.availableLanguages || [];
+                          const newLanguages = currentLanguages.includes(lang.code)
+                            ? currentLanguages.filter((l) => l !== lang.code)
+                            : [...currentLanguages, lang.code];
+                          setSettings(prev => ({
+                            ...prev,
+                            language: { ...prev.language, availableLanguages: newLanguages }
+                          }));
+                        }}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all",
+                          settings.language.availableLanguages?.includes(lang.code)
+                            ? "bg-amber-500/10 border-amber-500/50 text-amber-400"
+                            : "bg-slate-800/50 border-slate-700 text-slate-400 hover:text-white hover:border-slate-600"
+                        )}
+                      >
+                        <span>{lang.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                  <div className="flex items-start gap-3">
+                    <Globe className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-blue-400 font-medium">How Translation Works</h4>
+                      <p className="text-slate-400 text-sm mt-1">
+                        Google Translate will automatically translate your website content. 
+                        For best results, ensure your content is clear and well-structured.
+                        Note: Machine translation may not be 100% accurate.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div className="flex justify-end pt-4">
+              <Button 
+                onClick={() => handleSave()} 
+                disabled={isSubmitting}
+                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-black font-semibold"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-4 w-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
             </div>
           </CardContent>
         </Card>

@@ -63,6 +63,13 @@ export default function Home() {
               memberDashboardEnabled: data.features?.memberDashboardEnabled !== false && data.features?.memberDashboardEnabled !== 'false',
               notificationsEnabled: data.features?.notificationsEnabled !== false && data.features?.notificationsEnabled !== 'false',
             },
+            language: {
+              enabled: data.language?.enabled === 'true' ||data.language?.enabled === true,
+              showInNavbar: data.language?.showInNavbar !== false && data.language?.showInNavbar !== 'false',
+              showInFooter: data.language?.showInFooter !== false && data.language?.showInFooter !== 'false',
+              defaultLanguage: data.language?.defaultLanguage || 'en',
+              availableLanguages: data.language?.availableLanguages || ['en', 'es', 'fr', 'de', 'pt', 'zh', 'ja', 'ko', 'ar', 'hi'],
+            },
           };
           
           // Only update if settings have changed to avoid unnecessary re-renders

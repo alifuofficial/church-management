@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { Church, Heart, Mail, Phone, MapPin, Facebook, Instagram, Youtube, Send, CheckCircle2, Loader2, Music2 } from 'lucide-react';
+import { GoogleTranslate } from './GoogleTranslate';
 
 // TikTok Icon Component
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -268,6 +269,11 @@ export function Footer() {
               <p className="text-slate-400">Live Stream Available</p>
             </div>
           </div>
+        </div>
+
+        {/* Language Switcher */}
+        <div className="mt-8 pt-8 border-t border-slate-800 flex justify-center">
+          <GoogleTranslate variant="footer" />
         </div>
       </div>
 
