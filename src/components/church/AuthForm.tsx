@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppStore } from '@/store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -397,7 +397,7 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
         <Card className="bg-transparent border-0 shadow-none relative z-10 overflow-hidden">
           <CardHeader className="text-center pb-2 pt-8">
             <div className="flex justify-center mb-4">
-              {settings.logoUrl && settings.logoUrl.trim() !== '' ? (
+              {settings.logoUrl && typeof settings.logoUrl === 'string' && settings.logoUrl.trim() !== '' ? (
                 <div className="bg-slate-900 border border-slate-700 p-1 rounded-2xl shadow-lg relative overflow-hidden group">
                   <img src={settings.logoUrl} alt={settings.siteName} className="h-12 w-12 object-contain rounded-xl" />
                   <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/10 to-transparent pointer-events-none" />
@@ -514,7 +514,7 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
           )}
           <div className="flex justify-center mb-3">
             <div className="relative">
-              {settings.logoUrl && settings.logoUrl.trim() !== '' ? (
+              {settings.logoUrl && typeof settings.logoUrl === 'string' && settings.logoUrl.trim() !== '' ? (
                 <div className="bg-slate-900 border border-slate-700 p-1 rounded-2xl shadow-lg relative overflow-hidden group">
                   <img src={settings.logoUrl} alt={settings.siteName} className="h-12 w-12 object-contain rounded-xl" />
                   <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/10 to-transparent pointer-events-none" />

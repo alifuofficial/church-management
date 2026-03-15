@@ -101,7 +101,7 @@ export function Navbar() {
             className="flex items-center gap-2 font-bold text-xl text-white group"
           >
             <div className="relative">
-              {settings.logoUrl && settings.logoUrl.trim() !== '' ? (
+              {settings.logoUrl && typeof settings.logoUrl === 'string' && settings.logoUrl.trim() !== '' ? (
                 <img src={settings.logoUrl} alt={settings.siteName} className="h-10 w-10 object-contain" />
               ) : (
                 <div className="relative">
