@@ -307,11 +307,11 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = '/api/auth/google';
+    signIn('google', { callbackUrl: '/dashboard' });
   };
 
   const handleFacebookLogin = () => {
-    window.location.href = '/api/auth/facebook';
+    signIn('facebook', { callbackUrl: '/dashboard' });
   };
 
   const hasSocialLogin = socialSettings?.googleEnabled || socialSettings?.facebookEnabled;
