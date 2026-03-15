@@ -687,6 +687,29 @@ export function DashboardPage() {
             
             {/* Right Side - Stats & Activity */}
             <div className="flex-1 space-y-6">
+              {/* Profile Completion Prompt */}
+              {user && (!user.country || !user.faithStatus) && (
+                <Card className="bg-amber-500/10 border-amber-500/30 border-l-4 border-l-amber-500 animate-in fade-in slide-in-from-top-4 duration-500">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="bg-amber-500 p-2 rounded-xl text-black">
+                        <User className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-white font-bold">Complete Your Profile</h3>
+                        <p className="text-slate-400 text-sm">Help us tailor your experience by providing a few more details.</p>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={() => setIsEditingProfile(true)}
+                      className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 px-4 rounded-lg flex items-center gap-2"
+                    >
+                      <Edit3 className="h-4 w-4" />
+                      Finish Now
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
               {/* Stats Grid */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card className="bg-gradient-to-br from-amber-500/20 to-amber-600/20 border-amber-500/30 hover:border-amber-500/50 transition-all">

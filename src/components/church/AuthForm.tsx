@@ -45,7 +45,6 @@ interface AuthFormProps {
 export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
   const { setUser, setCurrentView, settings } = useAppStore();
   const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
-  const [signupStep, setSignupStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [socialSettings, setSocialSettings] = useState<SocialLoginSettings | null>(null);
@@ -55,31 +54,13 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
   // Sign in state
   const [signInEmail, setSignInEmail] = useState('');
   const [signInPassword, setSignInPassword] = useState('');
-
+  
+  
   // Signup Form state
-  // Step 1: Basic
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  
-  // Step 2: Location
-  const [country, setCountry] = useState('');
-  const [city, setCity] = useState('');
-  const [timezone, setTimezone] = useState('');
-  
-  // Step 3: Faith
-  const [denomination, setDenomination] = useState('');
-  const [faithStatus, setFaithStatus] = useState('');
-  const [localChurch, setLocalChurch] = useState('');
-  
-  // Step 4: Interests
-  const [interests, setInterests] = useState<string[]>([]);
-  
-  // Step 5: Agreements
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
-  const [acceptedStatementOfFaith, setAcceptedStatementOfFaith] = useState(false);
   
   // Verification state
   const [showVerification, setShowVerification] = useState(false);
@@ -125,43 +106,9 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
     }
   }, [resendCooldown]);
 
-  const toggleInterest = (interest: string) => {
-    setInterests(prev => 
-      prev.includes(interest) 
-        ? prev.filter(i => i !== interest) 
-        : [...prev, interest]
-    );
-  };
-
-  const handleNextStep = () => {
-    if (signupStep === 1) {
-      if (!name || !email || !username || !password) {
-        setError('Please fill in all basic information');
-        return;
-      }
-    }
-    if (signupStep === 2) {
-      if (!country || !city || !timezone) {
-        setError('Please fill in all location information');
-        return;
-      }
-    }
-    setError('');
-    setSignupStep(prev => prev + 1);
-  };
-
-  const handlePrevStep = () => {
-    setError('');
-    setSignupStep(prev => prev - 1);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (mode === 'signup' && signupStep < 5) {
-      handleNextStep();
-      return;
-    }
 
     // Wait for settings to load
     if (!settingsLoaded) {
@@ -175,31 +122,22 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
     try {
       if (mode === 'signup') {
         // Final validation
-        if (!acceptedTerms || !acceptedPrivacy || !acceptedStatementOfFaith) {
-          setError('Please accept all agreements to continue');
-          setIsLoading(false);
-          return;
-        }
 
         // Create new user
         const res = await fetch('/api/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            email,
-            password,
-            name,
-            username,
-            country,
-            city,
-            timezone,
-            denomination,
-            faithStatus,
-            localChurch,
-            interests: interests.join(','),
-            acceptedTerms,
-            acceptedPrivacy,
-            acceptedStatementOfFaith,
+            country: '',
+            city: '',
+            timezone: '',
+            denomination: '',
+            faithStatus: '',
+            localChurch: '',
+            interests: '',
+            acceptedTerms: true,
+            acceptedPrivacy: true,
+            acceptedStatementOfFaith: true,
             role: 'MEMBER',
           }),
         });
@@ -535,7 +473,7 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
             {settings.siteName || 'Voices of Hope'}
           </CardTitle>
           <CardDescription className="text-slate-500 text-sm mt-1">
-            {mode === 'signin' ? 'Welcome back to our community' : `Member Registration • Step ${signupStep} of 5`}
+            {mode === 'signin' ? 'Welcome back to our community' : 'Member Registration'}
           </CardDescription>
         </CardHeader>
         
@@ -543,7 +481,6 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
           <CardContent className="pt-2 pb-8 px-6">
           <Tabs value={mode} onValueChange={(v) => {
             setMode(v as 'signin' | 'signup');
-            setSignupStep(1);
             setError('');
           }}>
             <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-900/50 p-1 rounded-xl border border-slate-800/50">
@@ -657,8 +594,7 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
 
             <TabsContent value="signup">
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Step 1: Basic Personal Information */}
-                {signupStep === 1 && (
+                {/* Simplified Personal Information */}
                   <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 p-2.5 rounded-xl border border-amber-500/20">
@@ -731,275 +667,16 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                       </div>
                     </div>
                   </div>
-                )}
-                {/* Step 2: Location Information */}
-                {signupStep === 2 && (
-                  <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 p-2.5 rounded-xl border border-amber-500/20">
-                        <MapPin className="h-5 w-5 text-amber-500" />
-                      </div>
-                      <h3 className="font-bold text-lg text-white">Location Information</h3>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label htmlFor="signup-country" className="text-white font-medium flex items-center gap-2 mb-1">
-                        <Globe className="h-4 w-4 text-amber-500/70" />
-                        Country
-                      </Label>
-                      <Select value={country} onValueChange={setCountry}>
-                        <SelectTrigger id="signup-country" className="bg-slate-900/40 border-slate-800 focus:ring-amber-500/20 text-white h-12 rounded-xl backdrop-blur-md">
-                          <SelectValue placeholder="Select Country" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-900 border-slate-800 text-white">
-                          <SelectItem value="USA">United States</SelectItem>
-                          <SelectItem value="UK">United Kingdom</SelectItem>
-                          <SelectItem value="Canada">Canada</SelectItem>
-                          <SelectItem value="Nigeria">Nigeria</SelectItem>
-                          <SelectItem value="Kenya">Kenya</SelectItem>
-                          <SelectItem value="Ethiopia">Ethiopia</SelectItem>
-                          <SelectItem value="Other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label htmlFor="signup-city" className="text-white font-medium flex items-center gap-2 mb-1">
-                        <MapPin className="h-4 w-4 text-amber-500/70" />
-                        City / Region
-                      </Label>
-                      <Input
-                        id="signup-city"
-                        placeholder="Nairobi / Addis Ababa"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        required
-                        className="bg-slate-900/40 border-slate-800 focus:border-amber-500/50 focus:ring-amber-500/20 text-white placeholder:text-slate-600 h-12 rounded-xl backdrop-blur-md transition-all duration-300"
-                      />
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label htmlFor="signup-timezone" className="text-white font-medium flex items-center gap-2 mb-1">
-                        <Clock className="h-4 w-4 text-amber-500/70" />
-                        Time Zone
-                      </Label>
-                      <Select value={timezone} onValueChange={setTimezone}>
-                        <SelectTrigger id="signup-timezone" className="bg-slate-900/40 border-slate-800 focus:ring-amber-500/20 text-white h-12 rounded-xl backdrop-blur-md">
-                          <SelectValue placeholder="Select Time Zone" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-900 border-slate-800 text-white">
-                          <SelectItem value="UTC+3">UTC+3 (East Africa Time)</SelectItem>
-                          <SelectItem value="UTC+1">UTC+1 (West Africa Time)</SelectItem>
-                          <SelectItem value="UTC+0">UTC (Greenwich Mean Time)</SelectItem>
-                          <SelectItem value="UTC-5">UTC-5 (Eastern Time)</SelectItem>
-                          <SelectItem value="Other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 3: Faith Information */}
-                {signupStep === 3 && (
-                  <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 p-2.5 rounded-xl border border-amber-500/20">
-                        <Church className="h-5 w-5 text-amber-500" />
-                      </div>
-                      <h3 className="font-bold text-lg text-white">Church / Faith Information</h3>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label htmlFor="signup-denomination" className="text-white font-medium flex items-center gap-2 mb-1">
-                        <Info className="h-4 w-4 text-amber-500/70" />
-                        Denomination (Optional)
-                      </Label>
-                      <Select value={denomination} onValueChange={setDenomination}>
-                        <SelectTrigger id="signup-denomination" className="bg-slate-900/40 border-slate-800 focus:ring-amber-500/20 text-white h-12 rounded-xl backdrop-blur-md">
-                          <SelectValue placeholder="Select Denomination" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-900 border-slate-800 text-white">
-                          <SelectItem value="Baptist">Baptist</SelectItem>
-                          <SelectItem value="Anglican">Anglican</SelectItem>
-                          <SelectItem value="Lutheran">Lutheran</SelectItem>
-                          <SelectItem value="Pentecostal">Pentecostal</SelectItem>
-                          <SelectItem value="Other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-4 pt-2">
-                      <Label className="text-white font-medium flex items-center gap-2 mb-2">
-                        <Heart className="h-4 w-4 text-amber-500/70" />
-                        Are you a Christian?
-                      </Label>
-                      <div className="grid grid-cols-1 gap-2">
-                        {['Yes', 'Exploring Faith', 'New Believer'].map((option) => (
-                          <div 
-                            key={option} 
-                            className={`flex items-center space-x-3 p-3 rounded-xl border transition-all duration-300 cursor-pointer ${
-                              faithStatus === option 
-                                ? 'bg-amber-500/10 border-amber-500/50 shadow-[0_0_15px_-5px_rgba(245,158,11,0.2)]' 
-                                : 'bg-slate-900/40 border-slate-800 hover:border-slate-700'
-                            }`}
-                            onClick={() => setFaithStatus(option)}
-                          >
-                            <Checkbox 
-                              id={`faith-${option}`} 
-                              checked={faithStatus === option}
-                              onCheckedChange={() => setFaithStatus(option)}
-                              className="border-slate-700 data-[state=checked]:bg-amber-500 data-[state=checked]:text-black"
-                            />
-                            <Label 
-                              htmlFor={`faith-${option}`}
-                              className="text-sm font-medium text-slate-200 cursor-pointer flex-1"
-                            >
-                              {option}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="space-y-3 pt-2">
-                      <Label htmlFor="signup-localchurch" className="text-white font-medium flex items-center gap-2 mb-1">
-                        <Church className="h-4 w-4 text-amber-500/70" />
-                        Local Church Name (Optional)
-                      </Label>
-                      <Input
-                        id="signup-localchurch"
-                        placeholder="Grace Community Church"
-                        value={localChurch}
-                        onChange={(e) => setLocalChurch(e.target.value)}
-                        className="bg-slate-900/40 border-slate-800 focus:border-amber-500/50 focus:ring-amber-500/20 text-white placeholder:text-slate-600 h-12 rounded-xl backdrop-blur-md transition-all duration-300"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 4: Interests */}
-                {signupStep === 4 && (
-                  <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 p-2.5 rounded-xl border border-amber-500/20">
-                        <Heart className="h-5 w-5 text-amber-500" />
-                      </div>
-                      <h3 className="font-bold text-lg text-white">Interests or Ministries</h3>
-                    </div>
-                    
-                    <p className="text-sm text-slate-400 mb-4 px-1">
-                      Choose the areas where you'd like to grow or serve:
-                    </p>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {signUpMinistries.map((ministry) => (
-                        <div 
-                          key={ministry.id} 
-                          className={`flex items-center space-x-3 p-3 rounded-xl border transition-all duration-300 cursor-pointer ${
-                            interests.includes(ministry.label)
-                              ? 'bg-amber-500/10 border-amber-500/50 shadow-[0_0_15px_-5px_rgba(245,158,11,0.2)]' 
-                              : 'bg-slate-900/40 border-slate-800 hover:border-slate-700'
-                          }`}
-                          onClick={() => toggleInterest(ministry.label)}
-                        >
-                          <Checkbox 
-                            id={`interest-${ministry.id}`} 
-                            checked={interests.includes(ministry.label)}
-                            onCheckedChange={() => toggleInterest(ministry.label)}
-                            className="border-slate-700 data-[state=checked]:bg-amber-500 data-[state=checked]:text-black"
-                          />
-                          <Label 
-                            htmlFor={`interest-${ministry.id}`}
-                            className="text-sm font-medium text-slate-200 cursor-pointer flex-1"
-                          >
-                            {ministry.label}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 5: Agreements */}
-                {signupStep === 5 && (
-                  <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 p-2.5 rounded-xl border border-amber-500/20">
-                        <Shield className="h-5 w-5 text-amber-500" />
-                      </div>
-                      <h3 className="font-bold text-lg text-white">Agreement and Consent</h3>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      {[
-                        { id: 'terms', label: 'Terms of Use', desc: 'Accept our community guidelines.', state: acceptedTerms, setState: setAcceptedTerms },
-                        { id: 'privacy', label: 'Privacy Policy', desc: 'Confirm data usage and protection.', state: acceptedPrivacy, setState: setAcceptedPrivacy },
-                        { id: 'faith-statement', label: 'Statement of Faith', desc: 'Align with our core beliefs.', state: acceptedStatementOfFaith, setState: setAcceptedStatementOfFaith }
-                      ].map((item) => (
-                        <div 
-                          key={item.id}
-                          className={`flex items-start space-x-4 p-4 rounded-2xl border transition-all duration-300 cursor-pointer ${
-                            item.state 
-                              ? 'bg-amber-500/10 border-amber-500/50 shadow-[0_0_15px_-5px_rgba(245,158,11,0.2)]' 
-                              : 'bg-slate-900/40 border-slate-800 hover:border-slate-700'
-                          }`}
-                          onClick={(e) => {
-                            // Only toggle if not clicking the checkbox itself (which has its own handler)
-                            if ((e.target as HTMLElement).closest('button[role="checkbox"]')) return;
-                            item.setState(!item.state);
-                          }}
-                        >
-                          <Checkbox 
-                            id={item.id} 
-                            checked={item.state}
-                            onCheckedChange={(checked) => item.setState(checked as boolean)}
-                            className="mt-1 border-slate-700 data-[state=checked]:bg-amber-500 data-[state=checked]:text-black"
-                          />
-                          <div className="grid gap-1.5 leading-none">
-                            <Label htmlFor={item.id} className="text-sm font-bold text-white cursor-pointer">
-                              I accept the {item.label}
-                            </Label>
-                            <p className="text-xs text-slate-500">
-                              {item.desc}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {/* Footer buttons */}
-                <div className="flex items-center gap-4 pt-8">
-                  {signupStep > 1 && (
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      className="flex-1 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-900 h-12 rounded-xl transition-all duration-300"
-                      onClick={handlePrevStep}
-                    >
-                      <ChevronLeft className="h-4 w-4 mr-2" />
-                      Back
-                    </Button>
-                  )}
-                  
+                <div className="flex items-center gap-4 pt-4">
                   <Button 
                     type="submit" 
-                    className={`flex-[2] bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-black font-bold h-12 rounded-xl shadow-lg shadow-amber-500/20 transition-all duration-300 transform active:scale-[0.98] ${signupStep === 1 ? 'w-full' : ''}`}
+                    className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-black font-bold h-12 rounded-xl shadow-lg shadow-amber-500/20 transition-all duration-300 transform active:scale-[0.98]"
                     disabled={isLoading || !settingsLoaded}
                   >
-                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
-                    {signupStep === 5 ? (
-                      <>
-                        <CheckCircle2 className="h-5 w-5 mr-2" />
-                        Complete Registration
-                      </>
-                    ) : (
-                      <>
-                        Continue
-                        <ChevronRight className="h-5 w-5 ml-2" />
-                      </>
-                    )}
+                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <CheckCircle2 className="h-5 w-5 mr-2" />}
+                    Complete Registration
                   </Button>
                 </div>
               </form>
