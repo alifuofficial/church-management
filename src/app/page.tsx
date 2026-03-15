@@ -62,7 +62,11 @@ export default function Home() {
               notificationsEnabled: data.features?.notificationsEnabled !== false && data.features?.notificationsEnabled !== 'false',
             },
           };
-          setSettings(parsedSettings);
+          
+          // Only update if settings have changed to avoid unnecessary re-renders
+          if (JSON.stringify(parsedSettings) !== JSON.stringify(settings)) {
+            setSettings(parsedSettings);
+          }
         }
       } catch (error) {
         console.error('Error fetching settings:', error);

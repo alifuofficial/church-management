@@ -18,7 +18,7 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { 
-  Church, AlertCircle, Loader2, Globe, Facebook, Mail, 
+  Church, AlertCircle, Loader2, Globe, Facebook, 
   ArrowLeft, RefreshCw, CheckCircle2, User, MapPin, 
   Heart, Shield, ChevronRight, ChevronLeft, X, Smartphone,
   Sparkles, Lock, Mail as MailIcon, Key, Info, LogIn, AtSign, Clock
@@ -43,7 +43,7 @@ interface AuthFormProps {
 }
 
 export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
-  const { setUser, setCurrentView } = useAppStore();
+  const { setUser, setCurrentView, settings } = useAppStore();
   const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
   const [signupStep, setSignupStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -397,9 +397,16 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
         <Card className="bg-transparent border-0 shadow-none relative z-10 overflow-hidden">
           <CardHeader className="text-center pb-2 pt-8">
             <div className="flex justify-center mb-4">
-              <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-4 rounded-2xl shadow-lg shadow-amber-500/20">
-                <MailIcon className="h-8 w-8 text-white" />
-              </div>
+              {settings.logoUrl && settings.logoUrl.trim() !== '' ? (
+                <div className="bg-slate-900 border border-slate-700 p-1 rounded-2xl shadow-lg relative overflow-hidden group">
+                  <img src={settings.logoUrl} alt={settings.siteName} className="h-12 w-12 object-contain rounded-xl" />
+                  <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/10 to-transparent pointer-events-none" />
+                </div>
+              ) : (
+                <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-4 rounded-2xl shadow-lg shadow-amber-500/20">
+                  <MailIcon className="h-8 w-8 text-white" />
+                </div>
+              )}
             </div>
             <CardTitle className="text-2xl font-bold text-white">Verify Your Email</CardTitle>
             <CardDescription className="text-slate-400 mt-2">
@@ -507,16 +514,25 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
           )}
           <div className="flex justify-center mb-3">
             <div className="relative">
-              <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-3 rounded-2xl shadow-lg shadow-amber-500/20">
-                <Church className="h-7 w-7 text-white" />
-              </div>
-              <div className="absolute -top-1 -right-1 bg-amber-400 rounded-full p-1 animate-pulse">
-                <Sparkles className="h-3 w-3 text-white" />
-              </div>
+              {settings.logoUrl && settings.logoUrl.trim() !== '' ? (
+                <div className="bg-slate-900 border border-slate-700 p-1 rounded-2xl shadow-lg relative overflow-hidden group">
+                  <img src={settings.logoUrl} alt={settings.siteName} className="h-12 w-12 object-contain rounded-xl" />
+                  <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/10 to-transparent pointer-events-none" />
+                </div>
+              ) : (
+                <>
+                  <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-3 rounded-2xl shadow-lg shadow-amber-500/20">
+                    <Church className="h-7 w-7 text-white" />
+                  </div>
+                  <div className="absolute -top-1 -right-1 bg-amber-400 rounded-full p-1 animate-pulse">
+                    <Sparkles className="h-3 w-3 text-white" />
+                  </div>
+                </>
+              )}
             </div>
           </div>
           <CardTitle className="text-xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent italic">
-            Digital Sanctuary
+            {settings.siteName || 'Voices of Hope'}
           </CardTitle>
           <CardDescription className="text-slate-500 text-sm mt-1">
             {mode === 'signin' ? 'Welcome back to our community' : `Member Registration • Step ${signupStep} of 5`}
@@ -641,6 +657,8 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
 
             <TabsContent value="signup">
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Step 1: Basic Personal Information */}
+                {signupStep === 1 && (
                   <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 p-2.5 rounded-xl border border-amber-500/20">
@@ -656,7 +674,7 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                       </Label>
                       <Input
                         id="signup-name"
-                        placeholder="John Doe"
+                        placeholder="John Doe (Your message of voices of hope)"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         required
@@ -713,6 +731,7 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                       </div>
                     </div>
                   </div>
+                )}
                 {/* Step 2: Location Information */}
                 {signupStep === 2 && (
                   <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
@@ -924,7 +943,11 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                               ? 'bg-amber-500/10 border-amber-500/50 shadow-[0_0_15px_-5px_rgba(245,158,11,0.2)]' 
                               : 'bg-slate-900/40 border-slate-800 hover:border-slate-700'
                           }`}
-                          onClick={() => item.setState(!item.state)}
+                          onClick={(e) => {
+                            // Only toggle if not clicking the checkbox itself (which has its own handler)
+                            if ((e.target as HTMLElement).closest('button[role="checkbox"]')) return;
+                            item.setState(!item.state);
+                          }}
                         >
                           <Checkbox 
                             id={item.id} 

@@ -549,7 +549,7 @@ export function EventsPage() {
         <DialogContent className="bg-slate-900 border-slate-700 text-white">
           <DialogHeader>
             <DialogTitle className="text-xl text-white">
-              {registrationSuccess ? 'Registration Complete!' : `Register for ${selectedEvent?.title}`}
+              {registrationSuccess ? 'Registration Complete!' : selectedEvent ? `Register for ${selectedEvent.title}` : 'Register for Event'}
             </DialogTitle>
             <DialogDescription className="text-slate-400">
               {registrationSuccess 

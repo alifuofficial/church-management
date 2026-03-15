@@ -101,7 +101,7 @@ export function Navbar() {
             className="flex items-center gap-2 font-bold text-xl text-white group"
           >
             <div className="relative">
-              {settings.logoUrl ? (
+              {settings.logoUrl && settings.logoUrl.trim() !== '' ? (
                 <img src={settings.logoUrl} alt={settings.siteName} className="h-10 w-10 object-contain" />
               ) : (
                 <div className="relative">
@@ -402,10 +402,9 @@ export function Navbar() {
       {/* Sign In / Register Dialog */}
       <Dialog open={showSignIn} onOpenChange={setShowSignIn}>
         <DialogContent className="sm:max-w-md bg-transparent border-0 text-white p-0 gap-0 overflow-visible">
-          <AuthForm 
-            initialMode={activeTab} 
-            onClose={() => setShowSignIn(false)} 
-          />
+          <DialogTitle className="sr-only">Authentication</DialogTitle>
+          <DialogDescription className="sr-only">Sign in or register for an account</DialogDescription>
+          <AuthForm initialMode={activeTab} onClose={() => setShowSignIn(false)} />
         </DialogContent>
       </Dialog>
     </>
