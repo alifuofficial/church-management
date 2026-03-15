@@ -78,7 +78,14 @@ export async function POST(request: NextRequest) {
     
     // Check if requester is admin to allow role assignment
     const session = await getServerSession(authOptions);
-    const finalRole = (session?.user?.role === 'ADMIN' && body.role) ? body.role : 'VISITOR';
+    let finalRole: 'ADMIN' | 'PASTOR' | 'MEMBER' | 'VISITOR' = 'VISITOR';
+    
+    if (session?.user?.role === 'ADMIN' && body.role) {
+      finalRole = body.role as any;
+    } else if (!session) {
+      // Direct registration defaults to MEMBER
+      finalRole = 'MEMBER';
+    }
 
     const hashedPassword = await hash(body.password, 12);
     

@@ -24,6 +24,7 @@ import {
   Sparkles, Lock, Mail as MailIcon, Key, Info, LogIn, AtSign, Clock
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { signIn } from 'next-auth/react';
 
 interface SocialLoginSettings {
   googleEnabled: boolean;
@@ -185,40 +186,32 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
           setError(data.error || 'Failed to create account');
         }
       } else {
-        // Sign in
-        const res = await fetch('/api/users');
-        const users = await res.json();
-        
-        const user = users.find((u: { email: string }) => u.email === signInEmail);
-        
-        if (user) {
-          if (verificationSettings?.isEnabled && !user.isVerified) {
-            const sendRes = await fetch('/api/auth/send-verification', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userId: user.id }),
-            });
-            
-            const sendData = await sendRes.json();
-            
-            setPendingUserId(user.id);
-            setPendingEmail(user.email);
-            setShowVerification(true);
-            setResendCooldown(verificationSettings.resendCooldownSeconds || 60);
-            
-            if (sendData._devCode) {
-              setVerificationCode(sendData._devCode);
-            }
-            
-            setIsLoading(false);
-            return;
-          }
-          
-          setUser(user);
-          setCurrentView(user.role === 'ADMIN' ? 'admin' : 'dashboard');
-          if (onClose) onClose();
+        // Sign in using NextAuth
+        const result = await signIn('credentials', {
+          redirect: false,
+          email: signInEmail,
+          password: signInPassword,
+        });
+
+        if (result?.error) {
+          setError(result.error === 'CredentialsSignin' ? 'Invalid email or password' : result.error);
         } else {
-          setError('Invalid email or password');
+          // Fetch user data after successful sign in to update store
+          const res = await fetch('/api/auth/session');
+          if (res.ok) {
+            const session = await res.json();
+            if (session.user) {
+              setUser({
+                id: session.user.id,
+                email: session.user.email,
+                name: session.user.name,
+                role: session.user.role,
+                image: session.user.image,
+              });
+              setCurrentView(session.user.role === 'ADMIN' ? 'admin' : 'dashboard');
+              if (onClose) onClose();
+            }
+          }
         }
       }
     } catch (err) {
@@ -525,7 +518,7 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                     <Input
                       id="signin-email"
                       type="email"
-                      placeholder="you@example.com"
+                      placeholder="you@example.com (Voices of hope)"
                       value={signInEmail}
                       onChange={(e) => setSignInEmail(e.target.value)}
                       required
@@ -542,7 +535,7 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                     <Input
                       id="signin-password"
                       type="password"
-                      placeholder="••••••••"
+                      placeholder="•••••••• (Your hope)"
                       value={signInPassword}
                       onChange={(e) => setSignInPassword(e.target.value)}
                       required
@@ -635,7 +628,7 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                       <Input
                         id="signup-email"
                         type="email"
-                        placeholder="john@example.com"
+                        placeholder="john@example.com (Voices of hope)"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
@@ -652,7 +645,7 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                         </Label>
                         <Input
                           id="signup-username"
-                          placeholder="johndoe"
+                          placeholder="johndoe (Voice of hope)"
                           value={username}
                           onChange={(e) => setUsername(e.target.value)}
                           required
@@ -667,7 +660,7 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                         <Input
                           id="signup-password"
                           type="password"
-                          placeholder="••••••••"
+                          placeholder="•••••••• (Secure hope)"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           required
