@@ -51,7 +51,7 @@ import {
   MoreHorizontal, Pencil, Trash2, Eye, Loader2, Download, Upload,
   Rocket, Wrench, Lock, Shield, AlertTriangle, Archive, LayoutDashboard,
   Smartphone, Send, TestTube, Pause, Play as PlayIcon, RefreshCw,
-  Image as ImageIcon, Music, File, FolderClosed, Grid, List, X, Check, Copy, ShieldCheck
+  Image as ImageIcon, Music, File, FolderClosed, Grid, List, X, Check, Copy, ShieldCheck, UserCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SmsContent } from './SmsContent';
@@ -1114,18 +1114,31 @@ function MembersContent({ members, searchQuery, setSearchQuery, formatDate }: {
     denomination: '',
     faithStatus: '',
     localChurch: '',
-    interests: '',
+    interests: [] as string[],
     acceptedTerms: false,
     acceptedPrivacy: false,
     acceptedStatementOfFaith: false,
+    password: '',
   });
 
   // Form state for edit member
   const [editMember, setEditMember] = useState({
     name: '',
     email: '',
+    username: '',
     role: 'MEMBER',
     isActive: true,
+    phone: '',
+    country: '',
+    city: '',
+    timezone: '',
+    denomination: '',
+    faithStatus: '',
+    localChurch: '',
+    interests: [] as string[],
+    acceptedTerms: false,
+    acceptedPrivacy: false,
+    acceptedStatementOfFaith: false,
   });
 
   useEffect(() => {
@@ -1147,7 +1160,8 @@ function MembersContent({ members, searchQuery, setSearchQuery, formatDate }: {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...newMember,
-          password: 'password123', // Default password
+          interests: newMember.interests.join(','),
+          password: newMember.password || 'password123',
         }),
       });
       
@@ -1166,10 +1180,11 @@ function MembersContent({ members, searchQuery, setSearchQuery, formatDate }: {
           denomination: '',
           faithStatus: '',
           localChurch: '',
-          interests: '',
+          interests: [],
           acceptedTerms: false,
           acceptedPrivacy: false,
           acceptedStatementOfFaith: false,
+          password: '',
         });
         setIsAddDialogOpen(false);
       }
@@ -1188,13 +1203,16 @@ function MembersContent({ members, searchQuery, setSearchQuery, formatDate }: {
       const res = await fetch(`/api/users/${selectedMember.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editMember),
+        body: JSON.stringify({
+          ...editMember,
+          interests: editMember.interests.join(','),
+        }),
       });
       
       if (res.ok) {
         setMemberList(prev => prev.map(m => 
           m.id === selectedMember.id 
-            ? { ...m, ...editMember }
+            ? { ...m, ...editMember, interests: editMember.interests.join(',') }
             : m
         ));
         setIsEditDialogOpen(false);
@@ -1233,8 +1251,20 @@ function MembersContent({ members, searchQuery, setSearchQuery, formatDate }: {
     setEditMember({
       name: member.name || '',
       email: member.email,
+      username: member.username || '',
       role: member.role,
       isActive: member.isActive,
+      phone: member.phone || '',
+      country: member.country || '',
+      city: member.city || '',
+      timezone: member.timezone || '',
+      denomination: member.denomination || '',
+      faithStatus: member.faithStatus || '',
+      localChurch: member.localChurch || '',
+      interests: member.interests ? member.interests.split(',').map(i => i.trim()) : [],
+      acceptedTerms: member.acceptedTerms || false,
+      acceptedPrivacy: member.acceptedPrivacy || false,
+      acceptedStatementOfFaith: member.acceptedStatementOfFaith || false,
     });
     setIsEditDialogOpen(true);
   };
@@ -1276,85 +1306,112 @@ function MembersContent({ members, searchQuery, setSearchQuery, formatDate }: {
             <DialogHeader>
               <DialogTitle>Add New Member</DialogTitle>
               <DialogDescription className="text-slate-400">
-                Enter the details for the new member. They will receive an email to set their password.
+                Fill in the member details. Password will be set to a default if not provided.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-6 py-4">
-              {/* Account Info Section */}
+              {/* 1. Basic Personal Information */}
               <div>
-                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider mb-3">Account Info</p>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Full Name *</Label>
-                    <Input
-                      value={newMember.name}
-                      onChange={(e) => setNewMember(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="John Doe"
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
+                <h4 className="text-amber-400 font-medium mb-3 flex items-center gap-2">
+                  <UserCircle className="h-4 w-4" />
+                  1. Basic Personal Information
+                </h4>
+                <div className="grid gap-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label className="text-slate-300">Full Name *</Label>
+                      <Input
+                        value={newMember.name}
+                        onChange={(e) => setNewMember(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="John Doe"
+                        className="bg-slate-800 border-slate-700 text-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-slate-300">Email Address *</Label>
+                      <Label className="text-slate-500 text-xs block">(required for login and communication)</Label>
+                      <Input
+                        type="email"
+                        value={newMember.email}
+                        onChange={(e) => setNewMember(prev => ({ ...prev, email: e.target.value }))}
+                        placeholder="john@example.com"
+                        className="bg-slate-800 border-slate-700 text-white"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Email *</Label>
-                    <Input
-                      type="email"
-                      value={newMember.email}
-                      onChange={(e) => setNewMember(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="john@example.com"
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Username</Label>
-                    <Input
-                      value={newMember.username}
-                      onChange={(e) => setNewMember(prev => ({ ...prev, username: e.target.value }))}
-                      placeholder="johndoe"
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Phone</Label>
-                    <Input
-                      value={newMember.phone}
-                      onChange={(e) => setNewMember(prev => ({ ...prev, phone: e.target.value }))}
-                      placeholder="+1 (555) 123-4567"
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Role</Label>
-                    <Select value={newMember.role} onValueChange={(value) => setNewMember(prev => ({ ...prev, role: value }))}>
-                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-700">
-                        <SelectItem value="MEMBER">Member</SelectItem>
-                        <SelectItem value="VISITOR">Visitor</SelectItem>
-                        <SelectItem value="PASTOR">Pastor</SelectItem>
-                        <SelectItem value="ADMIN">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="space-y-2">
+                      <Label className="text-slate-300">Username</Label>
+                      <Input
+                        value={newMember.username}
+                        onChange={(e) => setNewMember(prev => ({ ...prev, username: e.target.value }))}
+                        placeholder="johndoe"
+                        className="bg-slate-800 border-slate-700 text-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-slate-300">Password</Label>
+                      <Input
+                        type="password"
+                        value={newMember.password}
+                        onChange={(e) => setNewMember(prev => ({ ...prev, password: e.target.value }))}
+                        placeholder="Leave blank for default"
+                        className="bg-slate-800 border-slate-700 text-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-slate-300">Role</Label>
+                      <Select value={newMember.role} onValueChange={(value) => setNewMember(prev => ({ ...prev, role: value }))}>
+                        <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-800 border-slate-700">
+                          <SelectItem value="MEMBER">Member</SelectItem>
+                          <SelectItem value="VISITOR">Visitor</SelectItem>
+                          <SelectItem value="PASTOR">Pastor</SelectItem>
+                          <SelectItem value="ADMIN">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
               </div>
 
               <Separator className="bg-slate-800" />
 
-              {/* Location & Faith Section */}
+              {/* 2. Location Information */}
               <div>
-                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider mb-3">Location & Faith</p>
-                <div className="grid gap-4 md:grid-cols-2">
+                <h4 className="text-amber-400 font-medium mb-3 flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  2. Location Information
+                </h4>
+                <div className="grid gap-4 md:grid-cols-3">
                   <div className="space-y-2">
                     <Label className="text-slate-300">Country</Label>
-                    <Input
-                      value={newMember.country}
-                      onChange={(e) => setNewMember(prev => ({ ...prev, country: e.target.value }))}
-                      placeholder="United States"
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
+                    <Select value={newMember.country} onValueChange={(value) => setNewMember(prev => ({ ...prev, country: value }))}>
+                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                        <SelectValue placeholder="Select Country" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700 max-h-48">
+                        <SelectItem value="United States">United States</SelectItem>
+                        <SelectItem value="Canada">Canada</SelectItem>
+                        <SelectItem value="United Kingdom">United Kingdom</SelectItem>
+                        <SelectItem value="Ethiopia">Ethiopia</SelectItem>
+                        <SelectItem value="Kenya">Kenya</SelectItem>
+                        <SelectItem value="Nigeria">Nigeria</SelectItem>
+                        <SelectItem value="South Africa">South Africa</SelectItem>
+                        <SelectItem value="Germany">Germany</SelectItem>
+                        <SelectItem value="France">France</SelectItem>
+                        <SelectItem value="Australia">Australia</SelectItem>
+                        <SelectItem value="India">India</SelectItem>
+                        <SelectItem value="Brazil">Brazil</SelectItem>
+                        <SelectItem value="Mexico">Mexico</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-slate-300">City</Label>
+                    <Label className="text-slate-300">City / Region</Label>
                     <Input
                       value={newMember.city}
                       onChange={(e) => setNewMember(prev => ({ ...prev, city: e.target.value }))}
@@ -1363,10 +1420,10 @@ function MembersContent({ members, searchQuery, setSearchQuery, formatDate }: {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-slate-300">Timezone</Label>
+                    <Label className="text-slate-300">Time Zone</Label>
                     <Select value={newMember.timezone} onValueChange={(value) => setNewMember(prev => ({ ...prev, timezone: value }))}>
                       <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                        <SelectValue placeholder="Select timezone" />
+                        <SelectValue placeholder="Select Time Zone" />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-800 border-slate-700">
                         <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
@@ -1375,30 +1432,10 @@ function MembersContent({ members, searchQuery, setSearchQuery, formatDate }: {
                         <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
                         <SelectItem value="Europe/London">London (GMT)</SelectItem>
                         <SelectItem value="Europe/Paris">Paris (CET)</SelectItem>
+                        <SelectItem value="Africa/Addis_Ababa">East Africa Time (EAT)</SelectItem>
+                        <SelectItem value="Africa/Nairobi">Nairobi (EAT)</SelectItem>
                         <SelectItem value="Asia/Tokyo">Tokyo (JST)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Denomination</Label>
-                    <Input
-                      value={newMember.denomination}
-                      onChange={(e) => setNewMember(prev => ({ ...prev, denomination: e.target.value }))}
-                      placeholder="Baptist, Methodist, etc."
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Faith Status</Label>
-                    <Select value={newMember.faithStatus} onValueChange={(value) => setNewMember(prev => ({ ...prev, faithStatus: value }))}>
-                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-700">
-                        <SelectItem value="believer">Believer</SelectItem>
-                        <SelectItem value="new_believer">New Believer</SelectItem>
-                        <SelectItem value="exploring">Exploring Faith</SelectItem>
-                        <SelectItem value="seeker">Seeker</SelectItem>
+                        <SelectItem value="Asia/Dubai">Dubai (GST)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1407,68 +1444,124 @@ function MembersContent({ members, searchQuery, setSearchQuery, formatDate }: {
 
               <Separator className="bg-slate-800" />
 
-              {/* Church & Interests Section */}
+              {/* 3. Church / Faith Information */}
               <div>
-                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider mb-3">Church & Interests</p>
+                <h4 className="text-amber-400 font-medium mb-3 flex items-center gap-2">
+                  <Church className="h-4 w-4" />
+                  3. Church / Faith Information
+                </h4>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-slate-300">Local Church</Label>
-                    <Input
-                      value={newMember.localChurch}
-                      onChange={(e) => setNewMember(prev => ({ ...prev, localChurch: e.target.value }))}
-                      placeholder="Grace Community Church"
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
+                    <Label className="text-slate-300">Denomination (Optional)</Label>
+                    <Select value={newMember.denomination} onValueChange={(value) => setNewMember(prev => ({ ...prev, denomination: value }))}>
+                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                        <SelectValue placeholder="Select Denomination" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700">
+                        <SelectItem value="Baptist">Baptist</SelectItem>
+                        <SelectItem value="Anglican">Anglican</SelectItem>
+                        <SelectItem value="Lutheran">Lutheran</SelectItem>
+                        <SelectItem value="Pentecostal">Pentecostal</SelectItem>
+                        <SelectItem value="Methodist">Methodist</SelectItem>
+                        <SelectItem value="Presbyterian">Presbyterian</SelectItem>
+                        <SelectItem value="Catholic">Catholic</SelectItem>
+                        <SelectItem value="Non-denominational">Non-denominational</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-slate-300">Interests</Label>
-                    <Input
-                      value={newMember.interests}
-                      onChange={(e) => setNewMember(prev => ({ ...prev, interests: e.target.value }))}
-                      placeholder="Worship, Bible Study, Youth (comma separated)"
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
-                    <p className="text-slate-500 text-xs">Separate multiple interests with commas</p>
+                    <Label className="text-slate-300">Are you a Christian?</Label>
+                    <Select value={newMember.faithStatus} onValueChange={(value) => setNewMember(prev => ({ ...prev, faithStatus: value }))}>
+                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                        <SelectValue placeholder="Select Status" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700">
+                        <SelectItem value="believer">Yes - I am a Christian</SelectItem>
+                        <SelectItem value="exploring">Exploring Faith</SelectItem>
+                        <SelectItem value="new_believer">New Believer</SelectItem>
+                        <SelectItem value="seeker">Seeker / Curious</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
+                </div>
+                <div className="mt-4">
+                  <Label className="text-slate-300">Local Church Name (Optional)</Label>
+                  <Input
+                    value={newMember.localChurch}
+                    onChange={(e) => setNewMember(prev => ({ ...prev, localChurch: e.target.value }))}
+                    placeholder="Grace Community Church"
+                    className="bg-slate-800 border-slate-700 text-white mt-2"
+                  />
                 </div>
               </div>
 
               <Separator className="bg-slate-800" />
 
-              {/* Agreements Section */}
+              {/* 4. Interests or Ministries */}
               <div>
-                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider mb-3">Agreements</p>
+                <h4 className="text-amber-400 font-medium mb-3 flex items-center gap-2">
+                  <Heart className="h-4 w-4" />
+                  4. Interests or Ministries
+                </h4>
+                <Label className="text-slate-300 text-sm">Select the areas you are interested in:</Label>
+                <div className="grid grid-cols-2 gap-3 mt-3">
+                  {['Bible Study', 'Prayer Groups', 'Evangelism', 'Online Fellowship', 'Volunteering', 'Worship Team', 'Youth Ministry', 'Children Ministry'].map((interest) => (
+                    <label key={interest} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newMember.interests.includes(interest)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewMember(prev => ({ ...prev, interests: [...prev.interests, interest] }));
+                          } else {
+                            setNewMember(prev => ({ ...prev, interests: prev.interests.filter(i => i !== interest) }));
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-amber-500 focus:ring-amber-500"
+                      />
+                      <span className="text-slate-300 text-sm">{interest}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <Separator className="bg-slate-800" />
+
+              {/* 5. Agreement and Consent */}
+              <div>
+                <h4 className="text-amber-400 font-medium mb-3 flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4" />
+                  5. Agreement and Consent
+                </h4>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3">
+                  <label className="flex items-start gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      id="acceptedTerms"
                       checked={newMember.acceptedTerms}
                       onChange={(e) => setNewMember(prev => ({ ...prev, acceptedTerms: e.target.checked }))}
-                      className="h-4 w-4 rounded border-slate-600 bg-slate-800"
+                      className="h-4 w-4 mt-0.5 rounded border-slate-600 bg-slate-800 text-amber-500"
                     />
-                    <Label htmlFor="acceptedTerms" className="text-slate-300 text-sm">Terms of Service Accepted</Label>
-                  </div>
-                  <div className="flex items-center gap-3">
+                    <span className="text-slate-300 text-sm">I accept the Terms of Use</span>
+                  </label>
+                  <label className="flex items-start gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      id="acceptedPrivacy"
                       checked={newMember.acceptedPrivacy}
                       onChange={(e) => setNewMember(prev => ({ ...prev, acceptedPrivacy: e.target.checked }))}
-                      className="h-4 w-4 rounded border-slate-600 bg-slate-800"
+                      className="h-4 w-4 mt-0.5 rounded border-slate-600 bg-slate-800 text-amber-500"
                     />
-                    <Label htmlFor="acceptedPrivacy" className="text-slate-300 text-sm">Privacy Policy Accepted</Label>
-                  </div>
-                  <div className="flex items-center gap-3">
+                    <span className="text-slate-300 text-sm">I accept the Privacy Policy</span>
+                  </label>
+                  <label className="flex items-start gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      id="acceptedStatementOfFaith"
                       checked={newMember.acceptedStatementOfFaith}
                       onChange={(e) => setNewMember(prev => ({ ...prev, acceptedStatementOfFaith: e.target.checked }))}
-                      className="h-4 w-4 rounded border-slate-600 bg-slate-800"
+                      className="h-4 w-4 mt-0.5 rounded border-slate-600 bg-slate-800 text-amber-500"
                     />
-                    <Label htmlFor="acceptedStatementOfFaith" className="text-slate-300 text-sm">Statement of Faith Accepted</Label>
-                  </div>
+                    <span className="text-slate-300 text-sm">I agree with the Statement of Faith</span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -1701,56 +1794,262 @@ function MembersContent({ members, searchQuery, setSearchQuery, formatDate }: {
 
       {/* Edit Member Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="bg-slate-900 border-slate-800 text-white">
+        <DialogContent className="bg-slate-900 border-slate-800 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Member</DialogTitle>
             <DialogDescription className="text-slate-400">
               Update the member&apos;s information.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="edit-name" className="text-slate-300">Full Name</Label>
-              <Input
-                id="edit-name"
-                value={editMember.name}
-                onChange={(e) => setEditMember(prev => ({ ...prev, name: e.target.value }))}
-                className="bg-slate-800 border-slate-700 text-white"
-              />
+          <div className="grid gap-6 py-4">
+            {/* 1. Basic Personal Information */}
+            <div>
+              <h4 className="text-amber-400 font-medium mb-3 flex items-center gap-2">
+                <UserCircle className="h-4 w-4" />
+                1. Basic Personal Information
+              </h4>
+              <div className="grid gap-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Full Name *</Label>
+                    <Input
+                      value={editMember.name}
+                      onChange={(e) => setEditMember(prev => ({ ...prev, name: e.target.value }))}
+                      className="bg-slate-800 border-slate-700 text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Email Address *</Label>
+                    <Input
+                      type="email"
+                      value={editMember.email}
+                      onChange={(e) => setEditMember(prev => ({ ...prev, email: e.target.value }))}
+                      className="bg-slate-800 border-slate-700 text-white"
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Username</Label>
+                    <Input
+                      value={editMember.username}
+                      onChange={(e) => setEditMember(prev => ({ ...prev, username: e.target.value }))}
+                      className="bg-slate-800 border-slate-700 text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Role</Label>
+                    <Select value={editMember.role} onValueChange={(value) => setEditMember(prev => ({ ...prev, role: value }))}>
+                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700">
+                        <SelectItem value="MEMBER">Member</SelectItem>
+                        <SelectItem value="VISITOR">Visitor</SelectItem>
+                        <SelectItem value="PASTOR">Pastor</SelectItem>
+                        <SelectItem value="ADMIN">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="edit-active"
+                    checked={editMember.isActive}
+                    onChange={(e) => setEditMember(prev => ({ ...prev, isActive: e.target.checked }))}
+                    className="h-4 w-4 rounded border-slate-700 bg-slate-800"
+                  />
+                  <Label htmlFor="edit-active" className="text-slate-300">Active Member</Label>
+                </div>
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-email" className="text-slate-300">Email</Label>
-              <Input
-                id="edit-email"
-                type="email"
-                value={editMember.email}
-                onChange={(e) => setEditMember(prev => ({ ...prev, email: e.target.value }))}
-                className="bg-slate-800 border-slate-700 text-white"
-              />
+
+            <Separator className="bg-slate-800" />
+
+            {/* 2. Location Information */}
+            <div>
+              <h4 className="text-amber-400 font-medium mb-3 flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                2. Location Information
+              </h4>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Country</Label>
+                  <Select value={editMember.country} onValueChange={(value) => setEditMember(prev => ({ ...prev, country: value }))}>
+                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                      <SelectValue placeholder="Select Country" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700 max-h-48">
+                      <SelectItem value="United States">United States</SelectItem>
+                      <SelectItem value="Canada">Canada</SelectItem>
+                      <SelectItem value="United Kingdom">United Kingdom</SelectItem>
+                      <SelectItem value="Ethiopia">Ethiopia</SelectItem>
+                      <SelectItem value="Kenya">Kenya</SelectItem>
+                      <SelectItem value="Nigeria">Nigeria</SelectItem>
+                      <SelectItem value="South Africa">South Africa</SelectItem>
+                      <SelectItem value="Germany">Germany</SelectItem>
+                      <SelectItem value="France">France</SelectItem>
+                      <SelectItem value="Australia">Australia</SelectItem>
+                      <SelectItem value="India">India</SelectItem>
+                      <SelectItem value="Brazil">Brazil</SelectItem>
+                      <SelectItem value="Mexico">Mexico</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">City / Region</Label>
+                  <Input
+                    value={editMember.city}
+                    onChange={(e) => setEditMember(prev => ({ ...prev, city: e.target.value }))}
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Time Zone</Label>
+                  <Select value={editMember.timezone} onValueChange={(value) => setEditMember(prev => ({ ...prev, timezone: value }))}>
+                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                      <SelectValue placeholder="Select Time Zone" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
+                      <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
+                      <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
+                      <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
+                      <SelectItem value="Europe/London">London (GMT)</SelectItem>
+                      <SelectItem value="Europe/Paris">Paris (CET)</SelectItem>
+                      <SelectItem value="Africa/Addis_Ababa">East Africa Time (EAT)</SelectItem>
+                      <SelectItem value="Africa/Nairobi">Nairobi (EAT)</SelectItem>
+                      <SelectItem value="Asia/Tokyo">Tokyo (JST)</SelectItem>
+                      <SelectItem value="Asia/Dubai">Dubai (GST)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-role" className="text-slate-300">Role</Label>
-              <Select value={editMember.role} onValueChange={(value) => setEditMember(prev => ({ ...prev, role: value }))}>
-                <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
-                  <SelectItem value="MEMBER">Member</SelectItem>
-                  <SelectItem value="VISITOR">Visitor</SelectItem>
-                  <SelectItem value="PASTOR">Pastor</SelectItem>
-                  <SelectItem value="ADMIN">Admin</SelectItem>
-                </SelectContent>
-              </Select>
+
+            <Separator className="bg-slate-800" />
+
+            {/* 3. Church / Faith Information */}
+            <div>
+              <h4 className="text-amber-400 font-medium mb-3 flex items-center gap-2">
+                <Church className="h-4 w-4" />
+                3. Church / Faith Information
+              </h4>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Denomination</Label>
+                  <Select value={editMember.denomination} onValueChange={(value) => setEditMember(prev => ({ ...prev, denomination: value }))}>
+                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                      <SelectValue placeholder="Select Denomination" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      <SelectItem value="Baptist">Baptist</SelectItem>
+                      <SelectItem value="Anglican">Anglican</SelectItem>
+                      <SelectItem value="Lutheran">Lutheran</SelectItem>
+                      <SelectItem value="Pentecostal">Pentecostal</SelectItem>
+                      <SelectItem value="Methodist">Methodist</SelectItem>
+                      <SelectItem value="Presbyterian">Presbyterian</SelectItem>
+                      <SelectItem value="Catholic">Catholic</SelectItem>
+                      <SelectItem value="Non-denominational">Non-denominational</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Are you a Christian?</Label>
+                  <Select value={editMember.faithStatus} onValueChange={(value) => setEditMember(prev => ({ ...prev, faithStatus: value }))}>
+                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                      <SelectValue placeholder="Select Status" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      <SelectItem value="believer">Yes - I am a Christian</SelectItem>
+                      <SelectItem value="exploring">Exploring Faith</SelectItem>
+                      <SelectItem value="new_believer">New Believer</SelectItem>
+                      <SelectItem value="seeker">Seeker / Curious</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="mt-4">
+                <Label className="text-slate-300">Local Church Name</Label>
+                <Input
+                  value={editMember.localChurch}
+                  onChange={(e) => setEditMember(prev => ({ ...prev, localChurch: e.target.value }))}
+                  placeholder="Grace Community Church"
+                  className="bg-slate-800 border-slate-700 text-white mt-2"
+                />
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="edit-active"
-                checked={editMember.isActive}
-                onChange={(e) => setEditMember(prev => ({ ...prev, isActive: e.target.checked }))}
-                className="h-4 w-4 rounded border-slate-700 bg-slate-800"
-              />
-              <Label htmlFor="edit-active" className="text-slate-300">Active Member</Label>
+
+            <Separator className="bg-slate-800" />
+
+            {/* 4. Interests or Ministries */}
+            <div>
+              <h4 className="text-amber-400 font-medium mb-3 flex items-center gap-2">
+                <Heart className="h-4 w-4" />
+                4. Interests or Ministries
+              </h4>
+              <Label className="text-slate-300 text-sm">Select the areas of interest:</Label>
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                {['Bible Study', 'Prayer Groups', 'Evangelism', 'Online Fellowship', 'Volunteering', 'Worship Team', 'Youth Ministry', 'Children Ministry'].map((interest) => (
+                  <label key={interest} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editMember.interests.includes(interest)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setEditMember(prev => ({ ...prev, interests: [...prev.interests, interest] }));
+                        } else {
+                          setEditMember(prev => ({ ...prev, interests: prev.interests.filter(i => i !== interest) }));
+                        }
+                      }}
+                      className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-amber-500 focus:ring-amber-500"
+                    />
+                    <span className="text-slate-300 text-sm">{interest}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <Separator className="bg-slate-800" />
+
+            {/* 5. Agreement and Consent */}
+            <div>
+              <h4 className="text-amber-400 font-medium mb-3 flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4" />
+                5. Agreement and Consent
+              </h4>
+              <div className="space-y-3">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editMember.acceptedTerms}
+                    onChange={(e) => setEditMember(prev => ({ ...prev, acceptedTerms: e.target.checked }))}
+                    className="h-4 w-4 mt-0.5 rounded border-slate-600 bg-slate-800 text-amber-500"
+                  />
+                  <span className="text-slate-300 text-sm">I accept the Terms of Use</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editMember.acceptedPrivacy}
+                    onChange={(e) => setEditMember(prev => ({ ...prev, acceptedPrivacy: e.target.checked }))}
+                    className="h-4 w-4 mt-0.5 rounded border-slate-600 bg-slate-800 text-amber-500"
+                  />
+                  <span className="text-slate-300 text-sm">I accept the Privacy Policy</span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editMember.acceptedStatementOfFaith}
+                    onChange={(e) => setEditMember(prev => ({ ...prev, acceptedStatementOfFaith: e.target.checked }))}
+                    className="h-4 w-4 mt-0.5 rounded border-slate-600 bg-slate-800 text-amber-500"
+                  />
+                  <span className="text-slate-300 text-sm">I agree with the Statement of Faith</span>
+                </label>
+              </div>
             </div>
           </div>
           <DialogFooter>
