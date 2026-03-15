@@ -174,6 +174,7 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         currentView: state.currentView,
         user: state.user,
+        settings: state.settings,
       }),
     }
   )

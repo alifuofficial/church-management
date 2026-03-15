@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { db } from "@/lib/db";
 import { compare } from "bcryptjs";
+import { UserRole } from "@/types";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -60,7 +61,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        session.user.role = token.role as string;
+        session.user.role = token.role as UserRole;
       }
       return session;
     },
@@ -92,6 +93,6 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || "church-management-stable-secret-key-12345",
   debug: process.env.NODE_ENV === "development" || !!process.env.DEBUG_AUTH,
 };

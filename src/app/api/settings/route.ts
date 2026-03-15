@@ -4,10 +4,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { z } from 'zod';
 
-const settingsSchema = z.record(z.any());
+const settingsSchema = z.record(z.string(), z.any());
 
 // GET - Retrieve all settings
 export async function GET() {
+  console.log('GET /api/settings - Fetching settings');
   try {
     const settings = await db.setting.findMany();
     
@@ -33,18 +34,22 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'ADMIN') {
+    console.log('POST /api/settings - Session:', session ? { user: session?.user?.email, role: (session?.user as any)?.role } : 'No session');
+    
+    if (!session || (session.user as any)?.role !== 'ADMIN') {
+      console.warn('POST /api/settings - Unauthorized attempt');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const validation = settingsSchema.safeParse(await request.json());
+    const body = await request.json();
+    console.log('POST /api/settings - Body keys:', Object.keys(body));
+    const validation = settingsSchema.safeParse(body);
     if (!validation.success) {
       return NextResponse.json({ error: 'Invalid input', details: validation.error.format() }, { status: 400 });
     }
-    const body = validation.data;
     
     // Update or create each setting
-    const updates = Object.entries(body).map(async ([key, value]) => {
+    const updates = Object.entries(body as Record<string, any>).map(async ([key, value]) => {
       const stringValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
       
       return db.setting.upsert({

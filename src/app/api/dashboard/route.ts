@@ -6,21 +6,21 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
 
-    // Get all counts
+    // Optimized: Get all counts and sums using aggregate where possible
     const [
       totalMembers,
       activeMembers,
       totalEvents,
       totalSermons,
-      upcomingEvents,
+      upcomingEventsCount,
       liveEvents,
       pendingPrayers,
       answeredPrayers,
       recentRegistrations,
       totalGroups,
       activeGroups,
-      donations,
-      allDonations,
+      monthlyGivingResult,
+      totalDonationResult,
       totalVisitors
     ] = await Promise.all([
       db.user.count({ where: { isActive: true } }),
@@ -40,71 +40,93 @@ export async function GET(request: NextRequest) {
       }),
       db.smallGroup.count(),
       db.smallGroup.count({ where: { isActive: true } }),
-      db.donation.findMany({
+      db.donation.aggregate({
         where: {
           status: 'COMPLETED',
           createdAt: {
             gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
           }
-        }
+        },
+        _sum: { amount: true },
+        _count: true
       }),
-      db.donation.findMany({
-        where: { status: 'COMPLETED' }
+      db.donation.aggregate({
+        where: { status: 'COMPLETED' },
+        _sum: { amount: true }
       }),
       db.user.count({ where: { role: 'VISITOR' } })
     ]);
 
-    const monthlyGiving = donations.reduce((sum, d) => sum + d.amount, 0);
-    const totalDonationAmount = allDonations.reduce((sum, d) => sum + d.amount, 0);
+    const monthlyGiving = monthlyGivingResult._sum.amount || 0;
+    const totalDonationsCount = monthlyGivingResult._count || 0;
+    const totalDonationAmount = totalDonationResult._sum.amount || 0;
 
-    // Get monthly donation data for chart (last 6 months)
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    // Get chart data more efficiently
+    const now = new Date();
+    const months: Array<{ name: string; start: Date; end: Date }> = [];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     
-    const monthlyDonations = await db.donation.groupBy({
-      by: ['createdAt'],
-      where: {
-        status: 'COMPLETED',
-        createdAt: { gte: sixMonthsAgo }
-      },
-      _sum: { amount: true },
-      _count: true
-    });
+    // Generate last 6 months data
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({
+        name: monthNames[d.getMonth()],
+        start: d,
+        end: new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59)
+      });
+    }
 
-    // Get member growth data (last 6 months)
-    const memberGrowth = await db.user.groupBy({
-      by: ['createdAt'],
-      where: {
-        createdAt: { gte: sixMonthsAgo }
-      },
-      _count: true
-    });
+    // Fetch data for each month in parallel
+    const chartDataResults = await Promise.all(months.map(async (month) => {
+      const [donationAgg, memberCount] = await Promise.all([
+        db.donation.aggregate({
+          where: {
+            status: 'COMPLETED',
+            createdAt: { gte: month.start, lte: month.end }
+          },
+          _sum: { amount: true },
+          _count: true
+        }),
+        db.user.count({
+          where: {
+            createdAt: { gte: month.start, lte: month.end }
+          }
+        })
+      ]);
 
-    // Get event type distribution
-    const eventsByType = await db.event.groupBy({
-      by: ['type'],
-      _count: true
-    });
+      return {
+        month: month.name,
+        donationAmount: donationAgg._sum.amount || 0,
+        donors: donationAgg._count || 0,
+        newMembers: memberCount
+      };
+    }));
 
-    // Get user role distribution
-    const usersByRole = await db.user.groupBy({
-      by: ['role'],
-      _count: true
-    });
+    const donationChartData = chartDataResults.map(r => ({
+      month: r.month,
+      amount: r.donationAmount,
+      donors: r.donors
+    }));
 
-    // Get prayer status distribution
-    const prayersByStatus = await db.prayerRequest.groupBy({
-      by: ['status'],
-      _count: true
-    });
+    const memberGrowthData = chartDataResults.map(r => ({
+      month: r.month,
+      newMembers: r.newMembers
+    }));
 
-    // Get registration status distribution
-    const registrationsByStatus = await db.registration.groupBy({
-      by: ['status'],
-      _count: true
-    });
+    // Get distributions using groupBy
+    const [
+      eventsByType,
+      usersByRole,
+      prayersByStatus,
+      registrationsByStatus
+    ] = await Promise.all([
+      db.event.groupBy({ by: ['type'], _count: true }),
+      db.user.groupBy({ by: ['role'], _count: true }),
+      db.prayerRequest.groupBy({ by: ['status'], _count: true }),
+      db.registration.groupBy({ by: ['status'], _count: true })
+    ]);
 
-    // Get small group members count
+    // Get group members count
     const groupMembers = await db.smallGroupMember.count();
     
     // Get top events by registration
@@ -223,43 +245,20 @@ export async function GET(request: NextRequest) {
       ]);
     }
 
-    // Process monthly data for charts
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
-    const donationChartData = months.map((month, i) => {
-      const monthDonations = monthlyDonations.filter(d => 
-        new Date(d.createdAt).getMonth() === i
-      );
-      return {
-        month,
-        amount: monthDonations.reduce((sum, d) => sum + (d._sum.amount || 0), 0),
-        donors: monthDonations.reduce((sum, d) => sum + d._count, 0)
-      };
-    });
-
-    const memberGrowthData = months.map((month, i) => {
-      const monthMembers = memberGrowth.filter(m => 
-        new Date(m.createdAt).getMonth() === i
-      );
-      return {
-        month,
-        newMembers: monthMembers.reduce((sum, m) => sum + m._count, 0)
-      };
-    });
-
     return NextResponse.json({
       stats: {
         totalMembers,
         activeMembers,
         totalEvents,
         totalSermons,
-        upcomingEvents,
+        upcomingEvents: upcomingEventsCount,
         liveEvents,
         pendingPrayers,
         answeredPrayers,
         recentRegistrations,
         monthlyGiving,
         totalDonationAmount,
-        totalDonations: donations.length,
+        totalDonations: totalDonationsCount,
         totalGroups,
         activeGroups,
         groupMembers,

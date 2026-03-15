@@ -5242,6 +5242,8 @@ function SettingsContent() {
     allowRegistration: true,
     showLoginForm: true,
     privateMessage: '',
+    // Site Mode Settings
+    heroBackgroundImage: '',
     // Feature Flags
     features: {
       eventsEnabled: true,
@@ -5304,53 +5306,25 @@ function SettingsContent() {
     fetchSettings();
   }, []);
 
-  const handleSave = async () => {
+  const handleSave = async (settingsToSave = settings) => {
     setIsSubmitting(true);
     setSaveMessage(null);
     try {
+      console.log('handleSave - Requesting save with body keys:', Object.keys(settingsToSave));
       const res = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        body: JSON.stringify(settingsToSave),
       });
-      
+
+      console.log('handleSave - Response status:', res.status);
       if (res.ok) {
-        // Update global settings so Navbar and Footer reflect changes immediately
-        setGlobalSettings({
-          siteName: settings.siteName,
-          siteTagline: settings.siteTagline,
-          siteDescription: settings.siteDescription,
-          siteUrl: settings.siteUrl,
-          contactEmail: settings.contactEmail,
-          contactPhone: settings.contactPhone,
-          address: settings.address,
-          logoUrl: settings.logoUrl,
-          faviconUrl: settings.faviconUrl,
-          metaTitle: settings.metaTitle,
-          metaDescription: settings.metaDescription,
-          metaKeywords: settings.metaKeywords,
-          socialFacebook: settings.socialFacebook,
-          socialTiktok: settings.socialTiktok,
-          socialInstagram: settings.socialInstagram,
-          socialYoutube: settings.socialYoutube,
-          siteMode: settings.siteMode,
-          statusHeadline: settings.statusHeadline,
-          statusMessage: settings.statusMessage,
-          launchDate: settings.launchDate,
-          collectEmails: settings.collectEmails,
-          showProgress: settings.showProgress,
-          statusBackgroundImage: settings.statusBackgroundImage,
-          statusContactEmail: settings.statusContactEmail,
-          allowRegistration: settings.allowRegistration,
-          showLoginForm: settings.showLoginForm,
-          privateMessage: settings.privateMessage,
-          heroBackgroundImage: settings.heroBackgroundImage,
-          features: settings.features,
-        });
         setSaveMessage({ type: 'success', text: 'Settings saved successfully!' });
         setTimeout(() => setSaveMessage(null), 3000);
       } else {
-        setSaveMessage({ type: 'error', text: 'Failed to save settings' });
+        const errorData = await res.json().catch(() => ({}));
+        console.error('handleSave - Error response:', errorData);
+        setSaveMessage({ type: 'error', text: `Failed to save settings: ${errorData.error || res.statusText}` });
       }
     } catch (error) {
       console.error('Error saving settings:', error);
@@ -5375,24 +5349,37 @@ function SettingsContent() {
       formData.append('file', file);
       formData.append('type', 'images');
       
+      console.log(`handleFileUpload - Uploading ${type} to /api/upload`);
       const res = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
-      
+
+      console.log('handleFileUpload - Response status:', res.status);
       if (res.ok) {
         const data = await res.json();
+        console.log('handleFileUpload - Success:', data);
+        let updatedSettings = { ...settings };
         if (type === 'logo') {
-          setSettings(prev => ({ ...prev, logoUrl: data.url }));
+          updatedSettings.logoUrl = data.url;
         } else if (type === 'favicon') {
-          setSettings(prev => ({ ...prev, faviconUrl: data.url }));
+          updatedSettings.faviconUrl = data.url;
         } else {
-          setSettings(prev => ({ ...prev, heroBackgroundImage: data.url }));
+          updatedSettings.heroBackgroundImage = data.url;
         }
-        setSaveMessage({ type: 'success', text: `${type.charAt(0).toUpperCase() + type.slice(1)} uploaded successfully! Click "Save Changes" to apply.` });
+        
+        setSettings(updatedSettings);
+        setSaveMessage({ type: 'success', text: `${type.charAt(0).toUpperCase() + type.slice(1)} uploaded successfully! Auto-saving changes...` });
+        
+        // Auto-save settings immediately with the updated data
+        console.log('handleFileUpload - Triggering auto-save');
+        await handleSave(updatedSettings);
+        
         setTimeout(() => setSaveMessage(null), 5000);
       } else {
-        setSaveMessage({ type: 'error', text: 'Failed to upload file' });
+        const errorData = await res.json().catch(() => ({}));
+        console.error('handleFileUpload - Error response:', errorData);
+        setSaveMessage({ type: 'error', text: `Failed to upload file: ${errorData.error || res.statusText}` });
       }
     } catch (error) {
       console.error('Error uploading file:', error);
@@ -5752,7 +5739,7 @@ function SettingsContent() {
             {/* Save Button for Logo Tab */}
             <div className="flex justify-end pt-4">
               <Button 
-                onClick={handleSave} 
+                onClick={() => handleSave()} 
                 disabled={isSubmitting || uploadingLogo || uploadingFavicon}
                 className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-black font-semibold"
               >
@@ -6853,7 +6840,7 @@ function SettingsContent() {
             Cancel
           </Button>
           <Button 
-            onClick={handleSave} 
+            onClick={() => handleSave()} 
             disabled={isSubmitting || isLoading}
             className="bg-amber-500 hover:bg-amber-600 text-black"
           >
