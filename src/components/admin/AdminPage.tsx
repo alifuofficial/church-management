@@ -95,8 +95,10 @@ interface Member {
   email: string;
   role: string;
   image: string | null;
+  phone?: string | null;
   createdAt: string;
   isActive: boolean;
+  isVerified?: boolean;
   username?: string;
   country?: string;
   city?: string;
@@ -510,7 +512,23 @@ function DashboardContent({ stats, charts, members, events, sermons, donations, 
 }) {
   const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
   const [showNewsletterDialog, setShowNewsletterDialog] = useState(false);
-  const [newMember, setNewMember] = useState({ name: '', email: '', role: 'MEMBER' });
+  const [newMember, setNewMember] = useState({ 
+    name: '', 
+    email: '', 
+    username: '',
+    role: 'MEMBER', 
+    phone: '',
+    country: '',
+    city: '',
+    timezone: '',
+    denomination: '',
+    faithStatus: '',
+    localChurch: '',
+    interests: '',
+    acceptedTerms: false,
+    acceptedPrivacy: false,
+    acceptedStatementOfFaith: false,
+  });
   const [newsletterSubject, setNewsletterSubject] = useState('');
   const [newsletterContent, setNewsletterContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -535,7 +553,23 @@ function DashboardContent({ stats, charts, members, events, sermons, donations, 
         body: JSON.stringify({ ...newMember, password: 'password123' }),
       });
       if (res.ok) {
-        setNewMember({ name: '', email: '', role: 'MEMBER' });
+        setNewMember({ 
+          name: '', 
+          email: '', 
+          username: '',
+          role: 'MEMBER', 
+          phone: '',
+          country: '',
+          city: '',
+          timezone: '',
+          denomination: '',
+          faithStatus: '',
+          localChurch: '',
+          interests: '',
+          acceptedTerms: false,
+          acceptedPrivacy: false,
+          acceptedStatementOfFaith: false,
+        });
         setShowAddMemberDialog(false);
       }
     } catch (error) {
@@ -1071,8 +1105,19 @@ function MembersContent({ members, searchQuery, setSearchQuery, formatDate }: {
   const [newMember, setNewMember] = useState({
     name: '',
     email: '',
+    username: '',
     role: 'MEMBER',
     phone: '',
+    country: '',
+    city: '',
+    timezone: '',
+    denomination: '',
+    faithStatus: '',
+    localChurch: '',
+    interests: '',
+    acceptedTerms: false,
+    acceptedPrivacy: false,
+    acceptedStatementOfFaith: false,
   });
 
   // Form state for edit member
@@ -1109,7 +1154,23 @@ function MembersContent({ members, searchQuery, setSearchQuery, formatDate }: {
       if (res.ok) {
         const createdMember = await res.json();
         setMemberList(prev => [createdMember, ...prev]);
-        setNewMember({ name: '', email: '', role: 'MEMBER', phone: '' });
+        setNewMember({ 
+          name: '', 
+          email: '', 
+          username: '',
+          role: 'MEMBER', 
+          phone: '',
+          country: '',
+          city: '',
+          timezone: '',
+          denomination: '',
+          faithStatus: '',
+          localChurch: '',
+          interests: '',
+          acceptedTerms: false,
+          acceptedPrivacy: false,
+          acceptedStatementOfFaith: false,
+        });
         setIsAddDialogOpen(false);
       }
     } catch (error) {
@@ -1211,58 +1272,204 @@ function MembersContent({ members, searchQuery, setSearchQuery, formatDate }: {
               Add Member
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-slate-900 border-slate-800 text-white">
+          <DialogContent className="bg-slate-900 border-slate-800 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add New Member</DialogTitle>
               <DialogDescription className="text-slate-400">
                 Enter the details for the new member. They will receive an email to set their password.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name" className="text-slate-300">Full Name</Label>
-                <Input
-                  id="name"
-                  value={newMember.name}
-                  onChange={(e) => setNewMember(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="John Doe"
-                  className="bg-slate-800 border-slate-700 text-white"
-                />
+            <div className="grid gap-6 py-4">
+              {/* Account Info Section */}
+              <div>
+                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider mb-3">Account Info</p>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Full Name *</Label>
+                    <Input
+                      value={newMember.name}
+                      onChange={(e) => setNewMember(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="John Doe"
+                      className="bg-slate-800 border-slate-700 text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Email *</Label>
+                    <Input
+                      type="email"
+                      value={newMember.email}
+                      onChange={(e) => setNewMember(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="john@example.com"
+                      className="bg-slate-800 border-slate-700 text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Username</Label>
+                    <Input
+                      value={newMember.username}
+                      onChange={(e) => setNewMember(prev => ({ ...prev, username: e.target.value }))}
+                      placeholder="johndoe"
+                      className="bg-slate-800 border-slate-700 text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Phone</Label>
+                    <Input
+                      value={newMember.phone}
+                      onChange={(e) => setNewMember(prev => ({ ...prev, phone: e.target.value }))}
+                      placeholder="+1 (555) 123-4567"
+                      className="bg-slate-800 border-slate-700 text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Role</Label>
+                    <Select value={newMember.role} onValueChange={(value) => setNewMember(prev => ({ ...prev, role: value }))}>
+                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700">
+                        <SelectItem value="MEMBER">Member</SelectItem>
+                        <SelectItem value="VISITOR">Visitor</SelectItem>
+                        <SelectItem value="PASTOR">Pastor</SelectItem>
+                        <SelectItem value="ADMIN">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email" className="text-slate-300">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newMember.email}
-                  onChange={(e) => setNewMember(prev => ({ ...prev, email: e.target.value }))}
-                  placeholder="john@example.com"
-                  className="bg-slate-800 border-slate-700 text-white"
-                />
+
+              <Separator className="bg-slate-800" />
+
+              {/* Location & Faith Section */}
+              <div>
+                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider mb-3">Location & Faith</p>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Country</Label>
+                    <Input
+                      value={newMember.country}
+                      onChange={(e) => setNewMember(prev => ({ ...prev, country: e.target.value }))}
+                      placeholder="United States"
+                      className="bg-slate-800 border-slate-700 text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">City</Label>
+                    <Input
+                      value={newMember.city}
+                      onChange={(e) => setNewMember(prev => ({ ...prev, city: e.target.value }))}
+                      placeholder="New York"
+                      className="bg-slate-800 border-slate-700 text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Timezone</Label>
+                    <Select value={newMember.timezone} onValueChange={(value) => setNewMember(prev => ({ ...prev, timezone: value }))}>
+                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                        <SelectValue placeholder="Select timezone" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700">
+                        <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
+                        <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
+                        <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
+                        <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
+                        <SelectItem value="Europe/London">London (GMT)</SelectItem>
+                        <SelectItem value="Europe/Paris">Paris (CET)</SelectItem>
+                        <SelectItem value="Asia/Tokyo">Tokyo (JST)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Denomination</Label>
+                    <Input
+                      value={newMember.denomination}
+                      onChange={(e) => setNewMember(prev => ({ ...prev, denomination: e.target.value }))}
+                      placeholder="Baptist, Methodist, etc."
+                      className="bg-slate-800 border-slate-700 text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Faith Status</Label>
+                    <Select value={newMember.faithStatus} onValueChange={(value) => setNewMember(prev => ({ ...prev, faithStatus: value }))}>
+                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700">
+                        <SelectItem value="believer">Believer</SelectItem>
+                        <SelectItem value="new_believer">New Believer</SelectItem>
+                        <SelectItem value="exploring">Exploring Faith</SelectItem>
+                        <SelectItem value="seeker">Seeker</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="phone" className="text-slate-300">Phone (Optional)</Label>
-                <Input
-                  id="phone"
-                  value={newMember.phone}
-                  onChange={(e) => setNewMember(prev => ({ ...prev, phone: e.target.value }))}
-                  placeholder="+1 (555) 123-4567"
-                  className="bg-slate-800 border-slate-700 text-white"
-                />
+
+              <Separator className="bg-slate-800" />
+
+              {/* Church & Interests Section */}
+              <div>
+                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider mb-3">Church & Interests</p>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Local Church</Label>
+                    <Input
+                      value={newMember.localChurch}
+                      onChange={(e) => setNewMember(prev => ({ ...prev, localChurch: e.target.value }))}
+                      placeholder="Grace Community Church"
+                      className="bg-slate-800 border-slate-700 text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Interests</Label>
+                    <Input
+                      value={newMember.interests}
+                      onChange={(e) => setNewMember(prev => ({ ...prev, interests: e.target.value }))}
+                      placeholder="Worship, Bible Study, Youth (comma separated)"
+                      className="bg-slate-800 border-slate-700 text-white"
+                    />
+                    <p className="text-slate-500 text-xs">Separate multiple interests with commas</p>
+                  </div>
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="role" className="text-slate-300">Role</Label>
-                <Select value={newMember.role} onValueChange={(value) => setNewMember(prev => ({ ...prev, role: value }))}>
-                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-700">
-                    <SelectItem value="MEMBER">Member</SelectItem>
-                    <SelectItem value="VISITOR">Visitor</SelectItem>
-                    <SelectItem value="PASTOR">Pastor</SelectItem>
-                    <SelectItem value="ADMIN">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
+
+              <Separator className="bg-slate-800" />
+
+              {/* Agreements Section */}
+              <div>
+                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider mb-3">Agreements</p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="acceptedTerms"
+                      checked={newMember.acceptedTerms}
+                      onChange={(e) => setNewMember(prev => ({ ...prev, acceptedTerms: e.target.checked }))}
+                      className="h-4 w-4 rounded border-slate-600 bg-slate-800"
+                    />
+                    <Label htmlFor="acceptedTerms" className="text-slate-300 text-sm">Terms of Service Accepted</Label>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="acceptedPrivacy"
+                      checked={newMember.acceptedPrivacy}
+                      onChange={(e) => setNewMember(prev => ({ ...prev, acceptedPrivacy: e.target.checked }))}
+                      className="h-4 w-4 rounded border-slate-600 bg-slate-800"
+                    />
+                    <Label htmlFor="acceptedPrivacy" className="text-slate-300 text-sm">Privacy Policy Accepted</Label>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="acceptedStatementOfFaith"
+                      checked={newMember.acceptedStatementOfFaith}
+                      onChange={(e) => setNewMember(prev => ({ ...prev, acceptedStatementOfFaith: e.target.checked }))}
+                      className="h-4 w-4 rounded border-slate-600 bg-slate-800"
+                    />
+                    <Label htmlFor="acceptedStatementOfFaith" className="text-slate-300 text-sm">Statement of Faith Accepted</Label>
+                  </div>
+                </div>
               </div>
             </div>
             <DialogFooter>
