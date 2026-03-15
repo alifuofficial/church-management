@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { z } from 'zod';
+
+const newsletterSchema = z.object({
+  title: z.string().min(1),
+  subject: z.string().min(1),
+  content: z.string().min(1),
+  plainText: z.string().optional(),
+  frequency: z.string().optional(),
+  scheduledFor: z.string().optional(),
+  targetAll: z.boolean().optional(),
+  targetSegments: z.any().optional(),
+});
 
 // GET - List all newsletters
 export async function GET(request: NextRequest) {
@@ -67,7 +79,17 @@ export async function GET(request: NextRequest) {
 // POST - Create a new newsletter
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const validation = newsletterSchema.safeParse(await request.json());
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Invalid input', details: validation.error.format() }, { status: 400 });
+    }
+    const body = validation.data;
+
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const {
       title,
       subject,
@@ -78,18 +100,6 @@ export async function POST(request: NextRequest) {
       targetAll,
       targetSegments,
     } = body;
-
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    if (!title || !subject || !content) {
-      return NextResponse.json(
-        { error: 'Title, subject, and content are required' },
-        { status: 400 }
-      );
-    }
 
     // Get subscriber count for total recipients
     const subscriberCount = await db.subscriber.count({

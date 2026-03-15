@@ -2,11 +2,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { z } from 'zod';
+
+const donationSchema = z.object({
+  userId: z.string().optional(),
+  amount: z.union([z.number(), z.string()]),
+  currency: z.string().optional(),
+  status: z.string().optional(),
+  paymentMethod: z.string().optional(),
+  transactionId: z.string().optional(),
+  isRecurring: z.boolean().optional(),
+  recurringInterval: z.string().optional(),
+  isAnonymous: z.boolean().optional(),
+  donorName: z.string().optional(),
+  donorEmail: z.string().optional(),
+  notes: z.string().optional(),
+  campaignId: z.string().optional(),
+});
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'ADMIN') {
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -18,8 +35,15 @@ export async function GET(request: NextRequest) {
 
     const where: Record<string, unknown> = {};
     
-    if (userId) {
-      where.userId = userId;
+    // Authorization logic:
+    // 1. Admins can see everything
+    // 2. Regular users can only see their own (explicitly filtered by session id)
+    if (session.user.role === 'ADMIN') {
+      if (userId) {
+        where.userId = userId;
+      }
+    } else {
+      where.userId = session.user.id;
     }
     if (status) {
       where.status = status;
@@ -43,12 +67,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const validation = donationSchema.safeParse(await request.json());
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Invalid input', details: validation.error.format() }, { status: 400 });
+    }
+    const body = validation.data;
     
     const donation = await db.donation.create({
       data: {
         userId: body.userId,
-        amount: parseFloat(body.amount),
+        amount: typeof body.amount === 'string' ? parseFloat(body.amount) : body.amount,
         currency: body.currency || 'USD',
         status: body.status || 'COMPLETED',
         paymentMethod: body.paymentMethod,

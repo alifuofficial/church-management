@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { z } from 'zod';
+
+const settingsSchema = z.record(z.any());
 
 // GET - Retrieve all settings
 export async function GET() {
@@ -34,7 +37,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const body = await request.json();
+    const validation = settingsSchema.safeParse(await request.json());
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Invalid input', details: validation.error.format() }, { status: 400 });
+    }
+    const body = validation.data;
     
     // Update or create each setting
     const updates = Object.entries(body).map(async ([key, value]) => {
