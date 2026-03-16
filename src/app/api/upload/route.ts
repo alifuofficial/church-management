@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
       console.log(`Warning: File type ${file.type} not in allowed list for ${type}`);
     }
 
-    // Create upload directory if it doesn't exist
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', type);
+// Create upload directory in persistent db folder
+    const uploadDir = path.join(process.cwd(), 'db', 'uploads', type);
     if (!existsSync(uploadDir)) {
       await mkdir(uploadDir, { recursive: true });
     }
@@ -61,8 +61,8 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(bytes);
     await writeFile(filePath, buffer);
 
-    // Return public URL
-    const publicUrl = `/uploads/${type}/${fileName}`;
+    // Return public URL - use /api/uploads for persistent storage access
+    const publicUrl = `/api/uploads/${type}/${fileName}`;
     
     return NextResponse.json({
       success: true,
