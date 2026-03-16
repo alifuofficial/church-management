@@ -48,4 +48,4 @@ bun run dev
 
 ---
 
-**Developed by [AlifXperience](https://t.me/dmalifu)** 🚀
+**Developed by [AlifXperience](https://t.me/dmalifu)**  🚀 version 0.1
