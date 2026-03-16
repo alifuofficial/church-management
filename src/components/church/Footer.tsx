@@ -280,10 +280,13 @@ export function Footer() {
       {/* Bottom Bar */}
       <div className="border-t border-slate-800 py-6">
         <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-400 flex items-center gap-1">
             © {new Date().getFullYear()} {settings.siteName || 'Digital Church'}. All rights reserved. 
-            <span className="ml-2 pl-2 border-l border-slate-800">
-              Developed by <a href="https://t.me/dmalifu" target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:text-amber-400 font-medium">AlifXperience</a>
+            <span className="ml-2 pl-2 border-l border-slate-800 flex items-center gap-1">
+              Crafted with <span className="text-red-500 animate-pulse">♥</span> by 
+              <a href="https://t.me/dmalifu" target="_blank" rel="noopener noreferrer" className="font-bold bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 bg-clip-text text-transparent hover:from-rose-500 hover:via-orange-500 hover:to-amber-400 transition-all duration-300">
+                AlifXperience
+              </a>
             </span>
           </p>
           <div className="text-sm text-slate-400">
