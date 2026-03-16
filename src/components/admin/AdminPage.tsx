@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -42,7 +43,7 @@ import {
   PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ComposedChart, Scatter
 } from 'recharts';
 import { 
-  Users, Calendar, BookOpen, DollarSign, Heart, Church, Home, Settings,
+  Users, Calendar, BookOpen, DollarSign, Heart, Church, Home, Settings, Info,
   TrendingUp, Activity, Clock, CheckCircle2, AlertCircle, Video,
   BarChart3, ArrowUpRight, ArrowDownRight, Plus, Search, Bell,
   Mail, UserPlus, ChevronRight, Layers, MessageSquare, UsersRound,
@@ -51,7 +52,7 @@ import {
   MoreHorizontal, Pencil, Trash2, Eye, Loader2, Download, Upload,
   Rocket, Wrench, Lock, Shield, AlertTriangle, Archive, LayoutDashboard,
   Smartphone, Send, TestTube, Pause, Play as PlayIcon, RefreshCw,
-  Image as ImageIcon, Music, File, FolderClosed, Grid, List, X, Check, Copy, ShieldCheck, UserCircle
+  Image as ImageIcon, Music, File, FolderClosed, Grid, List, X, Check, Copy, ShieldCheck, UserCircle, Save
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SmsContent } from './SmsContent';
@@ -142,9 +143,21 @@ interface Donation {
 interface SmallGroup {
   id: string;
   name: string;
+  description: string | null;
   type: string | null;
   location: string | null;
   meetingDay: string | null;
+  meetingTime: string | null;
+  maxMembers: number | null;
+  imageUrl: string | null;
+  isActive: boolean;
+  country: string | null;
+  city: string | null;
+  timezone: string | null;
+  denomination: string | null;
+  faithStatus: string | null;
+  localChurch: string | null;
+  interests: string | null;
   _count: { members: number };
 }
 
@@ -332,7 +345,7 @@ export function AdminPage() {
       case 'prayers':
         return <PrayersContent charts={charts} stats={stats} user={user} />;
       case 'groups':
-        return <GroupsContent groups={groups} />;
+        return <GroupsContent initialGroups={groups} />;
       case 'settings':
         return <SettingsContent />;
       case 'activity':
@@ -4701,43 +4714,708 @@ function PrayersContent({ charts, stats, user }: { charts: ChartData; stats: Das
 }
 
 // Groups Content Component
-function GroupsContent({ groups }: { groups: SmallGroup[] }) {
+function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
+  const [groups, setGroups] = useState<SmallGroup[]>(initialGroups);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<SmallGroup | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const interestOptions = [
+    'Bible Study', 'Prayer Groups', 'Evangelism', 'Online Fellowship', 'Volunteering'
+  ];
+
+  const faithStatusOptions = [
+    'Yes', 'Exploring Faith', 'New Believer'
+  ];
+
+  const countries = [
+    'United States', 'United Kingdom', 'Canada', 'Australia', 'Nigeria', 'Kenya', 'Ethiopia', 'South Africa', 'Other'
+  ];
+
+  const [form, setForm] = useState({
+    name: '',
+    description: '',
+    type: 'General',
+    location: '',
+    meetingDay: 'Sunday',
+    meetingTime: '10:00',
+    maxMembers: '20',
+    imageUrl: '',
+    country: '',
+    city: '',
+    timezone: 'UTC',
+    denomination: '',
+    faithStatus: 'Yes',
+    localChurch: '',
+    interests: [] as string[]
+  });
+
+  const fetchGroups = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/groups');
+      if (res.ok) {
+        const data = await res.json();
+        setGroups(data);
+      }
+    } catch (error) {
+      console.error('Error fetching groups:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateGroup = async () => {
+    if (!form.name) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
+      if (res.ok) {
+        await fetchGroups();
+        setIsCreateDialogOpen(false);
+        resetForm();
+      }
+    } catch (error) {
+      console.error('Error creating group:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditGroup = async () => {
+    if (!selectedGroup || !form.name) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/groups/${selectedGroup.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
+      if (res.ok) {
+        await fetchGroups();
+        setIsEditDialogOpen(false);
+        setSelectedGroup(null);
+        resetForm();
+      }
+    } catch (error) {
+      console.error('Error updating group:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!selectedGroup) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/groups/${selectedGroup.id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        await fetchGroups();
+        setIsDeleteDialogOpen(false);
+        setSelectedGroup(null);
+      }
+    } catch (error) {
+      console.error('Error deleting group:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
+    setForm({
+      name: '', description: '', type: 'General', location: '',
+      meetingDay: 'Sunday', meetingTime: '10:00', maxMembers: '20', imageUrl: '',
+      country: '', city: '', timezone: 'UTC', denomination: '',
+      faithStatus: 'Yes', localChurch: '', interests: []
+    });
+  };
+
+  const openEditDialog = (group: SmallGroup) => {
+    setSelectedGroup(group);
+    setForm({
+      name: group.name,
+      description: group.description || '',
+      type: group.type || 'General',
+      location: group.location || '',
+      meetingDay: group.meetingDay || 'Sunday',
+      meetingTime: group.meetingTime || '10:00',
+      maxMembers: group.maxMembers?.toString() || '20',
+      imageUrl: group.imageUrl || '',
+      country: group.country || '',
+      city: group.city || '',
+      timezone: group.timezone || 'UTC',
+      denomination: group.denomination || '',
+      faithStatus: group.faithStatus || 'Yes',
+      localChurch: group.localChurch || '',
+      interests: group.interests ? group.interests.split(',') : []
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const toggleInterest = (interest: string) => {
+    setForm(prev => ({
+      ...prev,
+      interests: prev.interests.includes(interest)
+        ? prev.interests.filter(i => i !== interest)
+        : [...prev.interests, interest]
+    }));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div></div>
-        <Button className="bg-amber-500 hover:bg-amber-600 text-black">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Group
-        </Button>
+        <div>
+          <h2 className="text-xl font-semibold text-white">Small Groups</h2>
+          <p className="text-slate-400 text-sm">Manage church small groups, ministries, and house fellowships</p>
+        </div>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-amber-500 hover:bg-amber-600 text-black">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Group
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="bg-slate-900 border-slate-800 max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+            <DialogHeader className="p-6 pb-2">
+              <DialogTitle className="text-white">Create New Small Group</DialogTitle>
+              <DialogDescription className="text-slate-400">
+                Define a new group with location, faith profile, and focus areas.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto px-6 py-4 pb-10 custom-scrollbar">
+              <div className="space-y-6">
+                {/* Basic Information */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2">
+                    <Info className="h-4 w-4" /> Basic Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-white">Group Name *</Label>
+                      <Input
+                        value={form.name}
+                        onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
+                        className="bg-slate-800 border-slate-700 text-white"
+                        placeholder="e.g., Downtown Bible Study"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-white">Category / Type</Label>
+                      <Select value={form.type} onValueChange={(v) => setForm(prev => ({ ...prev, type: v }))}>
+                        <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-800 border-slate-700">
+                          <SelectItem value="General">General</SelectItem>
+                          <SelectItem value="Bible Study">Bible Study</SelectItem>
+                          <SelectItem value="Youth">Youth</SelectItem>
+                          <SelectItem value="Interests">Interests</SelectItem>
+                          <SelectItem value="Ministry">Ministry</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white">Description</Label>
+                    <textarea
+                      value={form.description}
+                      onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+                      className="w-full min-h-[80px] rounded-md bg-slate-800 border border-slate-700 p-2 text-white text-sm focus:ring-1 focus:ring-amber-500 outline-none"
+                      placeholder="What is this group about?"
+                    />
+                  </div>
+                </div>
+
+                <Separator className="bg-slate-800" />
+
+                {/* Location Information */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2">
+                    <MapPin className="h-4 w-4" /> Location Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-white">Country</Label>
+                      <Select value={form.country} onValueChange={(v) => setForm(prev => ({ ...prev, country: v }))}>
+                        <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                          <SelectValue placeholder="Select Country" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-800 border-slate-700">
+                          {countries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-white">City / Region</Label>
+                      <Input
+                        value={form.city}
+                        onChange={(e) => setForm(prev => ({ ...prev, city: e.target.value }))}
+                        className="bg-slate-800 border-slate-700 text-white"
+                        placeholder="e.g., Addis Ababa"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-white">Time Zone</Label>
+                      <Select value={form.timezone} onValueChange={(v) => setForm(prev => ({ ...prev, timezone: v }))}>
+                        <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                          <SelectValue placeholder="Select Time Zone" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-800 border-slate-700">
+                          <SelectItem value="UTC">UTC (Greenwich Mean Time)</SelectItem>
+                          <SelectItem value="UTC+3">UTC+3 (East Africa Time)</SelectItem>
+                          <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
+                          <SelectItem value="Europe/London">London (GMT/BST)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-white">Physical Location (Optional)</Label>
+                      <Input
+                        value={form.location}
+                        onChange={(e) => setForm(prev => ({ ...prev, location: e.target.value }))}
+                        className="bg-slate-800 border-slate-700 text-white"
+                        placeholder="e.g., Hall B, Online, or Home Address"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <Separator className="bg-slate-800" />
+
+                {/* Church / Faith Information */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2">
+                    <Church className="h-4 w-4" /> Church & Faith Profile
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-white">Denomination (Optional)</Label>
+                      <Input
+                        value={form.denomination}
+                        onChange={(e) => setForm(prev => ({ ...prev, denomination: e.target.value }))}
+                        className="bg-slate-800 border-slate-700 text-white"
+                        placeholder="e.g., Baptist, Pentecostal"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-white">Target Faith Status</Label>
+                      <Select value={form.faithStatus} onValueChange={(v) => setForm(prev => ({ ...prev, faithStatus: v }))}>
+                        <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-800 border-slate-700">
+                          {faithStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white">Local Church Name (Optional)</Label>
+                    <Input
+                      value={form.localChurch}
+                      onChange={(e) => setForm(prev => ({ ...prev, localChurch: e.target.value }))}
+                      className="bg-slate-800 border-slate-700 text-white"
+                      placeholder="Current Church affiliation"
+                    />
+                  </div>
+                </div>
+
+                <Separator className="bg-slate-800" />
+
+                {/* Interests */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2">
+                    <Target className="h-4 w-4" /> Interests & Ministries
+                  </h3>
+                  <p className="text-xs text-slate-400">Select the areas this group focuses on:</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {interestOptions.map(option => (
+                      <div key={option} className="flex items-center space-x-2 bg-slate-800/50 p-2 rounded-md border border-slate-700/50">
+                        <Checkbox
+                          id={`interest-${option}`}
+                          checked={form.interests.includes(option)}
+                          onCheckedChange={() => toggleInterest(option)}
+                        />
+                        <Label htmlFor={`interest-${option}`} className="text-sm text-slate-300 cursor-pointer">{option}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Separator className="bg-slate-800" />
+
+                {/* Meeting Logistics */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2">
+                    <Clock className="h-4 w-4" /> Meeting Logistics
+                  </h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-white">Meeting Day</Label>
+                      <Select value={form.meetingDay} onValueChange={(v) => setForm(prev => ({ ...prev, meetingDay: v }))}>
+                        <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-800 border-slate-700">
+                          {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(d => (
+                            <SelectItem key={d} value={d}>{d}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-white">Start Time</Label>
+                      <Input
+                        type="time"
+                        value={form.meetingTime}
+                        onChange={(e) => setForm(prev => ({ ...prev, meetingTime: e.target.value }))}
+                        className="bg-slate-800 border-slate-700 text-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-white">Max Capacity</Label>
+                      <Input
+                        type="number"
+                        value={form.maxMembers}
+                        onChange={(e) => setForm(prev => ({ ...prev, maxMembers: e.target.value }))}
+                        className="bg-slate-800 border-slate-700 text-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="pt-4 border-t border-slate-800">
+              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="border-slate-700 text-white">
+                Cancel
+              </Button>
+              <Button onClick={handleCreateGroup} disabled={isSubmitting || !form.name} className="bg-amber-500 hover:bg-amber-600 text-black">
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Rocket className="h-4 w-4 mr-2" />}
+                Create Group
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {groups.map((group) => (
-          <Card key={group.id} className="bg-slate-900/50 border-slate-800 hover:border-cyan-500/50 transition">
+          <Card key={group.id} className="bg-slate-900/50 border-slate-800 hover:border-amber-500/50 transition">
             <CardContent className="p-5">
               <div className="flex items-start justify-between mb-3">
-                <Badge className="bg-cyan-500/20 text-cyan-400">{group.type || 'General'}</Badge>
-                <div className="flex items-center gap-1 text-emerald-400">
-                  <Users className="h-4 w-4" />
-                  <span className="text-sm">{group._count.members}</span>
+                <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/30 font-medium">
+                  {group.type || 'General'}
+                </Badge>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1 text-emerald-400">
+                    <Users className="h-4 w-4" />
+                    <span className="text-sm font-medium">{group._count.members}</span>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-white">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-slate-900 border-slate-800">
+                      <DropdownMenuItem onClick={() => openEditDialog(group)} className="text-slate-300 hover:text-white focus:bg-slate-800 focus:text-white cursor-pointer">
+                        <Pencil className="h-4 w-4 mr-2" /> Edit Details
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="bg-slate-800" />
+                      <DropdownMenuItem onClick={() => { setSelectedGroup(group); setIsDeleteDialogOpen(true); }} className="text-red-400 hover:text-red-300 focus:bg-red-500/10 focus:text-red-400 cursor-pointer">
+                        <Trash2 className="h-4 w-4 mr-2" /> Delete Group
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
-              <h3 className="text-white font-semibold mb-2">{group.name}</h3>
-              <div className="flex items-center gap-2 text-slate-400 text-sm">
-                <MapPin className="h-4 w-4" />
-                {group.location || 'Location TBD'}
+              
+              <h3 className="text-white font-semibold text-lg mb-1">{group.name}</h3>
+              <p className="text-slate-400 text-sm line-clamp-2 mb-4 h-10">{group.description || 'No description provided.'}</p>
+              
+              <div className="space-y-2 pt-2 border-t border-slate-800/50">
+                <div className="flex items-center gap-2 text-slate-300 text-sm">
+                  <MapPin className="h-4 w-4 text-amber-500/70" />
+                  <span className="truncate">{group.city ? `${group.city}, ${group.country}` : group.location || 'Location TBD'}</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-300 text-sm">
+                  <Clock className="h-4 w-4 text-amber-500/70" />
+                  <span>{group.meetingDay} at {group.meetingTime || 'TBD'}</span>
+                </div>
               </div>
-              {group.meetingDay && (
-                <div className="flex items-center gap-2 text-slate-400 text-sm mt-2">
-                  <Clock className="h-4 w-4" />
-                  {group.meetingDay}
+
+              {group.interests && (
+                <div className="flex flex-wrap gap-1.5 mt-4">
+                  {group.interests.split(',').slice(0, 3).map(interest => (
+                    <span key={interest} className="text-[10px] uppercase tracking-wider bg-slate-800 text-slate-400 px-2 py-0.5 rounded">
+                      {interest}
+                    </span>
+                  ))}
+                  {group.interests.split(',').length > 3 && (
+                    <span className="text-[10px] text-slate-500 px-1">+{group.interests.split(',').length - 3} more</span>
+                  )}
                 </div>
               )}
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {groups.length === 0 && !isLoading && (
+        <div className="flex flex-col items-center justify-center py-20 bg-slate-900/30 rounded-xl border border-dashed border-slate-800">
+          <UsersRound className="h-12 w-12 text-slate-700 mb-4" />
+          <h3 className="text-slate-400 font-medium">No groups found</h3>
+          <p className="text-slate-500 text-sm">Create your first small group to get started</p>
+        </div>
+      )}
+
+      {/* Delete Confirmation */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="bg-slate-900 border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="text-white">Delete Small Group</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Are you sure you want to delete <span className="text-white font-medium">"{selectedGroup?.name}"</span>? 
+              This action cannot be undone and will remove all members from the group.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="border-slate-700 text-white">
+              Cancel
+            </Button>
+            <Button onClick={handleDeleteGroup} disabled={isSubmitting} className="bg-red-500 hover:bg-red-600 text-white">
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+              Delete Group
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Group Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="bg-slate-900 border-slate-800 max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+          <DialogHeader className="p-6 pb-2">
+            <DialogTitle className="text-white">Edit Small Group</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Update group details, location, or faith profile.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-6 py-4 pb-10 custom-scrollbar">
+            <div className="space-y-6">
+              {/* Basic Information */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2">
+                  <Info className="h-4 w-4" /> Basic Information
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-white">Group Name *</Label>
+                    <Input
+                      value={form.name}
+                      onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
+                      className="bg-slate-800 border-slate-700 text-white"
+                      placeholder="e.g., Downtown Bible Study"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white">Category / Type</Label>
+                    <Select value={form.type || ''} onValueChange={(v) => setForm(prev => ({ ...prev, type: v }))}>
+                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700">
+                        <SelectItem value="General">General</SelectItem>
+                        <SelectItem value="Bible Study">Bible Study</SelectItem>
+                        <SelectItem value="Youth">Youth</SelectItem>
+                        <SelectItem value="Interests">Interests</SelectItem>
+                        <SelectItem value="Ministry">Ministry</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-white">Description</Label>
+                  <textarea
+                    value={form.description}
+                    onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full min-h-[80px] rounded-md bg-slate-800 border border-slate-700 p-2 text-white text-sm focus:ring-1 focus:ring-amber-500 outline-none"
+                    placeholder="What is this group about?"
+                  />
+                </div>
+              </div>
+
+              <Separator className="bg-slate-800" />
+
+              {/* Location Information */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2">
+                  <MapPin className="h-4 w-4" /> Location Information
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-white">Country</Label>
+                    <Select value={form.country || ''} onValueChange={(v) => setForm(prev => ({ ...prev, country: v }))}>
+                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                        <SelectValue placeholder="Select Country" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700">
+                        {countries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white">City / Region</Label>
+                    <Input
+                      value={form.city}
+                      onChange={(e) => setForm(prev => ({ ...prev, city: e.target.value }))}
+                      className="bg-slate-800 border-slate-700 text-white"
+                      placeholder="e.g., Addis Ababa"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-white">Time Zone</Label>
+                    <Select value={form.timezone || ''} onValueChange={(v) => setForm(prev => ({ ...prev, timezone: v }))}>
+                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                        <SelectValue placeholder="Select Time Zone" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700">
+                        <SelectItem value="UTC">UTC (GMT)</SelectItem>
+                        <SelectItem value="UTC+3">UTC+3 (EAT)</SelectItem>
+                        <SelectItem value="America/New_York">Eastern Time</SelectItem>
+                        <SelectItem value="Europe/London">London</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white">Physical Location</Label>
+                    <Input
+                      value={form.location}
+                      onChange={(e) => setForm(prev => ({ ...prev, location: e.target.value }))}
+                      className="bg-slate-800 border-slate-700 text-white"
+                      placeholder="e.g., Hall B"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator className="bg-slate-800" />
+
+              {/* Faith Info */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2">
+                  <Church className="h-4 w-4" /> Church & Faith Profile
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-white">Denomination</Label>
+                    <Input
+                      value={form.denomination}
+                      onChange={(e) => setForm(prev => ({ ...prev, denomination: e.target.value }))}
+                      className="bg-slate-800 border-slate-700 text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white">Target Faith Status</Label>
+                    <Select value={form.faithStatus || ''} onValueChange={(v) => setForm(prev => ({ ...prev, faithStatus: v }))}>
+                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700">
+                        {faithStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              <Separator className="bg-slate-800" />
+
+              {/* Interests */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2">
+                  <Target className="h-4 w-4" /> Interests
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {interestOptions.map(option => (
+                    <div key={option} className="flex items-center space-x-2 bg-slate-800/50 p-2 rounded-md border border-slate-700/50">
+                      <Checkbox
+                        id={`edit-interest-${option}`}
+                        checked={form.interests.includes(option)}
+                        onCheckedChange={() => toggleInterest(option)}
+                      />
+                      <Label htmlFor={`edit-interest-${option}`} className="text-sm text-slate-300">{option}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator className="bg-slate-800" />
+
+              {/* Logistics */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2">
+                  <Clock className="h-4 w-4" /> Meeting Logistics
+                </h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-white">Day</Label>
+                    <Select value={form.meetingDay || ''} onValueChange={(v) => setForm(prev => ({ ...prev, meetingDay: v }))}>
+                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700">
+                        {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(d => (
+                          <SelectItem key={d} value={d}>{d}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white">Time</Label>
+                    <Input
+                      type="time"
+                      value={form.meetingTime}
+                      onChange={(e) => setForm(prev => ({ ...prev, meetingTime: e.target.value }))}
+                      className="bg-slate-800 border-slate-700 text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white">Capacity</Label>
+                    <Input
+                      type="number"
+                      value={form.maxMembers}
+                      onChange={(e) => setForm(prev => ({ ...prev, maxMembers: e.target.value }))}
+                      className="bg-slate-800 border-slate-700 text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="p-6 border-t border-slate-800">
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="border-slate-700 text-white">
+              Cancel
+            </Button>
+            <Button onClick={handleEditGroup} disabled={isSubmitting || !form.name} className="bg-amber-500 hover:bg-amber-600 text-black">
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

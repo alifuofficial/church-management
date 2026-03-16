@@ -220,9 +220,10 @@ export async function GET(request: NextRequest) {
     let userRegistrations = [];
     let userDonations = [];
     let userPrayers = [];
+    let userGroups = [];
 
     if (userId) {
-      [userRegistrations, userDonations, userPrayers] = await Promise.all([
+      const results = await Promise.all([
         db.registration.findMany({
           where: {
             userId,
@@ -241,8 +242,40 @@ export async function GET(request: NextRequest) {
           where: { userId },
           orderBy: { createdAt: 'desc' },
           take: 5
+        }),
+        db.smallGroupMember.findMany({
+          where: { userId },
+          include: {
+            group: {
+              include: {
+                members: {
+                  include: {
+                    user: {
+                      select: {
+                        id: true,
+                        name: true,
+                        image: true,
+                        email: true
+                      }
+                    }
+                  }
+                },
+                leader: {
+                  select: {
+                    id: true,
+                    name: true,
+                    image: true
+                  }
+                }
+              }
+            }
+          }
         })
       ]);
+      userRegistrations = results[0];
+      userDonations = results[1];
+      userPrayers = results[2];
+      userGroups = results[3].map(membership => membership.group);
     }
 
     return NextResponse.json({
@@ -280,7 +313,8 @@ export async function GET(request: NextRequest) {
       smallGroups,
       userRegistrations,
       userDonations,
-      userPrayers
+      userPrayers,
+      userGroups
     });
   } catch (error) {
     console.error('Error fetching dashboard data:', error);

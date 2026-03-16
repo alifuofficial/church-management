@@ -9,12 +9,8 @@ export async function GET() {
         leader: {
           select: { id: true, name: true, image: true }
         },
-        members: {
-          include: {
-            user: {
-              select: { id: true, name: true, image: true }
-            }
-          }
+        _count: {
+          select: { members: true }
         }
       },
       orderBy: { name: 'asc' },
@@ -24,5 +20,41 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching groups:', error);
     return NextResponse.json({ error: 'Failed to fetch groups' }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { 
+      name, description, type, location, meetingDay, meetingTime, 
+      maxMembers, imageUrl, country, city, timezone, 
+      denomination, faithStatus, localChurch, interests 
+    } = body;
+
+    const group = await db.smallGroup.create({
+      data: {
+        name,
+        description,
+        type,
+        location,
+        meetingDay,
+        meetingTime,
+        maxMembers: maxMembers ? parseInt(maxMembers.toString()) : null,
+        imageUrl,
+        country,
+        city,
+        timezone,
+        denomination,
+        faithStatus,
+        localChurch,
+        interests: Array.isArray(interests) ? interests.join(',') : interests,
+      },
+    });
+
+    return NextResponse.json(group);
+  } catch (error) {
+    console.error('Error creating group:', error);
+    return NextResponse.json({ error: 'Failed to create group' }, { status: 500 });
   }
 }

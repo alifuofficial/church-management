@@ -48,6 +48,33 @@ interface Donation {
   paymentMethod: string | null;
 }
 
+interface SmallGroup {
+  id: string;
+  name: string;
+  description: string | null;
+  type: string | null;
+  location: string | null;
+  city: string | null;
+  country: string | null;
+  meetingDay: string | null;
+  meetingTime: string | null;
+  leader: {
+    id: string;
+    name: string | null;
+    image: string | null;
+  } | null;
+  members: {
+    userId: string;
+    role: string;
+    user: {
+      id: string;
+      name: string | null;
+      image: string | null;
+      email: string;
+    }
+  }[];
+}
+
 interface PrayerRequest {
   id: string;
   title: string;
@@ -77,6 +104,7 @@ export function DashboardPage() {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [donations, setDonations] = useState<Donation[]>([]);
   const [prayers, setPrayers] = useState<PrayerRequest[]>([]);
+  const [userGroups, setUserGroups] = useState<SmallGroup[]>([]);
   const [stats, setStats] = useState({
     totalEvents: 0,
     totalDonations: 0,
@@ -145,6 +173,7 @@ export function DashboardPage() {
       setRegistrations(data.userRegistrations || []);
       setDonations(data.userDonations || []);
       setPrayers(data.userPrayers || []);
+      setUserGroups(data.userGroups || []);
       setStats({
         totalEvents: data.userRegistrations?.length || 0,
         totalDonations: data.userDonations?.reduce((sum: number, d: Donation) => sum + d.amount, 0) || 0,
@@ -815,6 +844,10 @@ export function DashboardPage() {
                     <Heart className="h-4 w-4 mr-2" />
                     Prayers
                   </TabsTrigger>
+                  <TabsTrigger value="groups" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">
+                    <Users className="h-4 w-4 mr-2" />
+                    My Groups
+                  </TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="events" className="mt-4">
@@ -977,6 +1010,92 @@ export function DashboardPage() {
                             ))}
                           </div>
                         </ScrollArea>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="groups" className="mt-4">
+                  <Card className="bg-slate-900/60 border-slate-700/50 backdrop-blur-xl">
+                    <CardHeader>
+                      <CardTitle className="text-white flex items-center gap-2">
+                        <Users className="h-5 w-5 text-purple-400" />
+                        My Small Groups
+                      </CardTitle>
+                      <CardDescription className="text-slate-400">Groups you are a member of</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {isLoading ? (
+                        <div className="flex items-center justify-center h-32">
+                          <Loader2 className="h-6 w-6 animate-spin text-purple-500" />
+                        </div>
+                      ) : userGroups.length === 0 ? (
+                        <div className="text-center py-8">
+                          <Users className="h-12 w-12 mx-auto text-slate-600 mb-3" />
+                          <p className="text-slate-400 mb-4">You haven't joined any groups yet</p>
+                          <Button variant="outline" className="border-slate-700 text-white" onClick={() => setCurrentView('home')}>
+                            Explore Groups
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          {userGroups.map((group) => (
+                            <div key={group.id} className="space-y-4 border-b border-slate-800 pb-6 last:border-0 last:pb-0">
+                              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div className="space-y-1">
+                                  <h3 className="text-lg font-bold text-white">{group.name}</h3>
+                                  <div className="flex flex-wrap gap-3 text-sm text-slate-400">
+                                    <span className="flex items-center gap-1">
+                                      <Clock className="h-4 w-4 text-amber-500" />
+                                      {group.meetingDay} {group.meetingTime}
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <MapPin className="h-4 w-4 text-emerald-500" />
+                                      {group.city || group.location || 'Location TBD'}
+                                    </span>
+                                    {group.leader && (
+                                      <span className="flex items-center gap-1">
+                                        <User className="h-4 w-4 text-blue-500" />
+                                        Leader: {group.leader.name}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 w-fit">
+                                  Active Member
+                                </Badge>
+                              </div>
+
+                              <div className="bg-slate-800/30 rounded-xl p-4 border border-slate-700/50">
+                                <div className="flex items-center justify-between mb-3">
+                                  <h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                                    <Users className="h-4 w-4 text-purple-400" />
+                                    Group Members ({group.members.length})
+                                  </h4>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                  {group.members.map((member) => (
+                                    <div key={member.userId} className="flex items-center gap-2 bg-slate-900/40 p-2 rounded-lg border border-slate-800/50">
+                                      <Avatar className="h-8 w-8">
+                                        <AvatarImage src={member.user.image || ''} />
+                                        <AvatarFallback className="bg-slate-700 text-[10px]">
+                                          {member.user.name?.charAt(0) || 'U'}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="min-w-0">
+                                        <p className="text-xs font-medium text-white truncate">{member.user.name || 'Anonymous'}</p>
+                                        <p className="text-[10px] text-slate-500 truncate">{member.user.email}</p>
+                                      </div>
+                                      {member.role === 'leader' && (
+                                        <Star className="h-3 w-3 text-amber-500 shrink-0 ml-auto" />
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </CardContent>
                   </Card>

@@ -9,6 +9,19 @@ interface User {
   name: string | null;
   role: string;
   image: string | null;
+  username: string | null;
+  country: string | null;
+  city: string | null;
+  timezone: string | null;
+  denomination: string | null;
+  faithStatus: string | null;
+  localChurch: string | null;
+  interests: string | null;
+  memberSince: string;
+  isVerified: boolean;
+  acceptedTerms: boolean;
+  acceptedPrivacy: boolean;
+  acceptedStatementOfFaith: boolean;
 }
 
 export interface FeatureFlags {

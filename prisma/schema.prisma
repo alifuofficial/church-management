@@ -338,22 +338,36 @@ model DonationCampaign {
 }
 
 model SmallGroup {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  type        String?  // age-based, interest-based, etc.
-  leaderId    String?
-  leader      User?    @relation("GroupLeader", fields: [leaderId], references: [id])
-  location    String?
-  meetingDay  String?
-  meetingTime String?
-  maxMembers  Int?
-  imageUrl    String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  type            String?  // age-based, interest-based, etc.
+  leaderId        String?
+  leader          User?    @relation("GroupLeader", fields: [leaderId], references: [id])
+  location        String?
+  meetingDay      String?
+  meetingTime     String?
+  maxMembers      Int?
+  imageUrl        String?
+  isActive        Boolean  @default(true)
   
-  members     SmallGroupMember[]
+  // Location Information
+  country         String?
+  city            String?
+  timezone        String?
+  
+  // Church / Faith Information
+  denomination    String?
+  faithStatus     String?  // Yes, Exploring Faith, New Believer
+  localChurch     String?
+  
+  // Interests or Ministries
+  interests       String?  // comma-separated
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  members         SmallGroupMember[]
 }
 
 model SmallGroupMember {
