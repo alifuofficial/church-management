@@ -73,6 +73,14 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [verificationError, setVerificationError] = useState('');
 
+  // Username check state
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  
+  // Password strength state
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [passwordFeedback, setPasswordFeedback] = useState('');
+
   // Fetch settings
   useEffect(() => {
     const fetchSettings = async () => {
@@ -99,13 +107,53 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
     fetchSettings();
   }, []);
 
-  // Resend cooldown timer
+  // Username availability check with debounce
   useEffect(() => {
-    if (resendCooldown > 0) {
-      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
-      return () => clearTimeout(timer);
+    if (mode !== 'signup' || !username || username.length < 3) {
+      setUsernameAvailable(null);
+      return;
     }
-  }, [resendCooldown]);
+
+    const timer = setTimeout(async () => {
+      setIsCheckingUsername(true);
+      try {
+        const res = await fetch(`/api/users/check-username?username=${encodeURIComponent(username)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setUsernameAvailable(data.available);
+        }
+      } catch (error) {
+        console.error('Error checking username:', error);
+      } finally {
+        setIsCheckingUsername(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [username, mode]);
+
+  // Password strength calculation
+  useEffect(() => {
+    if (!password) {
+      setPasswordStrength(0);
+      setPasswordFeedback('');
+      return;
+    }
+
+    let strength = 0;
+    if (password.length >= 8) strength += 25;
+    if (/[A-Z]/.test(password)) strength += 25;
+    if (/[0-9]/.test(password)) strength += 25;
+    if (/[^A-Za-z0-9]/.test(password)) strength += 25;
+
+    setPasswordStrength(strength);
+
+    if (strength === 0) setPasswordFeedback('');
+    else if (strength <= 25) setPasswordFeedback('Weak');
+    else if (strength <= 50) setPasswordFeedback('Fair');
+    else if (strength <= 75) setPasswordFeedback('Good');
+    else setPasswordFeedback('Strong');
+  }, [password]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -643,17 +691,34 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                           <AtSign className="h-4 w-4 text-amber-500/70" />
                           Username
                         </Label>
-                        <Input
-                          id="signup-username"
-                          placeholder="johndoe (Voice of hope)"
-                          value={username}
-                          onChange={(e) => setUsername(e.target.value)}
-                          required
-                          className="bg-slate-900/40 border-slate-800 focus:border-amber-500/50 focus:ring-amber-500/20 text-white placeholder:text-slate-600 h-12 rounded-xl backdrop-blur-md transition-all duration-300"
-                        />
+                        <div className="relative group">
+                          <Input
+                            id="signup-username"
+                            placeholder="johndoe (Voice of hope)"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            required
+                            className={`bg-slate-900/40 border-slate-800 focus:border-amber-500/50 focus:ring-amber-500/20 text-white placeholder:text-slate-600 h-12 rounded-xl backdrop-blur-md transition-all duration-300 pr-10 ${
+                              usernameAvailable === true ? 'border-emerald-500/50' : 
+                              usernameAvailable === false ? 'border-red-500/50' : ''
+                            }`}
+                          />
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center">
+                            {isCheckingUsername ? (
+                              <Loader2 className="h-4 w-4 text-slate-500 animate-spin" />
+                            ) : usernameAvailable === true ? (
+                              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                            ) : usernameAvailable === false ? (
+                              <X className="h-4 w-4 text-red-500" />
+                            ) : null}
+                          </div>
+                        </div>
+                        {usernameAvailable === false && (
+                          <p className="text-[10px] text-red-400 ml-1">Username is already taken</p>
+                        )}
                       </div>
                       <div className="space-y-3">
-                        <Label htmlFor="signup-password" className="text-white font-medium flex items-center gap-2 mb-1">
+                        <Label htmlFor="signup-password" title="Password must be at least 8 characters with upper, number, and symbol" className="text-white font-medium flex items-center gap-2 mb-1">
                           <Key className="h-4 w-4 text-amber-500/70" />
                           Password
                         </Label>
@@ -666,20 +731,42 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                           required
                           className="bg-slate-900/40 border-slate-800 focus:border-amber-500/50 focus:ring-amber-500/20 text-white placeholder:text-slate-600 h-12 rounded-xl backdrop-blur-md transition-all duration-300"
                         />
+                        {password && (
+                          <div className="space-y-1.5 ml-1">
+                            <div className="flex justify-between items-center text-[10px] h-3">
+                              <span className="text-slate-500 uppercase tracking-wider font-bold">Strength</span>
+                              <span className={`font-bold transition-colors ${
+                                passwordStrength <= 25 ? 'text-red-400' :
+                                passwordStrength <= 50 ? 'text-orange-400' :
+                                passwordStrength <= 75 ? 'text-yellow-400' : 'text-emerald-400'
+                              }`}>{passwordFeedback}</span>
+                            </div>
+                            <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full transition-all duration-500 ${
+                                  passwordStrength <= 25 ? 'bg-red-500' :
+                                  passwordStrength <= 50 ? 'bg-orange-500' :
+                                  passwordStrength <= 75 ? 'bg-yellow-500' : 'bg-emerald-500'
+                                }`}
+                                style={{ width: `${passwordStrength}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
 
                 {/* Footer buttons */}
                 <div className="flex items-center gap-4 pt-4">
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-black font-bold h-12 rounded-xl shadow-lg shadow-amber-500/20 transition-all duration-300 transform active:scale-[0.98]"
-                    disabled={isLoading || !settingsLoaded}
-                  >
-                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <CheckCircle2 className="h-5 w-5 mr-2" />}
-                    Complete Registration
-                  </Button>
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-black font-bold h-12 rounded-xl shadow-lg shadow-amber-500/20 transition-all duration-300 transform active:scale-[0.98]"
+                      disabled={isLoading || !settingsLoaded || usernameAvailable === false || passwordStrength < 50}
+                    >
+                      {isLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <CheckCircle2 className="h-5 w-5 mr-2" />}
+                      Complete Registration
+                    </Button>
                 </div>
               </form>
             </TabsContent>
