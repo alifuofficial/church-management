@@ -5938,10 +5938,13 @@ function SettingsContent() {
     setPasswordMessage(null);
 
     try {
-      const res = await fetch(`/api/users/${user?.id}`, {
+      const res = await fetch(`/api/users/${user?.id}/password`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: passwordData.newPassword }),
+        body: JSON.stringify({ 
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword 
+        }),
       });
 
       if (res.ok) {
@@ -7530,36 +7533,63 @@ function SettingsContent() {
               Update your administrative password.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+           <CardContent className="space-y-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-slate-300">New Password</Label>
-                <Input
-                  type="password"
-                  value={passwordData.newPassword}
-                  onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
-                  placeholder="At least 8 characters"
-                  className="bg-slate-800 border-slate-700 text-white"
-                />
+                <Label className="text-slate-300 font-medium">Current Password</Label>
+                <div className="relative group">
+                  <Input
+                    type="password"
+                    value={passwordData.currentPassword}
+                    onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                    placeholder="Enter your current password"
+                    className="bg-slate-800 border-slate-700 text-white h-11 focus:ring-purple-500/20 focus:border-purple-500/50 transition-all"
+                  />
+                  <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                </div>
+              </div>
+
+              <Separator className="bg-slate-800" />
+
+              <div className="space-y-2">
+                <Label className="text-slate-300 font-medium">New Password</Label>
+                <div className="relative group">
+                  <Input
+                    type="password"
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                    placeholder="At least 8 characters"
+                    className="bg-slate-800 border-slate-700 text-white h-11 focus:ring-purple-500/20 focus:border-purple-500/50 transition-all"
+                  />
+                  <ShieldCheck className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-slate-300">Confirm New Password</Label>
-                <Input
-                  type="password"
-                  value={passwordData.confirmPassword}
-                  onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                  placeholder="Repeat new password"
-                  className="bg-slate-800 border-slate-700 text-white"
-                />
+                <Label className="text-slate-300 font-medium">Confirm New Password</Label>
+                <div className="relative group">
+                  <Input
+                    type="password"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    placeholder="Repeat new password"
+                    className="bg-slate-800 border-slate-700 text-white h-11 focus:ring-purple-500/20 focus:border-purple-500/50 transition-all"
+                  />
+                  <ShieldCheck className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                </div>
               </div>
 
               {passwordMessage && (
                 <div className={cn(
-                  "p-3 rounded-lg text-sm flex items-center gap-2",
-                  passwordMessage.type === 'success' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" : "bg-red-500/10 text-red-400 border border-red-500/30"
+                  "p-3 rounded-xl text-sm flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300",
+                  passwordMessage.type === 'success' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-red-500/10 text-red-400 border border-red-500/20"
                 )}>
-                  {passwordMessage.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-                  {passwordMessage.text}
+                  <div className={cn(
+                    "p-1.5 rounded-lg",
+                    passwordMessage.type === 'success' ? "bg-emerald-500/20" : "bg-red-500/20"
+                  )}>
+                    {passwordMessage.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                  </div>
+                  <span className="font-medium">{passwordMessage.text}</span>
                 </div>
               )}
 
