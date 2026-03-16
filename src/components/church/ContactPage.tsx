@@ -430,7 +430,7 @@ export function ContactPage() {
                     </p>
                   </CardContent>
                 </Card>
-              </div>
+              </motion.div>
             </div>
 
           </div>
