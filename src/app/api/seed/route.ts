@@ -5,14 +5,29 @@ import { hash } from 'bcryptjs';
 export async function GET() {
   try {
     // Create admin user
-    const hashedPassword = await hash('admin123', 12);
+    const adminPassword = await hash('admin123', 12);
     const admin = await db.user.upsert({
       where: { email: 'admin@church.org' },
-      update: {},
+      update: { password: adminPassword },
       create: {
         email: 'admin@church.org',
         name: 'Admin User',
-        password: hashedPassword,
+        password: adminPassword,
+        role: 'ADMIN',
+        isVerified: true,
+        isActive: true,
+      },
+    });
+
+    // Create NEW admin user
+    const churchAdminPassword = await hash('ChurchAdmin2026!', 12);
+    const churchAdmin = await db.user.upsert({
+      where: { email: 'churchadmin@church.org' },
+      update: { password: churchAdminPassword },
+      create: {
+        email: 'churchadmin@church.org',
+        name: 'Church Admin',
+        password: churchAdminPassword,
         role: 'ADMIN',
         isVerified: true,
         isActive: true,
@@ -23,7 +38,7 @@ export async function GET() {
     const pastorPassword = await hash('pastor123', 12);
     const pastor = await db.user.upsert({
       where: { email: 'pastor@church.org' },
-      update: {},
+      update: { password: pastorPassword },
       create: {
         email: 'pastor@church.org',
         name: 'Pastor John Smith',
@@ -38,7 +53,7 @@ export async function GET() {
     const memberPassword = await hash('member123', 12);
     const member = await db.user.upsert({
       where: { email: 'member@church.org' },
-      update: {},
+      update: { password: memberPassword },
       create: {
         email: 'member@church.org',
         name: 'Jane Doe',
@@ -388,9 +403,15 @@ export async function GET() {
 
     return NextResponse.json({ 
       message: 'Database seeded successfully!',
-      users: { admin: admin.email, pastor: pastor.email, member: member.email },
+      users: { 
+        admin: admin.email, 
+        churchAdmin: churchAdmin.email,
+        pastor: pastor.email, 
+        member: member.email 
+      },
       credentials: {
         admin: { email: 'admin@church.org', password: 'admin123' },
+        churchAdmin: { email: 'churchadmin@church.org', password: 'ChurchAdmin2026!' },
         pastor: { email: 'pastor@church.org', password: 'pastor123' },
         member: { email: 'member@church.org', password: 'member123' },
       }
