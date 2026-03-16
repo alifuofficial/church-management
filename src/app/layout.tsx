@@ -3,6 +3,8 @@ import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "next-themes";
+import AnalyticsTracker from "@/components/analytics/AnalyticsTracker";
+import { Suspense } from "react";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -51,6 +53,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <Suspense fallback={null}>
+            <AnalyticsTracker />
+          </Suspense>
           {children}
           <Toaster />
         </ThemeProvider>

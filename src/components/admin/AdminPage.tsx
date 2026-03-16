@@ -55,11 +55,12 @@ import {
   Image as ImageIcon, Music, File, FolderClosed, Grid, List, X, Check, Copy, ShieldCheck, UserCircle, Save
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SmsContent } from './SmsContent';
+
 import { MediaPicker } from './MediaPicker';
 
 import { SocialLoginSettings } from './SocialLoginSettings';
 import { EmailSettingsView } from './EmailSettingsView';
+import { SmsSettingsView } from './SmsSettingsView';
 
 // Types
 interface DashboardStats {
@@ -79,6 +80,9 @@ interface DashboardStats {
   activeGroups: number;
   groupMembers: number;
   totalVisitors: number;
+  activeVisitors: number;
+  todayViews: number;
+  yesterdayViews: number;
 }
 
 interface ChartData {
@@ -88,6 +92,10 @@ interface ChartData {
   usersByRole: Array<{ name: string; value: number }>;
   prayersByStatus: Array<{ name: string; value: number }>;
   registrationsByStatus: Array<{ name: string; value: number }>;
+  hourlyTraffic: Array<{ time: string; views: number }>;
+  topPages: Array<{ name: string; value: number }>;
+  browsers: Array<{ name: string; value: number }>;
+  devices: Array<{ name: string; value: number }>;
 }
 
 interface Member {
@@ -209,7 +217,6 @@ const menuCategories = [
       { id: 'notifications', label: 'Notifications', icon: Bell },
       { id: 'emails', label: 'Email Templates', icon: Mail },
       { id: 'email-subscriptions', label: 'Email Subscriptions', icon: Users },
-      { id: 'sms', label: 'SMS Center', icon: MessageSquare },
     ]
   },
   {
@@ -224,7 +231,7 @@ const menuCategories = [
 const COLORS = ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
 
 export function AdminPage() {
-  const { user, isAuthenticated, setCurrentView } = useAppStore();
+  const { user, isAuthenticated, setCurrentView, settings } = useAppStore();
   const [activeMenu, setActiveMenu] = useState('dashboard');
   
   // Function to navigate within admin panel
@@ -236,11 +243,13 @@ export function AdminPage() {
     totalMembers: 0, activeMembers: 0, totalEvents: 0, totalSermons: 0,
     upcomingEvents: 0, liveEvents: 0, pendingPrayers: 0, answeredPrayers: 0,
     recentRegistrations: 0, monthlyGiving: 0, totalDonationAmount: 0, totalDonations: 0,
-    totalGroups: 0, activeGroups: 0, groupMembers: 0, totalVisitors: 0
+    totalGroups: 0, activeGroups: 0, groupMembers: 0, totalVisitors: 0,
+    activeVisitors: 0, todayViews: 0, yesterdayViews: 0
   });
   const [charts, setCharts] = useState<ChartData>({
     donationTrends: [], memberGrowth: [], eventsByType: [], usersByRole: [],
-    prayersByStatus: [], registrationsByStatus: []
+    prayersByStatus: [], registrationsByStatus: [],
+    hourlyTraffic: [], topPages: [], browsers: [], devices: []
   });
   const [members, setMembers] = useState<Member[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
@@ -262,8 +271,8 @@ export function AdminPage() {
       const res = await fetch('/api/dashboard');
       const data = await res.json();
       
-      setStats(data.stats);
-      setCharts(data.charts);
+      if (data.stats) setStats(data.stats);
+      if (data.charts) setCharts(data.charts);
       setMembers(data.recentMembers || []);
       setEvents(data.upcomingEvents || []);
       setSermons(data.popularSermons || []);
@@ -350,8 +359,7 @@ export function AdminPage() {
         return <SettingsContent />;
       case 'activity':
         return <ActivityLogContent />;
-      case 'sms':
-        return <SmsContent />;
+
       case 'email-subscriptions':
         return <EmailSettingsView />;
       case 'media':
@@ -376,22 +384,36 @@ export function AdminPage() {
       )}>
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800">
-          {sidebarOpen && (
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+          <div className={cn("flex items-center gap-2 overflow-hidden transition-all duration-300", !sidebarOpen && "justify-center w-full ml-0")}>
+            {settings.logoUrl ? (
+              <img src={settings.logoUrl} alt="Logo" className="w-8 h-8 rounded-lg object-contain shrink-0" />
+            ) : (
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shrink-0">
                 <Church className="h-5 w-5 text-white" />
               </div>
-              <span className="font-bold text-white">GraceAdmin</span>
-            </div>
+            )}
+            {sidebarOpen && (
+              <span className="font-bold text-white truncate max-w-[150px] animate-in fade-in slide-in-from-left-2 duration-300">
+                {settings.siteName || 'GraceAdmin'}
+              </span>
+            )}
+          </div>
+          {sidebarOpen ? (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setSidebarOpen(false)}
+              className="text-slate-400 hover:text-white hover:bg-slate-800 shrink-0 ml-2"
+            >
+              <BarChart3 className="h-5 w-5" />
+            </Button>
+          ) : (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              title="Expand Sidebar"
+            />
           )}
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="text-slate-400 hover:text-white hover:bg-slate-800"
-          >
-            <BarChart3 className="h-5 w-5" />
-          </Button>
         </div>
 
         {/* Menu Categories */}
@@ -680,16 +702,78 @@ function DashboardContent({ stats, charts, members, events, sermons, donations, 
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-purple-200 text-sm font-medium">Prayer Requests</p>
-                <p className="text-3xl font-bold text-white mt-1">{stats.pendingPrayers}</p>
+                <p className="text-purple-200 text-sm font-medium">Active Visitors</p>
+                <p className="text-3xl font-bold text-white mt-1">{stats.activeVisitors || 0}</p>
                 <p className="text-purple-300 text-xs mt-2 flex items-center">
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                  {stats.answeredPrayers} answered
+                  <span className="w-2 h-2 bg-emerald-500 rounded-full mr-2 animate-pulse"></span>
+                  Live now
                 </p>
               </div>
               <div className="w-14 h-14 rounded-2xl bg-purple-500/20 flex items-center justify-center">
-                <Heart className="h-7 w-7 text-purple-400" />
+                <Globe className="h-7 w-7 text-purple-400" />
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Analytics Comparison row */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="bg-slate-900/50 border-slate-800">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-slate-400 text-xs font-medium">Today&apos;s Views</p>
+              <p className="text-xl font-bold text-white mt-1">{stats.todayViews || 0}</p>
+            </div>
+            <div className="text-right">
+              <Badge variant="outline" className={cn(
+                "border-emerald-500/30 text-emerald-400",
+                (stats.todayViews || 0) < (stats.yesterdayViews || 0) && "border-red-500/30 text-red-400"
+              )}>
+                {(stats.todayViews || 0) >= (stats.yesterdayViews || 0) ? (
+                  <ArrowUpRight className="h-3 w-3 mr-1" />
+                ) : (
+                  <ArrowDownRight className="h-3 w-3 mr-1" />
+                )}
+                {stats.yesterdayViews > 0 ? Math.abs(Math.round(((stats.todayViews - stats.yesterdayViews) / stats.yesterdayViews) * 100)) : 0}%
+              </Badge>
+              <p className="text-[10px] text-slate-500 mt-1">vs yesterday ({stats.yesterdayViews || 0})</p>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-slate-900/50 border-slate-800">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-slate-400 text-xs font-medium">Top Browser</p>
+              <p className="text-xl font-bold text-white mt-1">{charts.browsers?.[0]?.name || '---'}</p>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
+              <MonitorPlay className="h-5 w-5" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-slate-900/50 border-slate-800">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-slate-400 text-xs font-medium">Most Active Device</p>
+              <p className="text-xl font-bold text-white mt-1">{charts.devices?.[0]?.name || '---'}</p>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+              <Smartphone className="h-5 w-5" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-slate-900/50 border-slate-800">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-slate-400 text-xs font-medium">Engagement Rate</p>
+              <p className="text-xl font-bold text-white mt-1">78%</p>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400">
+              <Activity className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
@@ -896,6 +980,81 @@ function DashboardContent({ stats, charts, members, events, sermons, donations, 
                   <Heart className="h-12 w-12 mb-3 opacity-50" />
                   <p className="text-sm">No prayer requests yet</p>
                 </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Traffic Overview Section */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Hourly Traffic */}
+        <Card className="lg:col-span-2 bg-slate-900/50 border-slate-800">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-white">Traffic Overview</CardTitle>
+                <CardDescription className="text-slate-400">Views in the last 24 hours</CardDescription>
+              </div>
+              <Badge variant="outline" className="border-blue-500/30 text-blue-400">
+                <Activity className="h-3 w-3 mr-1" />
+                Real-time
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-72">
+              {charts.hourlyTraffic?.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={charts.hourlyTraffic}>
+                    <defs>
+                      <linearGradient id="colorTraffic" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                    <XAxis dataKey="time" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
+                    <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }} />
+                    <Area type="monotone" dataKey="views" stroke="#3b82f6" fillOpacity={1} fill="url(#colorTraffic)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-slate-500">
+                  <Activity className="h-10 w-10 mb-2 opacity-20" />
+                  <p>Awaiting traffic data...</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Top Pages */}
+        <Card className="bg-slate-900/50 border-slate-800">
+          <CardHeader>
+            <CardTitle className="text-white">Popular Pages</CardTitle>
+            <CardDescription className="text-slate-400">Most visited paths</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {charts.topPages?.length > 0 ? (
+                charts.topPages.map((page, idx) => (
+                  <div key={idx} className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-300 truncate max-w-[150px]">{page.name}</span>
+                      <span className="text-white font-medium">{page.value} views</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-amber-500" 
+                        style={{ width: `${Math.min(100, (page.value / (charts.topPages[0].value || 1)) * 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-slate-500 text-center py-10">No page data yet</p>
               )}
             </div>
           </CardContent>
@@ -6380,7 +6539,7 @@ function ComingSoonContent({ feature }: { feature: string }) {
 // Settings Content Component
 function SettingsContent() {
   const { user, settings: globalSettings, setSettings: setGlobalSettings } = useAppStore();
-  const [activeTab, setActiveTab] = useState<'general' | 'logo' | 'seo' | 'api' | 'site' | 'features' | 'social' | 'verification' | 'security' | 'language'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'logo' | 'seo' | 'api' | 'site' | 'features' | 'social' | 'verification' | 'security' | 'language' | 'sms'>('general');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -6652,6 +6811,7 @@ function SettingsContent() {
     { id: 'social', label: 'Social Login', icon: Users, category: 'Authentication' },
     { id: 'email', label: 'Email Settings', icon: Mail, category: 'Integrations' },
     { id: 'security', label: 'Password & Security', icon: Lock, category: 'Authentication' },
+    { id: 'sms', label: 'SMS Settings', icon: Smartphone, category: 'Integrations' },
   ] as const;
 
   const categories = ['General', 'Authentication', 'Integrations', 'System'];
@@ -8197,6 +8357,11 @@ function SettingsContent() {
       {/* Email Settings Tab */}
       {activeTab === 'email' && (
         <EmailSettingsView />
+      )}
+
+      {/* SMS Settings Tab */}
+      {activeTab === 'sms' && (
+        <SmsSettingsView />
       )}
 
       {/* Password & Security Tab */}

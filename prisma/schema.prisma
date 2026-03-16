@@ -647,3 +647,16 @@ model Testimony {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model PageView {
+  id        String   @id @default(cuid())
+  path      String
+  referrer  String?
+  browser   String?
+  device    String?
+  os        String?
+  timestamp DateTime @default(now())
+  ipAddress String?
+  userAgent String?
+  userId    String?
+}

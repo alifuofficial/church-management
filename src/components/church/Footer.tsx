@@ -286,13 +286,8 @@ export function Footer() {
               Developed by <a href="https://t.me/dmalifu" target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:text-amber-400 font-medium">AlifXperience</a>
             </span>
           </p>
-          <div className="flex gap-6 text-sm text-slate-400">
-            <button onClick={() => setCurrentView('about')} className="hover:text-amber-500 transition-colors">
-              Privacy Policy
-            </button>
-            <button onClick={() => setCurrentView('about')} className="hover:text-amber-500 transition-colors">
-              Terms of Service
-            </button>
+          <div className="text-sm text-slate-400">
+            version 0.1
           </div>
         </div>
       </div>

@@ -113,18 +113,66 @@ export async function GET(request: NextRequest) {
       newMembers: r.newMembers
     }));
 
-    // Get distributions using groupBy
-    const [
-      eventsByType,
-      usersByRole,
-      prayersByStatus,
-      registrationsByStatus
-    ] = await Promise.all([
-      db.event.groupBy({ by: ['type'], _count: true }),
-      db.user.groupBy({ by: ['role'], _count: true }),
-      db.prayerRequest.groupBy({ by: ['status'], _count: true }),
-      db.registration.groupBy({ by: ['status'], _count: true })
-    ]);
+    // Get analytics data with a safe wrapper in case the PageView table doesn't exist yet
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60000 * 60);
+    
+    let activeVisitors = 0;
+    let todayViews = 0;
+    let yesterdayViews = 0;
+    let topPages: any[] = [];
+    let browsers: any[] = [];
+    let devices: any[] = [];
+    let hourlyViews: any[] = [];
+
+    try {
+      const analyticsResults = await Promise.all([
+        db.pageView.count({ where: { timestamp: { gte: fiveMinutesAgo } } }),
+        db.pageView.count({ where: { timestamp: { gte: new Date(new Date().setHours(0,0,0,0)) } } }),
+        db.pageView.count({ 
+          where: { 
+            timestamp: { 
+              gte: new Date(new Date().setDate(new Date().getDate() - 1)).setHours(0,0,0,0),
+              lt: new Date(new Date().setHours(0,0,0,0))
+            } 
+          } 
+        }),
+        db.pageView.groupBy({
+          by: ['path'],
+          _count: true,
+          orderBy: { _count: { path: 'desc' } },
+          take: 5
+        }),
+        db.pageView.groupBy({ by: ['browser'], _count: true }),
+        db.pageView.groupBy({ by: ['device'], _count: true }),
+        db.pageView.findMany({
+          where: { timestamp: { gte: twentyFourHoursAgo } },
+          select: { timestamp: true }
+        })
+      ]);
+
+      activeVisitors = analyticsResults[0];
+      todayViews = analyticsResults[1];
+      yesterdayViews = analyticsResults[2];
+      topPages = analyticsResults[3].map((p: any) => ({ name: p.path, value: p._count }));
+      browsers = analyticsResults[4].map((b: any) => ({ name: b.browser, value: b._count }));
+      devices = analyticsResults[5].map((d: any) => ({ name: d.device, value: d._count }));
+      hourlyViews = analyticsResults[6];
+    } catch (e) {
+      console.warn('PageView analytics table not yet available:', e);
+    }
+
+    // Process hourly views for the last 24h chart
+    const hourlyData = Array.from({ length: 24 }, (_, i) => {
+      const hour = new Date(now.getTime() - i * 60 * 60 * 1000);
+      const hourStr = hour.getHours() + ':00';
+      const count = hourlyViews.filter(v => {
+        const vHour = new Date(v.timestamp);
+        return vHour.getHours() === hour.getHours() && 
+               vHour.getDate() === hour.getDate();
+      }).length;
+      return { time: hourStr, views: count };
+    }).reverse();
 
     // Get group members count
     const groupMembers = await db.smallGroupMember.count();
@@ -216,11 +264,24 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    // Get distributions using groupBy
+    const [
+      eventsByType,
+      usersByRole,
+      prayersByStatus,
+      registrationsByStatus
+    ] = await Promise.all([
+      db.event.groupBy({ by: ['type'], _count: true }),
+      db.user.groupBy({ by: ['role'], _count: true }),
+      db.prayerRequest.groupBy({ by: ['status'], _count: true }),
+      db.registration.groupBy({ by: ['status'], _count: true })
+    ]);
+
     // Get user-specific data if userId provided
-    let userRegistrations = [];
-    let userDonations = [];
-    let userPrayers = [];
-    let userGroups = [];
+    let userRegistrations: any[] = [];
+    let userDonations: any[] = [];
+    let userPrayers: any[] = [];
+    let userGroups: any[] = [];
 
     if (userId) {
       const results = await Promise.all([
@@ -295,7 +356,10 @@ export async function GET(request: NextRequest) {
         totalGroups,
         activeGroups,
         groupMembers,
-        totalVisitors
+        totalVisitors,
+        activeVisitors,
+        todayViews,
+        yesterdayViews
       },
       charts: {
         donationTrends: donationChartData,
@@ -303,7 +367,11 @@ export async function GET(request: NextRequest) {
         eventsByType: eventsByType.map(e => ({ name: e.type.replace('_', ' '), value: e._count })),
         usersByRole: usersByRole.map(u => ({ name: u.role, value: u._count })),
         prayersByStatus: prayersByStatus.map(p => ({ name: p.status.replace('_', ' '), value: p._count })),
-        registrationsByStatus: registrationsByStatus.map(r => ({ name: r.status, value: r._count }))
+        registrationsByStatus: registrationsByStatus.map(r => ({ name: r.status, value: r._count })),
+        hourlyTraffic: hourlyData,
+        topPages: topPages.map(p => ({ name: p.path, value: p._count })),
+        browsers: browsers.map(b => ({ name: b.browser || 'Unknown', value: b._count })),
+        devices: devices.map(d => ({ name: d.device || 'Unknown', value: d._count }))
       },
       topEvents,
       recentMembers,
