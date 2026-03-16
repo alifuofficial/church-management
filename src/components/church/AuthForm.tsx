@@ -21,7 +21,7 @@ import {
   Church, AlertCircle, Loader2, Globe, Facebook, 
   ArrowLeft, RefreshCw, CheckCircle2, User, MapPin, 
   Heart, Shield, ChevronRight, ChevronLeft, X, Smartphone,
-  Sparkles, Lock, Mail as MailIcon, Key, Info, LogIn, AtSign, Clock
+  Sparkles, Lock, Mail as MailIcon, Key, Info, LogIn, AtSign, Clock, Send
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { signIn } from 'next-auth/react';
@@ -45,7 +45,7 @@ interface AuthFormProps {
 
 export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
   const { setUser, setCurrentView, settings } = useAppStore();
-  const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
+  const [mode, setMode] = useState<'signin' | 'signup' | 'forgot-password'>(initialMode);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [socialSettings, setSocialSettings] = useState<SocialLoginSettings | null>(null);
@@ -80,6 +80,10 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
   // Password strength state
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [passwordFeedback, setPasswordFeedback] = useState('');
+
+  // Forgot password state
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState(false);
 
   // Fetch settings
   useEffect(() => {
@@ -158,6 +162,10 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (mode === 'forgot-password') {
+      await handleForgotPassword();
+      return;
+    }
 
     // Wait for settings to load
     if (!settingsLoaded) {
@@ -331,6 +339,32 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
       setVerificationError('Failed to resend code');
     } finally {
       setIsResending(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!forgotEmail) return;
+    
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
+      
+      if (res.ok) {
+        setForgotSuccess(true);
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Failed to send reset email');
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -591,6 +625,19 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                     />
                   </div>
                 </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('forgot-password');
+                      setError('');
+                    }}
+                    className="text-xs text-amber-500 hover:text-amber-400 hover:underline transition-all"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
                 
                   <Button 
                     type="submit" 
@@ -769,6 +816,73 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                     </Button>
                 </div>
               </form>
+            </TabsContent>
+
+            <TabsContent value="forgot-password">
+              <div className="space-y-6">
+                <div className="text-center space-y-2">
+                  <h3 className="text-xl font-bold text-white">Reset Password</h3>
+                  <p className="text-slate-400 text-sm">
+                    Enter your email address and we'll send you a link to reset your password.
+                  </p>
+                </div>
+
+                {forgotSuccess ? (
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 text-center space-y-4 animate-in zoom-in-95 duration-300">
+                    <div className="bg-emerald-500/20 w-12 h-12 rounded-full flex items-center justify-center mx-auto">
+                      <CheckCircle2 className="h-6 w-6 text-emerald-400" />
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="text-white font-bold">Check your email</h4>
+                      <p className="text-slate-400 text-sm">
+                        If an account exists for {forgotEmail}, you will receive a password reset link shortly.
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setMode('signin')}
+                      className="border-slate-800 text-slate-300 hover:text-white"
+                    >
+                      Return to Sign In
+                    </Button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-3">
+                      <Label htmlFor="forgot-email" className="text-white font-medium flex items-center gap-2 mb-1">
+                        <MailIcon className="h-4 w-4 text-amber-500" />
+                        Email Address
+                      </Label>
+                      <Input
+                        id="forgot-email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        required
+                        className="bg-slate-900/40 border-slate-800 focus:border-amber-500/50 focus:ring-amber-500/20 text-white placeholder:text-slate-600 h-12 rounded-xl backdrop-blur-md"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-black font-bold h-12 rounded-xl shadow-lg shadow-amber-500/20 transition-all duration-300 transform active:scale-[0.98]"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Send className="h-5 w-5 mr-2" />}
+                      Send Reset link
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setMode('signin')}
+                      className="w-full text-slate-500 hover:text-white"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back to Sign In
+                    </Button>
+                  </form>
+                )}
+              </div>
             </TabsContent>
           </Tabs>
 

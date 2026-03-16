@@ -61,6 +61,8 @@ export interface SiteSettings {
   showLoginForm: boolean;
   privateMessage: string;
   heroBackgroundImage: string;
+  // Email Settings
+  emailEnabled: boolean;
   // Feature Flags
   features: FeatureFlags;
   // Language Settings
@@ -115,6 +117,7 @@ const defaultSettings: SiteSettings = {
     defaultLanguage: 'en',
     availableLanguages: ['en', 'es', 'fr', 'de', 'pt', 'zh', 'ja', 'ko', 'ar', 'hi'],
   },
+  emailEnabled: true,
 };
 
 interface AppState {

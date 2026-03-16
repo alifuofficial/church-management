@@ -152,11 +152,11 @@ export function Footer() {
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-2">
               {settings.logoUrl ? (
-                <img src={settings.logoUrl} alt={settings.siteName} className="h-8 w-8 object-contain" />
+                <img src={settings.logoUrl} alt={settings.siteName} className="h-12 w-12 object-contain" />
               ) : (
-                <Church className="h-8 w-8 text-amber-500" />
+                <Church className="h-12 w-12 text-amber-500" />
               )}
-              <span className="font-bold text-xl">{settings.siteName || 'Digital Church'}</span>
+              <span className="font-bold text-2xl">{settings.siteName || 'Digital Church'}</span>
             </div>
             <p className="text-slate-400 text-sm max-w-sm">
               {settings.siteDescription || 'A vibrant community of faith, hope, and love. Join us as we grow together in our journey with Christ.'}

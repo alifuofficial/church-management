@@ -56,9 +56,9 @@ import {
 import { cn } from '@/lib/utils';
 import { SmsContent } from './SmsContent';
 import { MediaPicker } from './MediaPicker';
-import { EmailSubscriptionContent } from './EmailSubscriptionContent';
+
 import { SocialLoginSettings } from './SocialLoginSettings';
-import { EmailVerificationSettings } from './EmailVerificationSettings';
+import { EmailSettingsView } from './EmailSettingsView';
 
 // Types
 interface DashboardStats {
@@ -340,7 +340,7 @@ export function AdminPage() {
       case 'sms':
         return <SmsContent />;
       case 'email-subscriptions':
-        return <EmailSubscriptionContent />;
+        return <EmailSettingsView />;
       case 'media':
         return <MediaLibraryContent />;
       case 'testimonies':
@@ -5972,7 +5972,7 @@ function SettingsContent() {
     { id: 'site', label: 'Site Status', icon: Activity, category: 'System' },
     { id: 'features', label: 'Features', icon: Layers, category: 'System' },
     { id: 'social', label: 'Social Login', icon: Users, category: 'Authentication' },
-    { id: 'verification', label: 'Email Verification', icon: Mail, category: 'Authentication' },
+    { id: 'email', label: 'Email Settings', icon: Mail, category: 'Integrations' },
     { id: 'security', label: 'Password & Security', icon: Lock, category: 'Authentication' },
   ] as const;
 
@@ -7516,9 +7516,9 @@ function SettingsContent() {
         <SocialLoginSettings />
       )}
 
-      {/* Email Verification Tab */}
-      {activeTab === 'verification' && (
-        <EmailVerificationSettings />
+      {/* Email Settings Tab */}
+      {activeTab === 'email' && (
+        <EmailSettingsView />
       )}
 
       {/* Password & Security Tab */}

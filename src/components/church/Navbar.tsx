@@ -95,18 +95,18 @@ export function Navbar() {
   return (
     <>
       <nav className="sticky top-0 z-50 w-full border-b border-slate-800/50 bg-slate-950/95 backdrop-blur-lg supports-[backdrop-filter]:bg-slate-950/80">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+        <div className="container mx-auto flex h-20 items-center justify-between px-4">
           {/* Logo */}
           <button 
             onClick={() => setCurrentView('home')}
-            className="flex items-center gap-2 font-bold text-xl text-white group"
+            className="flex items-center gap-3 font-bold text-2xl text-white group"
           >
             <div className="relative">
               {settings.logoUrl && typeof settings.logoUrl === 'string' && settings.logoUrl.trim() !== '' ? (
-                <img src={settings.logoUrl} alt={settings.siteName} className="h-10 w-10 object-contain" />
+                <img src={settings.logoUrl} alt={settings.siteName} className="h-14 w-14 object-contain" />
               ) : (
                 <div className="relative">
-                  <Church className="h-10 w-10 text-amber-500 group-hover:scale-110 transition-transform" />
+                  <Church className="h-14 w-14 text-amber-500 group-hover:scale-110 transition-transform" />
                   <Sparkles className="h-4 w-4 text-amber-400 absolute -top-1 -right-1 animate-pulse" />
                 </div>
               )}
@@ -117,23 +117,23 @@ export function Navbar() {
           </button>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-1">
+          <div className="hidden lg:flex items-center gap-2">
             {navItems.map((item) => {
               const isActive = currentView === item.view;
               return (
                 <Button
                   key={item.view}
                   variant="ghost"
-                  size="sm"
+                  
                   onClick={() => setCurrentView(item.view)}
                   className={cn(
-                    "relative text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-300",
+                    "relative text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-300 text-base px-4 h-12",
                     isActive && "text-amber-400 hover:text-amber-400 bg-amber-500/10"
                   )}
                 >
                   {item.label}
                   {isActive && (
-                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-amber-500" />
+                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
                   )}
                 </Button>
               );

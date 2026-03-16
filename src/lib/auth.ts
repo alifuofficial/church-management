@@ -93,6 +93,10 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
-  secret: process.env.NEXTAUTH_SECRET || "church-management-stable-secret-key-12345",
-  debug: process.env.NODE_ENV === "development" || !!process.env.DEBUG_AUTH,
+  secret: process.env.NEXT_PUBLIC_SECRET || process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === "development",
 };
+
+if (process.env.NODE_ENV === "production" && !process.env.NEXTAUTH_SECRET) {
+  console.warn("WARNING: NEXTAUTH_SECRET is not set in production. This is a security risk.");
+}
