@@ -252,7 +252,7 @@ export function HomePage() {
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="group border-2 border-slate-700 text-white hover:bg-slate-800/50 hover:border-amber-500/40 px-10 py-8 rounded-2xl backdrop-blur-md transition-all duration-300 text-lg"
+                  className="group border-2 border-slate-700 text-white bg-transparent hover:bg-slate-800/50 hover:border-amber-500/40 px-10 py-8 rounded-2xl backdrop-blur-md transition-all duration-300 text-lg"
                   onClick={() => setCurrentView('about')}
                 >
                   <Compass className="mr-3 h-6 w-6 group-hover:rotate-45 transition-transform" />
@@ -890,7 +890,7 @@ export function HomePage() {
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="border-slate-600 text-white hover:bg-slate-800 hover:text-white px-8"
+                  className="border-slate-600 text-white bg-transparent hover:bg-slate-800 hover:text-white px-8"
                   onClick={() => setCurrentView('contact')}
                 >
                   <Mail className="mr-2 h-5 w-5" />
