@@ -25,12 +25,10 @@ for type in "image" "images"; do
   fi
 done
 
-# If the database file doesn't exist, initialize it
-if [ ! -f /app/db/church.db ]; then
-  echo "Database not found, initializing..."
-  # Run prisma as nextjs user
-  gosu nextjs npx prisma@6 db push --accept-data-loss
-fi
+# Sync database schema on every startup
+echo "Synchronizing database schema..."
+# Run prisma as nextjs user
+gosu nextjs npx prisma db push --accept-data-loss
 
 # Execute the main command as nextjs user
 echo "Starting application as nextjs user..."
