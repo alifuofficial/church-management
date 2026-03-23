@@ -23,6 +23,20 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Consume CapRover build arguments to make them available during Next.js build
+ARG DATABASE_URL
+ARG NEXTAUTH_SECRET
+ARG NEXTAUTH_URL
+ARG NEXT_PUBLIC_APP_URL
+ARG NODE_ENV
+ARG CAPROVER_GIT_COMMIT_SHA
+
+ENV DATABASE_URL=$DATABASE_URL
+ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
+ENV NEXTAUTH_URL=$NEXTAUTH_URL
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+ENV NODE_ENV=${NODE_ENV:-production}
+
 # Build using Node instead of Bun to avoid SIGILL (Illegal Instruction) on older CPUs
 RUN npm run build
 
