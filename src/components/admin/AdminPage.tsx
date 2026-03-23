@@ -1314,12 +1314,39 @@ function MembersContent({ members, searchQuery, setSearchQuery, formatDate }: {
   });
 
   useEffect(() => {
-    setMemberList(members);
+    const fetchAllMembers = async () => {
+      try {
+        const res = await fetch('/api/users?limit=1000');
+        if (res.ok) {
+          const data = await res.json();
+          setMemberList(data);
+        } else {
+          setMemberList(members);
+        }
+      } catch (error) {
+        console.error('Failed to fetch all members:', error);
+        setMemberList(members);
+      }
+    };
+    fetchAllMembers();
   }, [members]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   const filteredMembers = memberList.filter(m => 
     m.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     m.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredMembers.length / itemsPerPage));
+  const paginatedMembers = filteredMembers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   const handleAddMember = async () => {
@@ -1764,7 +1791,7 @@ function MembersContent({ members, searchQuery, setSearchQuery, formatDate }: {
                 </tr>
               </thead>
               <tbody>
-                {filteredMembers.map((member) => (
+                {paginatedMembers.map((member) => (
                   <tr key={member.id} className="border-b border-slate-800 hover:bg-slate-800/50">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -1838,6 +1865,57 @@ function MembersContent({ members, searchQuery, setSearchQuery, formatDate }: {
               </tbody>
             </table>
           </ScrollArea>
+          
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t border-slate-800">
+              <div className="text-sm text-slate-400">
+                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredMembers.length)} of {filteredMembers.length} members
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
+                >
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                     let pageNum = i + 1;
+                     if (totalPages > 5) {
+                       pageNum = Math.max(1, Math.min(currentPage - 2 + i, totalPages - 4 + i));
+                     }
+                     return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={currentPage === pageNum 
+                          ? "bg-amber-500 hover:bg-amber-600 text-black border-transparent" 
+                          : "border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white w-9 h-9 p-0"
+                        }
+                      >
+                        {pageNum}
+                      </Button>
+                     );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
