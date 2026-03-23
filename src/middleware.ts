@@ -30,7 +30,8 @@ export default withAuth(
           path.startsWith("/api/public") ||
           path.startsWith("/_next") ||
           path.includes("favicon.ico") ||
-          (['/api/events', '/api/sermons', '/api/settings', '/api/campaigns', '/api/testimonies'].some(p => path.startsWith(p)) && req.method === 'GET')
+          (['/api/events', '/api/sermons', '/api/settings', '/api/campaigns', '/api/testimonies'].some(p => path.startsWith(p)) && req.method === 'GET') ||
+          (path === '/api/users' && req.method === 'POST')
         ) {
           return true;
         }
