@@ -132,19 +132,19 @@ export async function GET(request: NextRequest) {
         db.pageView.count({ 
           where: { 
             timestamp: { 
-              gte: new Date(new Date().setDate(new Date().getDate() - 1)).setHours(0,0,0,0),
+              gte: new Date(new Date(new Date().setDate(new Date().getDate() - 1)).setHours(0,0,0,0)),
               lt: new Date(new Date().setHours(0,0,0,0))
             } 
           } 
         }),
         db.pageView.groupBy({
           by: ['path'],
-          _count: true,
+          _count: { path: true },
           orderBy: { _count: { path: 'desc' } },
           take: 5
         }),
-        db.pageView.groupBy({ by: ['browser'], _count: true }),
-        db.pageView.groupBy({ by: ['device'], _count: true }),
+        db.pageView.groupBy({ by: ['browser'], _count: { browser: true } }),
+        db.pageView.groupBy({ by: ['device'], _count: { device: true } }),
         db.pageView.findMany({
           where: { timestamp: { gte: twentyFourHoursAgo } },
           select: { timestamp: true }
@@ -154,9 +154,9 @@ export async function GET(request: NextRequest) {
       activeVisitors = analyticsResults[0];
       todayViews = analyticsResults[1];
       yesterdayViews = analyticsResults[2];
-      topPages = analyticsResults[3].map((p: any) => ({ name: p.path, value: p._count }));
-      browsers = analyticsResults[4].map((b: any) => ({ name: b.browser, value: b._count }));
-      devices = analyticsResults[5].map((d: any) => ({ name: d.device, value: d._count }));
+      topPages = analyticsResults[3].map((p: any) => ({ name: p.path, value: p._count.path }));
+      browsers = analyticsResults[4].map((b: any) => ({ name: b.browser, value: b._count.browser }));
+      devices = analyticsResults[5].map((d: any) => ({ name: d.device, value: d._count.device }));
       hourlyViews = analyticsResults[6];
     } catch (e) {
       console.warn('PageView analytics table not yet available:', e);
