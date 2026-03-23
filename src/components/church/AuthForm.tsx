@@ -85,6 +85,17 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotSuccess, setForgotSuccess] = useState(false);
 
+  // Registration fix notice
+  const [showFixNotice, setShowFixNotice] = useState(false);
+
+  useEffect(() => {
+    // Disable after 7 days (March 30, 2026)
+    const expiryDate = new Date('2026-03-30T23:59:59Z');
+    if (new Date() < expiryDate) {
+      setShowFixNotice(true);
+    }
+  }, []);
+
   // Fetch settings
   useEffect(() => {
     const fetchSettings = async () => {
@@ -691,6 +702,14 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
 
             <TabsContent value="signup">
               <form onSubmit={handleSubmit} className="space-y-6">
+                {showFixNotice && (
+                  <Alert className="bg-emerald-500/10 border-emerald-500/20 text-emerald-400 rounded-xl animate-in fade-in slide-in-from-top-4 mb-4">
+                    <Info className="h-4 w-4" />
+                    <AlertDescription className="leading-relaxed">
+                      Dhiifama gudda wajjin rakko registration website keenyaan walqabatee ture amma furameera. Yoo amma illee rakkon isin mudate ykn register gochuuf gargaarsa barbaaddan nu quunnama. Guyyaa eebba! 
+                    </AlertDescription>
+                  </Alert>
+                )}
                 {/* Simplified Personal Information */}
                   <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
                     <div className="flex items-center gap-3 mb-4">
