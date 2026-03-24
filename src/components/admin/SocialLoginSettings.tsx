@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { 
   Loader2, Save, Key, Globe, Facebook, CheckCircle2, XCircle, 
-  ExternalLink, Info
+  ExternalLink, Info, Send
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +24,9 @@ interface SocialLoginSettings {
   facebookAppId: string | null;
   facebookAppSecret: string | null;
   facebookRedirectUri: string | null;
+  telegramEnabled: boolean;
+  telegramBotName: string | null;
+  telegramBotToken: string | null;
   allowAccountLinking: boolean;
 }
 
@@ -31,7 +34,7 @@ export function SocialLoginSettings() {
   const [settings, setSettings] = useState<SocialLoginSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [testResults, setTestResults] = useState<{ google?: { valid: boolean; message: string }; facebook?: { valid: boolean; message: string } }>({});
+  const [testResults, setTestResults] = useState<{ google?: { valid: boolean; message: string }; facebook?: { valid: boolean; message: string }; telegram?: { valid: boolean; message: string } }>({});
 
   useEffect(() => {
     fetchSettings();
@@ -67,7 +70,7 @@ export function SocialLoginSettings() {
     }
   };
 
-  const handleTestProvider = async (provider: 'google' | 'facebook') => {
+  const handleTestProvider = async (provider: 'google' | 'facebook' | 'telegram') => {
     try {
       const res = await fetch('/api/social-login-settings', {
         method: 'POST',
@@ -327,6 +330,108 @@ export function SocialLoginSettings() {
                   className="text-sm text-amber-400 hover:text-amber-300 flex items-center gap-1"
                 >
                   Facebook Developer Portal <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+            </CardContent>
+          </>
+        )}
+      </Card>
+
+      {/* Telegram Login Settings */}
+      <Card className="bg-slate-900/50 border-slate-800">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-sky-500/20 flex items-center justify-center">
+                <Send className="h-5 w-5 text-sky-400" />
+              </div>
+              <div>
+                <CardTitle className="text-white flex items-center gap-2">
+                  Telegram Login
+                  {settings?.telegramEnabled ? (
+                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Enabled</Badge>
+                  ) : (
+                    <Badge className="bg-slate-500/20 text-slate-400 border-slate-500/30">Disabled</Badge>
+                  )}
+                </CardTitle>
+                <CardDescription className="text-slate-400">
+                  Allow users to sign in with their Telegram account using a Bot
+                </CardDescription>
+              </div>
+            </div>
+            <Switch
+              checked={settings?.telegramEnabled ?? false}
+              onCheckedChange={(checked) => updateSettings({ telegramEnabled: checked })}
+            />
+          </div>
+        </CardHeader>
+        
+        {settings?.telegramEnabled && (
+          <>
+            <Separator className="bg-slate-700" />
+            <CardContent className="space-y-4 pt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-white flex items-center gap-2">
+                    <Key className="h-4 w-4" />
+                    Bot Name
+                  </Label>
+                  <Input
+                    value={settings.telegramBotName || ''}
+                    onChange={(e) => updateSettings({ telegramBotName: e.target.value })}
+                    className="bg-slate-800 border-slate-700 text-white"
+                    placeholder="my_church_bot"
+                  />
+                  <p className="text-xs text-slate-500">The username of your Telegram Bot (without @)</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-white flex items-center gap-2">
+                    <Key className="h-4 w-4" />
+                    Bot Token
+                  </Label>
+                  <Input
+                    type="password"
+                    value={settings.telegramBotToken || ''}
+                    onChange={(e) => updateSettings({ telegramBotToken: e.target.value })}
+                    className="bg-slate-800 border-slate-700 text-white"
+                    placeholder="123456789:ABCDE..."
+                  />
+                  <p className="text-xs text-slate-500">Keep this secret! Get it from @BotFather</p>
+                </div>
+              </div>
+              
+              {testResults.telegram && (
+                <div className={cn(
+                  "flex items-center gap-2 p-3 rounded-lg",
+                  testResults.telegram.valid ? "bg-green-500/10" : "bg-red-500/10"
+                )}>
+                  {testResults.telegram.valid ? (
+                    <CheckCircle2 className="h-5 w-5 text-green-400" />
+                  ) : (
+                    <XCircle className="h-5 w-5 text-red-400" />
+                  )}
+                  <span className={testResults.telegram.valid ? "text-green-400" : "text-red-400"}>
+                    {testResults.telegram.message}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => handleTestProvider('telegram')}
+                  className="border-slate-700 text-white"
+                >
+                  <Info className="h-4 w-4 mr-2" />
+                  Test Configuration
+                </Button>
+                <a
+                  href="https://core.telegram.org/widgets/login"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                >
+                  Telegram Login Docs <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
             </CardContent>

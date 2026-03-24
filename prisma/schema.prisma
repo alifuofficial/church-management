@@ -589,6 +589,11 @@ model SocialLoginSettings {
   facebookAppSecret    String?
   facebookRedirectUri  String?
   
+  // Telegram Login
+  telegramEnabled      Boolean  @default(false)
+  telegramBotName      String?
+  telegramBotToken     String?
+  
   // Account linking
   allowAccountLinking  Boolean  @default(true)
   

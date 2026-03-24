@@ -6,13 +6,16 @@ import { z } from 'zod';
 
 const socialSettingsSchema = z.object({
   googleEnabled: z.boolean().optional(),
-  googleClientId: z.string().optional(),
-  googleClientSecret: z.string().optional(),
-  googleRedirectUri: z.string().optional(),
+  googleClientId: z.string().nullable().optional(),
+  googleClientSecret: z.string().nullable().optional(),
+  googleRedirectUri: z.string().nullable().optional(),
   facebookEnabled: z.boolean().optional(),
-  facebookAppId: z.string().optional(),
-  facebookAppSecret: z.string().optional(),
-  facebookRedirectUri: z.string().optional(),
+  facebookAppId: z.string().nullable().optional(),
+  facebookAppSecret: z.string().nullable().optional(),
+  facebookRedirectUri: z.string().nullable().optional(),
+  telegramEnabled: z.boolean().optional(),
+  telegramBotName: z.string().nullable().optional(),
+  telegramBotToken: z.string().nullable().optional(),
   allowAccountLinking: z.boolean().optional(),
 });
 
@@ -41,6 +44,7 @@ export async function GET() {
       ...settings,
       googleClientSecret: settings?.googleClientSecret ? (session?.user?.role === 'ADMIN' ? settings.googleClientSecret : '••••••••') : null,
       facebookAppSecret: settings?.facebookAppSecret ? (session?.user?.role === 'ADMIN' ? settings.facebookAppSecret : '••••••••') : null,
+      telegramBotToken: settings?.telegramBotToken ? (session?.user?.role === 'ADMIN' ? settings.telegramBotToken : '••••••••') : null,
     };
 
     return NextResponse.json(maskedSettings);
@@ -65,7 +69,7 @@ export async function PUT(request: NextRequest) {
     const validatedData = socialSettingsSchema.safeParse(body);
     
     if (!validatedData.success) {
-      return NextResponse.json({ error: 'Invalid data', details: validatedData.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid data', details: validatedData.error.format() }, { status: 400 });
     }
 
     const {
@@ -77,6 +81,9 @@ export async function PUT(request: NextRequest) {
       facebookAppId,
       facebookAppSecret,
       facebookRedirectUri,
+      telegramEnabled,
+      telegramBotName,
+      telegramBotToken,
       allowAccountLinking,
     } = validatedData.data;
 
@@ -88,28 +95,32 @@ export async function PUT(request: NextRequest) {
     
     if (googleEnabled !== undefined) updateData.googleEnabled = googleEnabled;
     if (googleClientId !== undefined) updateData.googleClientId = googleClientId;
-    if (googleClientSecret && googleClientSecret !== '••••••••') {
+    if (googleClientSecret !== undefined && googleClientSecret !== '••••••••') {
       updateData.googleClientSecret = googleClientSecret;
     }
     if (googleRedirectUri !== undefined) updateData.googleRedirectUri = googleRedirectUri;
     
     if (facebookEnabled !== undefined) updateData.facebookEnabled = facebookEnabled;
     if (facebookAppId !== undefined) updateData.facebookAppId = facebookAppId;
-    if (facebookAppSecret && facebookAppSecret !== '••••••••') {
+    if (facebookAppSecret !== undefined && facebookAppSecret !== '••••••••') {
       updateData.facebookAppSecret = facebookAppSecret;
     }
     if (facebookRedirectUri !== undefined) updateData.facebookRedirectUri = facebookRedirectUri;
     
+    if (telegramEnabled !== undefined) updateData.telegramEnabled = telegramEnabled;
+    if (telegramBotName !== undefined) updateData.telegramBotName = telegramBotName;
+    if (telegramBotToken !== undefined && telegramBotToken !== '••••••••') {
+      updateData.telegramBotToken = telegramBotToken;
+    }
+
     if (allowAccountLinking !== undefined) updateData.allowAccountLinking = allowAccountLinking;
 
     if (settings) {
-      // @ts-expect-error - Prisma client may need regeneration
       settings = await db.socialLoginSettings?.update({
         where: { id: settings.id },
         data: updateData,
       });
     } else {
-      // @ts-expect-error - Prisma client may need regeneration
       settings = await db.socialLoginSettings?.create({
         data: updateData as Record<string, unknown>,
       });
@@ -131,7 +142,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { provider } = body;
 
-    // @ts-expect-error - Prisma client may need regeneration
     const settings = await db.socialLoginSettings?.findFirst();
 
     if (!settings) {
@@ -166,6 +176,19 @@ export async function POST(request: NextRequest) {
         valid: true, 
         message: 'Facebook OAuth configuration is valid',
         redirectUri: settings.facebookRedirectUri 
+      });
+    }
+
+    if (provider === 'telegram') {
+      if (!settings.telegramEnabled) {
+        return NextResponse.json({ valid: false, error: 'Telegram login is disabled' });
+      }
+      if (!settings.telegramBotName || !settings.telegramBotToken) {
+        return NextResponse.json({ valid: false, error: 'Telegram credentials not configured' });
+      }
+      return NextResponse.json({ 
+        valid: true, 
+        message: 'Telegram configuration is valid',
       });
     }
 

@@ -29,6 +29,8 @@ import { signIn } from 'next-auth/react';
 interface SocialLoginSettings {
   googleEnabled: boolean;
   facebookEnabled: boolean;
+  telegramEnabled: boolean;
+  telegramBotName: string | null;
 }
 
 interface VerificationSettings {
@@ -42,6 +44,33 @@ interface AuthFormProps {
   initialMode?: 'signin' | 'signup';
   onClose?: () => void;
 }
+
+const TelegramLoginWidget = ({ botName, onAuth }: { botName: string, onAuth: (user: any) => void }) => {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!containerRef.current || !botName) return;
+    
+    // Clear previous widget
+    containerRef.current.innerHTML = '';
+    
+    // Attach function to window so Telegram script can call it
+    (window as any).onTelegramAuth = onAuth;
+
+    const script = document.createElement("script");
+    script.src = "https://telegram.org/js/telegram-widget.js?22";
+    script.setAttribute("data-telegram-login", botName);
+    script.setAttribute("data-size", "large");
+    script.setAttribute("data-radius", "10");
+    script.setAttribute("data-onauth", "onTelegramAuth(user)");
+    script.setAttribute("data-request-access", "write");
+    script.async = true;
+
+    containerRef.current.appendChild(script);
+  }, [botName, onAuth]);
+
+  return <div ref={containerRef} className="flex justify-center w-full" />;
+};
 
 export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
   const { setUser, setCurrentView, settings } = useAppStore();
@@ -274,7 +303,7 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                 name: session.user.name,
                 role: session.user.role,
                 image: session.user.image,
-              });
+              } as any);
               setCurrentView(session.user.role === 'ADMIN' ? 'admin' : 'dashboard');
               if (onClose) onClose();
             }
@@ -407,7 +436,7 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
     signIn('facebook', { callbackUrl: '/dashboard' });
   };
 
-  const hasSocialLogin = socialSettings?.googleEnabled || socialSettings?.facebookEnabled;
+  const hasSocialLogin = socialSettings?.googleEnabled || socialSettings?.facebookEnabled || socialSettings?.telegramEnabled;
 
   const signUpMinistries = [
     { id: 'bible_study', label: 'Bible Study' },
@@ -695,6 +724,47 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                         </Button>
                       )}
                     </div>
+                    {socialSettings?.telegramEnabled && socialSettings.telegramBotName && (
+                      <div className="flex justify-center mt-3">
+                        <TelegramLoginWidget 
+                          botName={socialSettings.telegramBotName} 
+                          onAuth={(user: any) => {
+                            setIsLoading(true);
+                            signIn('telegram', { 
+                              redirect: false, 
+                              id: user.id || '', 
+                              first_name: user.first_name || '', 
+                              last_name: user.last_name || '', 
+                              username: user.username || '', 
+                              photo_url: user.photo_url || '', 
+                              auth_date: user.auth_date || '', 
+                              hash: user.hash || '' 
+                            }).then(async (result) => {
+                               if (result?.error) {
+                                 setError(result.error);
+                                 setIsLoading(false);
+                               } else {
+                                 const res = await fetch('/api/auth/session');
+                                 if (res.ok) {
+                                   const session = await res.json();
+                                   if (session.user) {
+                                     setUser({
+                                       id: session.user.id,
+                                       email: session.user.email,
+                                       name: session.user.name,
+                                       role: session.user.role,
+                                       image: session.user.image,
+                                     } as any);
+                                     setCurrentView(session.user.role === 'ADMIN' ? 'admin' : 'dashboard');
+                                     if (onClose) onClose();
+                                   }
+                                 }
+                               }
+                            });
+                          }} 
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </form>
