@@ -297,13 +297,32 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
           if (res.ok) {
             const session = await res.json();
             if (session.user) {
-              setUser({
-                id: session.user.id,
-                email: session.user.email,
-                name: session.user.name,
-                role: session.user.role,
-                image: session.user.image,
-              } as any);
+              // Fetch full user profile to get all custom fields
+              try {
+                const profileRes = await fetch(`/api/users/${session.user.id}`);
+                if (profileRes.ok) {
+                  const fullUser = await profileRes.json();
+                  setUser(fullUser);
+                } else {
+                  // Fallback to basic session info if profile fetch fails
+                  setUser({
+                    id: session.user.id,
+                    email: session.user.email,
+                    name: session.user.name,
+                    role: session.user.role,
+                    image: session.user.image,
+                  } as any);
+                }
+              } catch (err) {
+                console.error('Error fetching full profile:', err);
+                setUser({
+                  id: session.user.id,
+                  email: session.user.email,
+                  name: session.user.name,
+                  role: session.user.role,
+                  image: session.user.image,
+                } as any);
+              }
               setCurrentView(session.user.role === 'ADMIN' ? 'admin' : 'dashboard');
               if (onClose) onClose();
             }
@@ -748,13 +767,30 @@ export function AuthForm({ initialMode = 'signin', onClose }: AuthFormProps) {
                                  if (res.ok) {
                                    const session = await res.json();
                                    if (session.user) {
-                                     setUser({
-                                       id: session.user.id,
-                                       email: session.user.email,
-                                       name: session.user.name,
-                                       role: session.user.role,
-                                       image: session.user.image,
-                                     } as any);
+                                     // Fetch full user profile
+                                     try {
+                                       const profileRes = await fetch(`/api/users/${session.user.id}`);
+                                       if (profileRes.ok) {
+                                         const fullUser = await profileRes.json();
+                                         setUser(fullUser);
+                                       } else {
+                                         setUser({
+                                           id: session.user.id,
+                                           email: session.user.email,
+                                           name: session.user.name,
+                                           role: session.user.role,
+                                           image: session.user.image,
+                                         } as any);
+                                       }
+                                     } catch (err) {
+                                       setUser({
+                                         id: session.user.id,
+                                         email: session.user.email,
+                                         name: session.user.name,
+                                         role: session.user.role,
+                                         image: session.user.image,
+                                       } as any);
+                                     }
                                      setCurrentView(session.user.role === 'ADMIN' ? 'admin' : 'dashboard');
                                      if (onClose) onClose();
                                    }

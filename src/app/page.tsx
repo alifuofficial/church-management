@@ -98,6 +98,34 @@ export default function Home() {
       setCurrentView('home');
     }
   }, [currentView, isAdminOrPastor, setCurrentView]);
+  
+  // Sync full user profile on mount if authenticated
+  useEffect(() => {
+    const syncUserProfile = async () => {
+      if (isAuthenticated && user?.id) {
+        try {
+          const res = await fetch(`/api/auth/session`);
+          if (res.ok) {
+            const session = await res.json();
+            if (session.user) {
+              const profileRes = await fetch(`/api/users/${session.user.id}`);
+              if (profileRes.ok) {
+                const fullUser = await profileRes.json();
+                // Only update if data is different to avoid infinite loops or excessive re-renders
+                if (JSON.stringify(fullUser) !== JSON.stringify(user)) {
+                  setUser(fullUser);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error syncing user profile:', error);
+        }
+      }
+    };
+
+    syncUserProfile();
+  }, [isAuthenticated, user, setUser]);
 
   // Handle login button click
   const handleLoginClick = () => {
