@@ -27,7 +27,8 @@ export default function Home() {
     settings, 
     setSettings, 
     settingsLoaded, 
-    setSettingsLoaded 
+    setSettingsLoaded,
+    setUser
   } = useAppStore();
   const [showAuth, setShowAuth] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
