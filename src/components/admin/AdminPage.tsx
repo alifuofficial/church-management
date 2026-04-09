@@ -4953,19 +4953,36 @@ function PrayersContent({ charts, stats, user }: { charts: ChartData; stats: Das
 // Groups Content Component
 function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
   const [groups, setGroups] = useState<SmallGroup[]>(initialGroups);
+  const [membersData, setMembersData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isSuggestDialogOpen, setIsSuggestDialogOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<SmallGroup | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<'groups' | 'suggestions' | 'analytics'>('groups');
+  const [selectedSuggestion, setSelectedSuggestion] = useState<any>(null);
 
   const interestOptions = [
-    'Bible Study', 'Prayer Groups', 'Evangelism', 'Online Fellowship', 'Volunteering'
+    'Prayer Ministry', 'Worship / Music', 'Media Support', 
+    'Evangelism', 'Bible Teaching', 'Administration',
+    'Follow-up', 'Intercession', 'Communication',
+    'Cell Fellowship', 'Need guidance'
   ];
 
   const faithStatusOptions = [
-    'Yes', 'Exploring Faith', 'New Believer'
+    'I am a committed believer in Jesus Christ',
+    'I recently gave my life to Christ',
+    'I am growing in my faith',
+    'I am exploring Christianity'
+  ];
+
+  const growthAreas = [
+    'Spiritual growth', 'Healing / health', 'Family / marriage', 
+    'Finances', 'Career / business', 'Direction / purpose',
+    'Emotional well-being', 'Salvation'
   ];
 
   const countries = [
@@ -4985,7 +5002,7 @@ function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
     city: '',
     timezone: 'UTC',
     denomination: '',
-    faithStatus: 'Yes',
+    faithStatus: '',
     localChurch: '',
     interests: [] as string[]
   });
@@ -5005,6 +5022,144 @@ function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
     }
   };
 
+  const fetchMembersData = async () => {
+    setIsLoadingMembers(true);
+    try {
+      const res = await fetch('/api/users?role=MEMBER');
+      if (res.ok) {
+        const data = await res.json();
+        setMembersData(data.filter((u: any) => u.dataConsent === true));
+      }
+    } catch (error) {
+      console.error('Error fetching members:', error);
+    } finally {
+      setIsLoadingMembers(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchGroups();
+    fetchMembersData();
+  }, []);
+
+  const getAnalytics = () => {
+    const analytics = {
+      byLocation: {} as Record<string, number>,
+      byInterest: {} as Record<string, number>,
+      byGrowthArea: {} as Record<string, number>,
+      byFaithStatus: {} as Record<string, number>,
+      needsMentorship: 0,
+      needsContact: 0,
+      totalCompletedProfiles: membersData.length
+    };
+
+    membersData.forEach(member => {
+      if (member.country) {
+        analytics.byLocation[member.country] = (analytics.byLocation[member.country] || 0) + 1;
+      }
+      if (member.ministryInterests) {
+        member.ministryInterests.split(',').forEach((interest: string) => {
+          const trimmed = interest.trim();
+          if (trimmed) {
+            analytics.byInterest[trimmed] = (analytics.byInterest[trimmed] || 0) + 1;
+          }
+        });
+      }
+      if (member.spiritualGrowthArea) {
+        analytics.byGrowthArea[member.spiritualGrowthArea] = (analytics.byGrowthArea[member.spiritualGrowthArea] || 0) + 1;
+      }
+      if (member.faithStatusDetail) {
+        analytics.byFaithStatus[member.faithStatusDetail] = (analytics.byFaithStatus[member.faithStatusDetail] || 0) + 1;
+      }
+      if (member.mentorshipInterest) analytics.needsMentorship++;
+      if (member.contactPreference) analytics.needsContact++;
+    });
+
+    return analytics;
+  };
+
+  const getSuggestedGroups = () => {
+    const suggestions: any[] = [];
+    const analytics = getAnalytics();
+
+    Object.entries(analytics.byInterest)
+      .filter(([_, count]) => (count as number) >= 2)
+      .sort((a, b) => (b[1] as number) - (a[1] as number))
+      .slice(0, 10)
+      .forEach(([interest, count]) => {
+        const matchingMembers = membersData.filter(m => 
+          m.ministryInterests?.includes(interest)
+        );
+        suggestions.push({
+          type: 'interest',
+          name: `${interest} Group`,
+          interest,
+          memberCount: count,
+          matchingMembers,
+          suggestedDay: 'Sunday',
+          suggestedTime: '10:00',
+          priority: 'high' as const
+        });
+      });
+
+    Object.entries(analytics.byLocation)
+      .filter(([_, count]) => (count as number) >= 3)
+      .sort((a, b) => (b[1] as number) - (a[1] as number))
+      .slice(0, 5)
+      .forEach(([location, count]) => {
+        const matchingMembers = membersData.filter(m => m.country === location);
+        const topInterest = [...analytics.byInterest.entries()]
+          .sort((a, b) => (b[1] as number) - (a[1] as number))[0]?.[0] || 'General';
+        suggestions.push({
+          type: 'location',
+          name: `${location} Fellowship`,
+          location,
+          memberCount: count,
+          matchingMembers,
+          suggestedInterest: topInterest,
+          suggestedDay: 'Sunday',
+          suggestedTime: '14:00',
+          priority: 'medium' as const
+        });
+      });
+
+    Object.entries(analytics.byGrowthArea)
+      .filter(([_, count]) => (count as number) >= 2)
+      .sort((a, b) => (b[1] as number) - (a[1] as number))
+      .slice(0, 5)
+      .forEach(([area, count]) => {
+        const matchingMembers = membersData.filter(m => m.spiritualGrowthArea === area);
+        suggestions.push({
+          type: 'growth',
+          name: `${area} Support Group`,
+          growthArea: area,
+          memberCount: count,
+          matchingMembers,
+          suggestedDay: 'Wednesday',
+          suggestedTime: '19:00',
+          priority: 'medium' as const
+        });
+      });
+
+    if (analytics.needsMentorship >= 3) {
+      const matchingMembers = membersData.filter(m => m.mentorshipInterest === true);
+      suggestions.push({
+        type: 'mentorship',
+        name: 'New Believers Mentorship',
+        memberCount: analytics.needsMentorship,
+        matchingMembers,
+        suggestedDay: 'Saturday',
+        suggestedTime: '10:00',
+        priority: 'high' as const
+      });
+    }
+
+    return suggestions.sort((a, b) => {
+      const priorityOrder = { high: 0, medium: 1, low: 2 };
+      return priorityOrder[a.priority] - priorityOrder[b.priority];
+    });
+  };
+
   const handleCreateGroup = async () => {
     if (!form.name) return;
     setIsSubmitting(true);
@@ -5021,6 +5176,34 @@ function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
       }
     } catch (error) {
       console.error('Error creating group:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCreateFromSuggestion = async (suggestion: any) => {
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: suggestion.name,
+          description: `Auto-generated group based on ${suggestion.type}: ${suggestion.interest || suggestion.location || suggestion.growthArea || 'member data'}`,
+          type: suggestion.type === 'interest' ? 'Ministry' : suggestion.type === 'growth' ? 'Interests' : 'General',
+          country: suggestion.location || '',
+          meetingDay: suggestion.suggestedDay || 'Sunday',
+          meetingTime: suggestion.suggestedTime || '10:00',
+          maxMembers: '30',
+          interests: suggestion.interest ? [suggestion.interest] : [],
+        })
+      });
+      if (res.ok) {
+        await fetchGroups();
+        setIsSuggestDialogOpen(false);
+      }
+    } catch (error) {
+      console.error('Error creating group from suggestion:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -5072,7 +5255,7 @@ function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
       name: '', description: '', type: 'General', location: '',
       meetingDay: 'Sunday', meetingTime: '10:00', maxMembers: '20', imageUrl: '',
       country: '', city: '', timezone: 'UTC', denomination: '',
-      faithStatus: 'Yes', localChurch: '', interests: []
+      faithStatus: '', localChurch: '', interests: []
     });
   };
 
@@ -5091,7 +5274,7 @@ function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
       city: group.city || '',
       timezone: group.timezone || 'UTC',
       denomination: group.denomination || '',
-      faithStatus: group.faithStatus || 'Yes',
+      faithStatus: group.faithStatus || '',
       localChurch: group.localChurch || '',
       interests: group.interests ? group.interests.split(',') : []
     });
@@ -5107,314 +5290,455 @@ function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
     }));
   };
 
+  const analytics = getAnalytics();
+  const suggestions = getSuggestedGroups();
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold text-white">Small Groups</h2>
-          <p className="text-slate-400 text-sm">Manage church small groups, ministries, and house fellowships</p>
+          <p className="text-slate-400 text-sm">Manage groups based on member ministry data</p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-amber-500 hover:bg-amber-600 text-black">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Group
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-slate-900 border-slate-800 max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
-            <DialogHeader className="p-6 pb-2">
-              <DialogTitle className="text-white">Create New Small Group</DialogTitle>
-              <DialogDescription className="text-slate-400">
-                Define a new group with location, faith profile, and focus areas.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex-1 overflow-y-auto px-6 py-4 pb-10 custom-scrollbar">
-              <div className="space-y-6">
-                {/* Basic Information */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2">
-                    <Info className="h-4 w-4" /> Basic Information
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-white">Group Name *</Label>
-                      <Input
-                        value={form.name}
-                        onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
-                        className="bg-slate-800 border-slate-700 text-white"
-                        placeholder="e.g., Downtown Bible Study"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-white">Category / Type</Label>
-                      <Select value={form.type} onValueChange={(v) => setForm(prev => ({ ...prev, type: v }))}>
-                        <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-800 border-slate-700">
-                          <SelectItem value="General">General</SelectItem>
-                          <SelectItem value="Bible Study">Bible Study</SelectItem>
-                          <SelectItem value="Youth">Youth</SelectItem>
-                          <SelectItem value="Interests">Interests</SelectItem>
-                          <SelectItem value="Ministry">Ministry</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-white">Description</Label>
-                    <textarea
-                      value={form.description}
-                      onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
-                      className="w-full min-h-[80px] rounded-md bg-slate-800 border border-slate-700 p-2 text-white text-sm focus:ring-1 focus:ring-amber-500 outline-none"
-                      placeholder="What is this group about?"
-                    />
-                  </div>
-                </div>
-
-                <Separator className="bg-slate-800" />
-
-                {/* Location Information */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2">
-                    <MapPin className="h-4 w-4" /> Location Information
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-white">Country</Label>
-                      <Select value={form.country} onValueChange={(v) => setForm(prev => ({ ...prev, country: v }))}>
-                        <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                          <SelectValue placeholder="Select Country" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-800 border-slate-700">
-                          {countries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-white">City / Region</Label>
-                      <Input
-                        value={form.city}
-                        onChange={(e) => setForm(prev => ({ ...prev, city: e.target.value }))}
-                        className="bg-slate-800 border-slate-700 text-white"
-                        placeholder="e.g., Addis Ababa"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-white">Time Zone</Label>
-                      <Select value={form.timezone} onValueChange={(v) => setForm(prev => ({ ...prev, timezone: v }))}>
-                        <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                          <SelectValue placeholder="Select Time Zone" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-800 border-slate-700">
-                          <SelectItem value="UTC">UTC (Greenwich Mean Time)</SelectItem>
-                          <SelectItem value="UTC+3">UTC+3 (East Africa Time)</SelectItem>
-                          <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
-                          <SelectItem value="Europe/London">London (GMT/BST)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-white">Physical Location (Optional)</Label>
-                      <Input
-                        value={form.location}
-                        onChange={(e) => setForm(prev => ({ ...prev, location: e.target.value }))}
-                        className="bg-slate-800 border-slate-700 text-white"
-                        placeholder="e.g., Hall B, Online, or Home Address"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <Separator className="bg-slate-800" />
-
-                {/* Church / Faith Information */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2">
-                    <Church className="h-4 w-4" /> Church & Faith Profile
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-white">Denomination (Optional)</Label>
-                      <Input
-                        value={form.denomination}
-                        onChange={(e) => setForm(prev => ({ ...prev, denomination: e.target.value }))}
-                        className="bg-slate-800 border-slate-700 text-white"
-                        placeholder="e.g., Baptist, Pentecostal"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-white">Target Faith Status</Label>
-                      <Select value={form.faithStatus} onValueChange={(v) => setForm(prev => ({ ...prev, faithStatus: v }))}>
-                        <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-800 border-slate-700">
-                          {faithStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-white">Local Church Name (Optional)</Label>
-                    <Input
-                      value={form.localChurch}
-                      onChange={(e) => setForm(prev => ({ ...prev, localChurch: e.target.value }))}
-                      className="bg-slate-800 border-slate-700 text-white"
-                      placeholder="Current Church affiliation"
-                    />
-                  </div>
-                </div>
-
-                <Separator className="bg-slate-800" />
-
-                {/* Interests */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2">
-                    <Target className="h-4 w-4" /> Interests & Ministries
-                  </h3>
-                  <p className="text-xs text-slate-400">Select the areas this group focuses on:</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {interestOptions.map(option => (
-                      <div key={option} className="flex items-center space-x-2 bg-slate-800/50 p-2 rounded-md border border-slate-700/50">
-                        <Checkbox
-                          id={`interest-${option}`}
-                          checked={form.interests.includes(option)}
-                          onCheckedChange={() => toggleInterest(option)}
-                        />
-                        <Label htmlFor={`interest-${option}`} className="text-sm text-slate-300 cursor-pointer">{option}</Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <Separator className="bg-slate-800" />
-
-                {/* Meeting Logistics */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2">
-                    <Clock className="h-4 w-4" /> Meeting Logistics
-                  </h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-white">Meeting Day</Label>
-                      <Select value={form.meetingDay} onValueChange={(v) => setForm(prev => ({ ...prev, meetingDay: v }))}>
-                        <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-800 border-slate-700">
-                          {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(d => (
-                            <SelectItem key={d} value={d}>{d}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-white">Start Time</Label>
-                      <Input
-                        type="time"
-                        value={form.meetingTime}
-                        onChange={(e) => setForm(prev => ({ ...prev, meetingTime: e.target.value }))}
-                        className="bg-slate-800 border-slate-700 text-white"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-white">Max Capacity</Label>
-                      <Input
-                        type="number"
-                        value={form.maxMembers}
-                        onChange={(e) => setForm(prev => ({ ...prev, maxMembers: e.target.value }))}
-                        className="bg-slate-800 border-slate-700 text-white"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <DialogFooter className="pt-4 border-t border-slate-800">
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="border-slate-700 text-white">
-                Cancel
-              </Button>
-              <Button onClick={handleCreateGroup} disabled={isSubmitting || !form.name} className="bg-amber-500 hover:bg-amber-600 text-black">
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Rocket className="h-4 w-4 mr-2" />}
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setActiveTab('analytics')}
+            className={`border-slate-700 ${activeTab === 'analytics' ? 'bg-amber-500/10 text-amber-500 border-amber-500/50' : 'text-slate-300'}`}
+          >
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Analytics
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setActiveTab('suggestions')}
+            className={`border-slate-700 ${activeTab === 'suggestions' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/50' : 'text-slate-300'}`}
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Suggestions ({suggestions.length})
+          </Button>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-amber-500 hover:bg-amber-600 text-black">
+                <Plus className="h-4 w-4 mr-2" />
                 Create Group
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {groups.map((group) => (
-          <Card key={group.id} className="bg-slate-900/50 border-slate-800 hover:border-amber-500/50 transition">
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between mb-3">
-                <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/30 font-medium">
-                  {group.type || 'General'}
-                </Badge>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1 text-emerald-400">
-                    <Users className="h-4 w-4" />
-                    <span className="text-sm font-medium">{group._count.members}</span>
+            </DialogTrigger>
+            <DialogContent className="bg-slate-900 border-slate-800 max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+              <DialogHeader className="p-6 pb-2">
+                <DialogTitle className="text-white">Create New Small Group</DialogTitle>
+                <DialogDescription className="text-slate-400">Define a new group with location, faith profile, and focus areas.</DialogDescription>
+              </DialogHeader>
+              <div className="flex-1 overflow-y-auto px-6 py-4 pb-10 custom-scrollbar">
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2"><Info className="h-4 w-4" /> Basic Information</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-white">Group Name *</Label>
+                        <Input value={form.name} onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))} className="bg-slate-800 border-slate-700 text-white" placeholder="e.g., Downtown Bible Study" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-white">Category / Type</Label>
+                        <Select value={form.type} onValueChange={(v) => setForm(prev => ({ ...prev, type: v }))}>
+                          <SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue /></SelectTrigger>
+                          <SelectContent className="bg-slate-800 border-slate-700">
+                            <SelectItem value="General">General</SelectItem>
+                            <SelectItem value="Bible Study">Bible Study</SelectItem>
+                            <SelectItem value="Youth">Youth</SelectItem>
+                            <SelectItem value="Interests">Interests</SelectItem>
+                            <SelectItem value="Ministry">Ministry</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-white">Description</Label>
+                      <textarea value={form.description} onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))} className="w-full min-h-[80px] rounded-md bg-slate-800 border border-slate-700 p-2 text-white text-sm focus:ring-1 focus:ring-amber-500 outline-none" placeholder="What is this group about?" />
+                    </div>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-white">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-slate-900 border-slate-800">
-                      <DropdownMenuItem onClick={() => openEditDialog(group)} className="text-slate-300 hover:text-white focus:bg-slate-800 focus:text-white cursor-pointer">
-                        <Pencil className="h-4 w-4 mr-2" /> Edit Details
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator className="bg-slate-800" />
-                      <DropdownMenuItem onClick={() => { setSelectedGroup(group); setIsDeleteDialogOpen(true); }} className="text-red-400 hover:text-red-300 focus:bg-red-500/10 focus:text-red-400 cursor-pointer">
-                        <Trash2 className="h-4 w-4 mr-2" /> Delete Group
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <Separator className="bg-slate-800" />
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2"><MapPin className="h-4 w-4" /> Location Information</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-white">Country</Label>
+                        <Select value={form.country} onValueChange={(v) => setForm(prev => ({ ...prev, country: v }))}>
+                          <SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue placeholder="Select Country" /></SelectTrigger>
+                          <SelectContent className="bg-slate-800 border-slate-700">{countries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-white">City / Region</Label>
+                        <Input value={form.city} onChange={(e) => setForm(prev => ({ ...prev, city: e.target.value }))} className="bg-slate-800 border-slate-700 text-white" placeholder="e.g., Addis Ababa" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-white">Time Zone</Label>
+                        <Select value={form.timezone} onValueChange={(v) => setForm(prev => ({ ...prev, timezone: v }))}>
+                          <SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue placeholder="Select Time Zone" /></SelectTrigger>
+                          <SelectContent className="bg-slate-800 border-slate-700">
+                            <SelectItem value="UTC">UTC (GMT)</SelectItem>
+                            <SelectItem value="UTC+3">UTC+3 (EAT)</SelectItem>
+                            <SelectItem value="America/New_York">Eastern Time</SelectItem>
+                            <SelectItem value="Europe/London">London</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-white">Physical Location</Label>
+                        <Input value={form.location} onChange={(e) => setForm(prev => ({ ...prev, location: e.target.value }))} className="bg-slate-800 border-slate-700 text-white" placeholder="e.g., Hall B" />
+                      </div>
+                    </div>
+                  </div>
+                  <Separator className="bg-slate-800" />
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2"><Target className="h-4 w-4" /> Ministry Interests</h3>
+                    <p className="text-xs text-slate-400">From MinistryRegistrationFlow data:</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {interestOptions.map(option => (
+                        <div key={option} className="flex items-center space-x-2 bg-slate-800/50 p-2 rounded-md border border-slate-700/50">
+                          <Checkbox id={`interest-${option}`} checked={form.interests.includes(option)} onCheckedChange={() => toggleInterest(option)} />
+                          <Label htmlFor={`interest-${option}`} className="text-sm text-slate-300 cursor-pointer">{option}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <Separator className="bg-slate-800" />
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2"><Clock className="h-4 w-4" /> Meeting Logistics</h3>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-white">Meeting Day</Label>
+                        <Select value={form.meetingDay} onValueChange={(v) => setForm(prev => ({ ...prev, meetingDay: v }))}>
+                          <SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue /></SelectTrigger>
+                          <SelectContent className="bg-slate-800 border-slate-700">
+                            {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(d => (<SelectItem key={d} value={d}>{d}</SelectItem>))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-white">Start Time</Label>
+                        <Input type="time" value={form.meetingTime} onChange={(e) => setForm(prev => ({ ...prev, meetingTime: e.target.value }))} className="bg-slate-800 border-slate-700 text-white" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-white">Max Capacity</Label>
+                        <Input type="number" value={form.maxMembers} onChange={(e) => setForm(prev => ({ ...prev, maxMembers: e.target.value }))} className="bg-slate-800 border-slate-700 text-white" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              
-              <h3 className="text-white font-semibold text-lg mb-1">{group.name}</h3>
-              <p className="text-slate-400 text-sm line-clamp-2 mb-4 h-10">{group.description || 'No description provided.'}</p>
-              
-              <div className="space-y-2 pt-2 border-t border-slate-800/50">
-                <div className="flex items-center gap-2 text-slate-300 text-sm">
-                  <MapPin className="h-4 w-4 text-amber-500/70" />
-                  <span className="truncate">{group.city ? `${group.city}, ${group.country}` : group.location || 'Location TBD'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-300 text-sm">
-                  <Clock className="h-4 w-4 text-amber-500/70" />
-                  <span>{group.meetingDay} at {group.meetingTime || 'TBD'}</span>
-                </div>
-              </div>
-
-              {group.interests && (
-                <div className="flex flex-wrap gap-1.5 mt-4">
-                  {group.interests.split(',').slice(0, 3).map(interest => (
-                    <span key={interest} className="text-[10px] uppercase tracking-wider bg-slate-800 text-slate-400 px-2 py-0.5 rounded">
-                      {interest}
-                    </span>
-                  ))}
-                  {group.interests.split(',').length > 3 && (
-                    <span className="text-[10px] text-slate-500 px-1">+{group.interests.split(',').length - 3} more</span>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+              <DialogFooter className="pt-4 border-t border-slate-800">
+                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="border-slate-700 text-white">Cancel</Button>
+                <Button onClick={handleCreateGroup} disabled={isSubmitting || !form.name} className="bg-amber-500 hover:bg-amber-600 text-black">
+                  {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Rocket className="h-4 w-4 mr-2" />}
+                  Create Group
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      {groups.length === 0 && !isLoading && (
-        <div className="flex flex-col items-center justify-center py-20 bg-slate-900/30 rounded-xl border border-dashed border-slate-800">
-          <UsersRound className="h-12 w-12 text-slate-700 mb-4" />
-          <h3 className="text-slate-400 font-medium">No groups found</h3>
-          <p className="text-slate-500 text-sm">Create your first small group to get started</p>
+      {/* Analytics Tab */}
+      {activeTab === 'analytics' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="grid grid-cols-4 gap-4">
+            <Card className="bg-slate-900/50 border-slate-800">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-amber-500/20"><Users className="h-5 w-5 text-amber-500" /></div>
+                  <div>
+                    <p className="text-2xl font-bold text-white">{analytics.totalCompletedProfiles}</p>
+                    <p className="text-xs text-slate-400">Completed Profiles</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-slate-900/50 border-slate-800">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-500/20"><CheckCircle2 className="h-5 w-5 text-emerald-500" /></div>
+                  <div>
+                    <p className="text-2xl font-bold text-white">{groups.length}</p>
+                    <p className="text-xs text-slate-400">Active Groups</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-slate-900/50 border-slate-800">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-500/20"><Target className="h-5 w-5 text-blue-500" /></div>
+                  <div>
+                    <p className="text-2xl font-bold text-white">{analytics.needsMentorship}</p>
+                    <p className="text-xs text-slate-400">Need Mentorship</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-slate-900/50 border-slate-800">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-500/20"><MessageSquare className="h-5 w-5 text-purple-500" /></div>
+                  <div>
+                    <p className="text-2xl font-bold text-white">{analytics.needsContact}</p>
+                    <p className="text-xs text-slate-400">Need Contact</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
+            <Card className="bg-slate-900/50 border-slate-800">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2"><Target className="h-5 w-5 text-amber-500" /> Ministry Interests Distribution</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {Object.entries(analytics.byInterest).sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 8).map(([interest, count]) => (
+                    <div key={interest} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-amber-500" />
+                        <span className="text-sm text-slate-300">{interest}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-32 h-2 bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-amber-500 rounded-full" style={{ width: `${Math.min((count as number / analytics.totalCompletedProfiles) * 100, 100)}%` }} />
+                        </div>
+                        <span className="text-sm font-medium text-white w-8 text-right">{count}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-slate-900/50 border-slate-800">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2"><MapPin className="h-5 w-5 text-emerald-500" /> Location Distribution</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {Object.entries(analytics.byLocation).sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 6).map(([location, count]) => (
+                    <div key={location} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                        <span className="text-sm text-slate-300">{location}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-32 h-2 bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min((count as number / analytics.totalCompletedProfiles) * 100, 100)}%` }} />
+                        </div>
+                        <span className="text-sm font-medium text-white w-8 text-right">{count}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-slate-900/50 border-slate-800">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2"><Heart className="h-5 w-5 text-rose-500" /> Spiritual Growth Focus</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {Object.entries(analytics.byGrowthArea).sort((a, b) => (b[1] as number) - (a[1] as number)).map(([area, count]) => (
+                    <div key={area} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-rose-500" />
+                        <span className="text-sm text-slate-300">{area}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-32 h-2 bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-rose-500 rounded-full" style={{ width: `${Math.min((count as number / analytics.totalCompletedProfiles) * 100, 100)}%` }} />
+                        </div>
+                        <span className="text-sm font-medium text-white w-8 text-right">{count}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-slate-900/50 border-slate-800">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2"><Church className="h-5 w-5 text-blue-500" /> Faith Status</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {Object.entries(analytics.byFaithStatus).sort((a, b) => (b[1] as number) - (a[1] as number)).map(([status, count]) => (
+                    <div key={status} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-blue-500" />
+                        <span className="text-sm text-slate-300">{status}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-32 h-2 bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min((count as number / analytics.totalCompletedProfiles) * 100, 100)}%` }} />
+                        </div>
+                        <span className="text-sm font-medium text-white w-8 text-right">{count}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
+      )}
+
+      {/* Suggestions Tab */}
+      {activeTab === 'suggestions' && (
+        <div className="space-y-4 animate-in fade-in duration-300">
+          <div className="flex items-center gap-2 text-sm text-slate-400 mb-4">
+            <Sparkles className="h-4 w-4 text-emerald-500" />
+            <span>Auto-generated suggestions based on member ministry data</span>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {suggestions.map((suggestion: any, index: number) => (
+              <Card key={index} className="bg-slate-900/50 border-slate-800 hover:border-emerald-500/50 transition-all">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <Badge className={
+                      suggestion.type === 'interest' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                      suggestion.type === 'location' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
+                      suggestion.type === 'growth' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' :
+                      'bg-purple-500/20 text-purple-400 border-purple-500/30'
+                    }>
+                      {suggestion.type}
+                    </Badge>
+                    <Badge variant="outline" className={
+                      suggestion.priority === 'high' ? 'border-red-500/50 text-red-400' : 'border-amber-500/50 text-amber-400'
+                    }>
+                      {suggestion.priority}
+                    </Badge>
+                  </div>
+                  <h3 className="text-white font-semibold mb-2">{suggestion.name}</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2 text-slate-400">
+                      <Users className="h-4 w-4" />
+                      <span>{suggestion.memberCount} matching members</span>
+                    </div>
+                    {suggestion.interest && (
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <Target className="h-4 w-4" />
+                        <span>{suggestion.interest}</span>
+                      </div>
+                    )}
+                    {suggestion.location && (
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <MapPin className="h-4 w-4" />
+                        <span>{suggestion.location}</span>
+                      </div>
+                    )}
+                    {suggestion.growthArea && (
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <Heart className="h-4 w-4" />
+                        <span>{suggestion.growthArea}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 text-slate-400">
+                      <Clock className="h-4 w-4" />
+                      <span>{suggestion.suggestedDay} at {suggestion.suggestedTime}</span>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => handleCreateFromSuggestion(suggestion)} 
+                    disabled={isSubmitting}
+                    className="w-full mt-4 bg-emerald-500 hover:bg-emerald-600 text-black"
+                  >
+                    {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                    Create Group
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          {suggestions.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12 bg-slate-900/30 rounded-xl border border-dashed border-slate-800">
+              <Sparkles className="h-12 w-12 text-slate-700 mb-4" />
+              <h3 className="text-slate-400 font-medium">No suggestions available</h3>
+              <p className="text-slate-500 text-sm">Complete member profiles will generate group suggestions</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Groups Tab */}
+      {activeTab === 'groups' && (
+        <>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {groups.map((group) => (
+              <Card key={group.id} className="bg-slate-900/50 border-slate-800 hover:border-amber-500/50 transition">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between mb-3">
+                    <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/30 font-medium">
+                      {group.type || 'General'}
+                    </Badge>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1 text-emerald-400">
+                        <Users className="h-4 w-4" />
+                        <span className="text-sm font-medium">{group._count.members}</span>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-white">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-slate-900 border-slate-800">
+                          <DropdownMenuItem onClick={() => openEditDialog(group)} className="text-slate-300 hover:text-white focus:bg-slate-800 focus:text-white cursor-pointer">
+                            <Pencil className="h-4 w-4 mr-2" /> Edit Details
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator className="bg-slate-800" />
+                          <DropdownMenuItem onClick={() => { setSelectedGroup(group); setIsDeleteDialogOpen(true); }} className="text-red-400 hover:text-red-300 focus:bg-red-500/10 focus:text-red-400 cursor-pointer">
+                            <Trash2 className="h-4 w-4 mr-2" /> Delete Group
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                  <h3 className="text-white font-semibold text-lg mb-1">{group.name}</h3>
+                  <p className="text-slate-400 text-sm line-clamp-2 mb-4 h-10">{group.description || 'No description provided.'}</p>
+                  <div className="space-y-2 pt-2 border-t border-slate-800/50">
+                    <div className="flex items-center gap-2 text-slate-300 text-sm">
+                      <MapPin className="h-4 w-4 text-amber-500/70" />
+                      <span className="truncate">{group.city ? `${group.city}, ${group.country}` : group.location || 'Location TBD'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-slate-300 text-sm">
+                      <Clock className="h-4 w-4 text-amber-500/70" />
+                      <span>{group.meetingDay} at {group.meetingTime || 'TBD'}</span>
+                    </div>
+                  </div>
+                  {group.interests && (
+                    <div className="flex flex-wrap gap-1.5 mt-4">
+                      {group.interests.split(',').slice(0, 3).map(interest => (
+                        <span key={interest} className="text-[10px] uppercase tracking-wider bg-slate-800 text-slate-400 px-2 py-0.5 rounded">
+                          {interest}
+                        </span>
+                      ))}
+                      {group.interests.split(',').length > 3 && (
+                        <span className="text-[10px] text-slate-500 px-1">+{group.interests.split(',').length - 3} more</span>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          {groups.length === 0 && !isLoading && (
+            <div className="flex flex-col items-center justify-center py-20 bg-slate-900/30 rounded-xl border border-dashed border-slate-800">
+              <UsersRound className="h-12 w-12 text-slate-700 mb-4" />
+              <h3 className="text-slate-400 font-medium">No groups found</h3>
+              <p className="text-slate-500 text-sm">Create your first small group or check suggestions</p>
+            </div>
+          )}
+        </>
       )}
 
       {/* Delete Confirmation */}
@@ -5423,14 +5747,11 @@ function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
           <DialogHeader>
             <DialogTitle className="text-white">Delete Small Group</DialogTitle>
             <DialogDescription className="text-slate-400">
-              Are you sure you want to delete <span className="text-white font-medium">"{selectedGroup?.name}"</span>? 
-              This action cannot be undone and will remove all members from the group.
+              Are you sure you want to delete <span className="text-white font-medium">"{selectedGroup?.name}"</span>? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="border-slate-700 text-white">
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="border-slate-700 text-white">Cancel</Button>
             <Button onClick={handleDeleteGroup} disabled={isSubmitting} className="bg-red-500 hover:bg-red-600 text-white">
               {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
               Delete Group
@@ -5444,33 +5765,21 @@ function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
         <DialogContent className="bg-slate-900 border-slate-800 max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
           <DialogHeader className="p-6 pb-2">
             <DialogTitle className="text-white">Edit Small Group</DialogTitle>
-            <DialogDescription className="text-slate-400">
-              Update group details, location, or faith profile.
-            </DialogDescription>
+            <DialogDescription className="text-slate-400">Update group details, location, or faith profile.</DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto px-6 py-4 pb-10 custom-scrollbar">
             <div className="space-y-6">
-              {/* Basic Information */}
               <div className="space-y-4">
-                <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2">
-                  <Info className="h-4 w-4" /> Basic Information
-                </h3>
+                <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2"><Info className="h-4 w-4" /> Basic Information</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-white">Group Name *</Label>
-                    <Input
-                      value={form.name}
-                      onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
-                      className="bg-slate-800 border-slate-700 text-white"
-                      placeholder="e.g., Downtown Bible Study"
-                    />
+                    <Input value={form.name} onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))} className="bg-slate-800 border-slate-700 text-white" placeholder="e.g., Downtown Bible Study" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-white">Category / Type</Label>
                     <Select value={form.type || ''} onValueChange={(v) => setForm(prev => ({ ...prev, type: v }))}>
-                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
+                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue /></SelectTrigger>
                       <SelectContent className="bg-slate-800 border-slate-700">
                         <SelectItem value="General">General</SelectItem>
                         <SelectItem value="Bible Study">Bible Study</SelectItem>
@@ -5483,51 +5792,30 @@ function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-white">Description</Label>
-                  <textarea
-                    value={form.description}
-                    onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
-                    className="w-full min-h-[80px] rounded-md bg-slate-800 border border-slate-700 p-2 text-white text-sm focus:ring-1 focus:ring-amber-500 outline-none"
-                    placeholder="What is this group about?"
-                  />
+                  <textarea value={form.description} onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))} className="w-full min-h-[80px] rounded-md bg-slate-800 border border-slate-700 p-2 text-white text-sm focus:ring-1 focus:ring-amber-500 outline-none" placeholder="What is this group about?" />
                 </div>
               </div>
-
               <Separator className="bg-slate-800" />
-
-              {/* Location Information */}
               <div className="space-y-4">
-                <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2">
-                  <MapPin className="h-4 w-4" /> Location Information
-                </h3>
+                <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2"><MapPin className="h-4 w-4" /> Location Information</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-white">Country</Label>
                     <Select value={form.country || ''} onValueChange={(v) => setForm(prev => ({ ...prev, country: v }))}>
-                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                        <SelectValue placeholder="Select Country" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-700">
-                        {countries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                      </SelectContent>
+                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue placeholder="Select Country" /></SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700">{countries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-white">City / Region</Label>
-                    <Input
-                      value={form.city}
-                      onChange={(e) => setForm(prev => ({ ...prev, city: e.target.value }))}
-                      className="bg-slate-800 border-slate-700 text-white"
-                      placeholder="e.g., Addis Ababa"
-                    />
+                    <Input value={form.city} onChange={(e) => setForm(prev => ({ ...prev, city: e.target.value }))} className="bg-slate-800 border-slate-700 text-white" placeholder="e.g., Addis Ababa" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-white">Time Zone</Label>
                     <Select value={form.timezone || ''} onValueChange={(v) => setForm(prev => ({ ...prev, timezone: v }))}>
-                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                        <SelectValue placeholder="Select Time Zone" />
-                      </SelectTrigger>
+                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue placeholder="Select Time Zone" /></SelectTrigger>
                       <SelectContent className="bg-slate-800 border-slate-700">
                         <SelectItem value="UTC">UTC (GMT)</SelectItem>
                         <SelectItem value="UTC+3">UTC+3 (EAT)</SelectItem>
@@ -5538,114 +5826,49 @@ function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-white">Physical Location</Label>
-                    <Input
-                      value={form.location}
-                      onChange={(e) => setForm(prev => ({ ...prev, location: e.target.value }))}
-                      className="bg-slate-800 border-slate-700 text-white"
-                      placeholder="e.g., Hall B"
-                    />
+                    <Input value={form.location} onChange={(e) => setForm(prev => ({ ...prev, location: e.target.value }))} className="bg-slate-800 border-slate-700 text-white" placeholder="e.g., Hall B" />
                   </div>
                 </div>
               </div>
-
               <Separator className="bg-slate-800" />
-
-              {/* Faith Info */}
               <div className="space-y-4">
-                <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2">
-                  <Church className="h-4 w-4" /> Church & Faith Profile
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-white">Denomination</Label>
-                    <Input
-                      value={form.denomination}
-                      onChange={(e) => setForm(prev => ({ ...prev, denomination: e.target.value }))}
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-white">Target Faith Status</Label>
-                    <Select value={form.faithStatus || ''} onValueChange={(v) => setForm(prev => ({ ...prev, faithStatus: v }))}>
-                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-700">
-                        {faithStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-
-              <Separator className="bg-slate-800" />
-
-              {/* Interests */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2">
-                  <Target className="h-4 w-4" /> Interests
-                </h3>
+                <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2"><Target className="h-4 w-4" /> Ministry Interests</h3>
                 <div className="grid grid-cols-2 gap-3">
                   {interestOptions.map(option => (
                     <div key={option} className="flex items-center space-x-2 bg-slate-800/50 p-2 rounded-md border border-slate-700/50">
-                      <Checkbox
-                        id={`edit-interest-${option}`}
-                        checked={form.interests.includes(option)}
-                        onCheckedChange={() => toggleInterest(option)}
-                      />
+                      <Checkbox id={`edit-interest-${option}`} checked={form.interests.includes(option)} onCheckedChange={() => toggleInterest(option)} />
                       <Label htmlFor={`edit-interest-${option}`} className="text-sm text-slate-300">{option}</Label>
                     </div>
                   ))}
                 </div>
               </div>
-
               <Separator className="bg-slate-800" />
-
-              {/* Logistics */}
               <div className="space-y-4">
-                <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2">
-                  <Clock className="h-4 w-4" /> Meeting Logistics
-                </h3>
+                <h3 className="text-sm font-medium text-amber-500 flex items-center gap-2"><Clock className="h-4 w-4" /> Meeting Logistics</h3>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label className="text-white">Day</Label>
                     <Select value={form.meetingDay || ''} onValueChange={(v) => setForm(prev => ({ ...prev, meetingDay: v }))}>
-                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
+                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue /></SelectTrigger>
                       <SelectContent className="bg-slate-800 border-slate-700">
-                        {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(d => (
-                          <SelectItem key={d} value={d}>{d}</SelectItem>
-                        ))}
+                        {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(d => (<SelectItem key={d} value={d}>{d}</SelectItem>))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-white">Time</Label>
-                    <Input
-                      type="time"
-                      value={form.meetingTime}
-                      onChange={(e) => setForm(prev => ({ ...prev, meetingTime: e.target.value }))}
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
+                    <Input type="time" value={form.meetingTime} onChange={(e) => setForm(prev => ({ ...prev, meetingTime: e.target.value }))} className="bg-slate-800 border-slate-700 text-white" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-white">Capacity</Label>
-                    <Input
-                      type="number"
-                      value={form.maxMembers}
-                      onChange={(e) => setForm(prev => ({ ...prev, maxMembers: e.target.value }))}
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
+                    <Input type="number" value={form.maxMembers} onChange={(e) => setForm(prev => ({ ...prev, maxMembers: e.target.value }))} className="bg-slate-800 border-slate-700 text-white" />
                   </div>
                 </div>
               </div>
             </div>
           </div>
           <DialogFooter className="p-6 border-t border-slate-800">
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="border-slate-700 text-white">
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="border-slate-700 text-white">Cancel</Button>
             <Button onClick={handleEditGroup} disabled={isSubmitting || !form.name} className="bg-amber-500 hover:bg-amber-600 text-black">
               {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
               Save Changes
