@@ -16,7 +16,8 @@ import {
   Calendar, Heart, DollarSign, BookOpen, Users, Clock, MapPin, Video,
   CheckCircle2, TrendingUp, Bell, Settings, Camera, Edit3, Lock, Eye,
   EyeOff, Sparkles, Star, Gift, MessageSquare, ChevronRight, Loader2,
-  Shield, User, Mail, Phone, Globe, Award, Zap, Church, ShieldCheck
+  Shield, User, Mail, Phone, Globe, Award, Zap, Church, ShieldCheck,
+  UsersRound, Target
 } from 'lucide-react';
 import { 
   Select, 
@@ -59,6 +60,8 @@ interface SmallGroup {
   country: string | null;
   meetingDay: string | null;
   meetingTime: string | null;
+  timezone: string | null;
+  interests: string | null;
   leader: {
     id: string;
     name: string | null;
@@ -74,6 +77,9 @@ interface SmallGroup {
       email: string;
     }
   }[];
+  _count?: {
+    members: number;
+  };
 }
 
 interface PrayerRequest {
@@ -107,6 +113,7 @@ export function DashboardPage() {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [prayers, setPrayers] = useState<PrayerRequest[]>([]);
   const [userGroups, setUserGroups] = useState<SmallGroup[]>([]);
+  const [recommendedGroups, setRecommendedGroups] = useState<SmallGroup[]>([]);
   const [stats, setStats] = useState({
     totalEvents: 0,
     totalDonations: 0,
@@ -182,6 +189,54 @@ export function DashboardPage() {
         totalPrayers: data.userPrayers?.length || 0,
         streakDays: 7,
       });
+
+      // Fetch recommended groups based on user's interests
+      const groupsRes = await fetch('/api/groups');
+      if (groupsRes.ok) {
+        const allGroups = await groupsRes.json();
+        const userGroupIds = new Set((data.userGroups || []).map((g: SmallGroup) => g.id));
+        
+        // Get user's ministry interests
+        const userInterests = user.ministryInterests 
+          ? user.ministryInterests.split(',').map((i: string) => i.trim().toLowerCase())
+          : [];
+        const userCountry = user.country?.toLowerCase() || '';
+        const userGrowthArea = user.spiritualGrowthArea?.toLowerCase() || '';
+        
+        // Filter and score groups
+        const scored = allGroups
+          .filter((g: SmallGroup) => !userGroupIds.has(g.id))
+          .map((group: SmallGroup) => {
+            let score = 0;
+            const groupInterests = group.interests 
+              ? group.interests.split(',').map(i => i.trim().toLowerCase())
+              : [];
+            
+            // Match interests
+            const interestMatches = userInterests.filter((ui: string) => 
+              groupInterests.some((gi: string) => gi.includes(ui) || ui.includes(gi))
+            ).length;
+            score += interestMatches * 3;
+            
+            // Match location
+            if (userCountry && group.country?.toLowerCase() === userCountry) {
+              score += 2;
+            }
+            
+            // Match type with spiritual growth area
+            if (userGrowthArea && group.type?.toLowerCase().includes(userGrowthArea)) {
+              score += 1;
+            }
+            
+            return { group, score };
+          })
+          .filter((item: { group: SmallGroup; score: number }) => item.score > 0)
+          .sort((a: { group: SmallGroup; score: number }, b: { group: SmallGroup; score: number }) => b.score - a.score)
+          .slice(0, 6)
+          .map((item: { group: SmallGroup; score: number }) => item.group);
+        
+        setRecommendedGroups(scored);
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -1017,7 +1072,8 @@ export function DashboardPage() {
                   </Card>
                 </TabsContent>
                 
-                <TabsContent value="groups" className="mt-4">
+<TabsContent value="groups" className="mt-4 space-y-6">
+                  {/* My Groups */}
                   <Card className="bg-slate-900/60 border-slate-700/50 backdrop-blur-xl">
                     <CardHeader>
                       <CardTitle className="text-white flex items-center gap-2">
@@ -1101,6 +1157,86 @@ export function DashboardPage() {
                       )}
                     </CardContent>
                   </Card>
+
+                  {/* Recommended Groups */}
+                  {!isLoading && recommendedGroups.length > 0 && (
+                    <Card className="bg-slate-900/60 border-slate-700/50 backdrop-blur-xl">
+                      <CardHeader>
+                        <CardTitle className="text-white flex items-center gap-2">
+                          <Target className="h-5 w-5 text-amber-400" />
+                          Recommended for You
+                        </CardTitle>
+                        <CardDescription className="text-slate-400">
+                          Groups matching your interests and location
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          {recommendedGroups.map((group) => (
+                            <div 
+                              key={group.id} 
+                              className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:border-amber-500/30 transition-all"
+                            >
+                              <div className="flex items-start justify-between mb-3">
+                                <div>
+                                  <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 mb-2">
+                                    {group.type || 'General'}
+                                  </Badge>
+                                  <h4 className="text-white font-semibold">{group.name}</h4>
+                                </div>
+                                <div className="flex items-center gap-1 text-slate-400 text-sm">
+                                  <UsersRound className="h-4 w-4" />
+                                  <span>{group._count?.members || group.members?.length || 0}</span>
+                                </div>
+                              </div>
+                              
+                              <p className="text-slate-400 text-sm line-clamp-2 mb-3 h-10">
+                                {group.description || 'No description'}
+                              </p>
+                              
+                              <div className="space-y-2 text-sm text-slate-400">
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4 text-amber-500/70" />
+                                  <span>{group.meetingDay} at {group.meetingTime || 'TBD'}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <MapPin className="h-4 w-4 text-emerald-500/70" />
+                                  <span>{group.city ? `${group.city}${group.country ? `, ${group.country}` : ''}` : group.location || 'Location TBD'}</span>
+                                </div>
+                              </div>
+
+                              {group.interests && (
+                                <div className="flex flex-wrap gap-1.5 mt-3">
+                                  {group.interests.split(',').slice(0, 3).map(interest => (
+                                    <span 
+                                      key={interest} 
+                                      className="text-[10px] uppercase tracking-wider bg-slate-700/50 text-slate-300 px-2 py-0.5 rounded"
+                                    >
+                                      {interest.trim()}
+                                    </span>
+                                  ))}
+                                  {group.interests.split(',').length > 3 && (
+                                    <span className="text-[10px] text-slate-500">
+                                      +{group.interests.split(',').length - 3}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+
+                              <Button 
+                                size="sm" 
+                                className="mt-4 w-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border-amber-500/30"
+                                variant="outline"
+                              >
+                                <Users className="h-4 w-4 mr-2" />
+                                Request to Join
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                 </TabsContent>
               </Tabs>
             </div>
