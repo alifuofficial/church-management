@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { User, Mail, Phone, MapPin, Calendar, Bell, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, Bell, CheckCircle2, Church, Heart, BookOpen, Users, Star } from 'lucide-react';
 
 export function ProfilePage() {
   const { user, setUser, isAuthenticated, setCurrentView } = useAppStore();
@@ -206,6 +206,124 @@ export function ProfilePage() {
                   value={zipCode}
                   onChange={(e) => setZipCode(e.target.value)}
                 />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Faith & Spiritual Journey */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Church className="h-5 w-5 text-amber-600" />
+              Faith & Spiritual Journey
+            </CardTitle>
+            <CardDescription>Your spiritual background and status</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-6 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Faith Status</Label>
+                <p className="font-medium">{user?.faithStatusDetail || 'Not specified'}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Believes in Salvation</Label>
+                <p className="font-medium">{user?.believesInSalvation || 'Not specified'}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Confessed Christ</Label>
+                <p className="font-medium">{user?.confessedChrist || 'Not specified'}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Discipleship Completed</Label>
+                <p className="font-medium">{user?.completedDiscipleship || 'Not specified'}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Water Baptism</Label>
+                <p className="font-medium">{user?.baptisedWater || 'Not specified'}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Holy Spirit Baptism</Label>
+                <p className="font-medium">{user?.baptisedSpirit || 'Not specified'}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Local Church Attendance</Label>
+                <p className="font-medium">{user?.attendingLocalChurch || 'Not specified'}</p>
+              </div>
+            </div>
+            {user?.notMemberReason && (
+              <div className="pt-2 border-t mt-4">
+                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Reason for not being a member</Label>
+                <p className="text-sm mt-1 bg-muted p-2 rounded italic text-muted-foreground">"{user.notMemberReason}"</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Ministry & Service */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-amber-600" />
+              Ministry & Service
+            </CardTitle>
+            <CardDescription>How you serve and areas of interest</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-1">
+              <Label className="text-muted-foreground text-xs uppercase tracking-wider">Current Service Status</Label>
+              <p className="font-medium">{user?.currentlyServing || 'Not specified'}</p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-muted-foreground text-xs uppercase tracking-wider">Ministry Interests</Label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {user?.ministryInterests ? user.ministryInterests.split(',').map((interest, i) => (
+                  <Badge key={i} variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200">
+                    {interest.trim()}
+                  </Badge>
+                )) : (
+                  <p className="text-sm text-muted-foreground">No interests listed</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-muted-foreground text-xs uppercase tracking-wider">Gifts & Strengths</Label>
+              <p className="text-sm text-balance">{user?.giftsStrengths || 'Not specified'}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Prayer & Follow-up */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Heart className="h-5 w-5 text-amber-600" />
+              Prayer & Growth
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-1">
+              <Label className="text-muted-foreground text-xs uppercase tracking-wider">Prayer Support Area</Label>
+              <p className="text-sm">{user?.prayerSupportArea || 'None specified'}</p>
+            </div>
+            <div className="space-y-1">
+                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Spiritual Growth Focus</Label>
+                <p className="font-medium">{user?.spiritualGrowthArea || 'Not specified'}</p>
+            </div>
+            <div className="flex flex-wrap gap-4 pt-2">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100">
+                <div className={`w-2 h-2 rounded-full ${user?.contactPreference ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                <span className="text-xs font-medium text-emerald-800">
+                  {user?.contactPreference ? 'Requested Contact' : 'No Contact Requested'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100">
+                <div className={`w-2 h-2 rounded-full ${user?.mentorshipInterest ? 'bg-blue-500' : 'bg-slate-300'}`} />
+                <span className="text-xs font-medium text-blue-800">
+                  {user?.mentorshipInterest ? 'Interested in Mentorship' : 'No Mentorship Requested'}
+                </span>
               </div>
             </div>
           </CardContent>
