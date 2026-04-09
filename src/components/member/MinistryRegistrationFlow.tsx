@@ -227,23 +227,23 @@ export function MinistryRegistrationFlow({ onClose, onComplete }: MinistryRegist
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
-                <Label className="text-base font-semibold">Have you been baptised in water?</Label>
+                <Label className="text-base font-semibold text-white">Have you been baptised in water?</Label>
                 <RadioGroup value={formData.baptisedWater} onValueChange={(v) => updateFormData('baptisedWater', v)} className="flex items-center space-x-4">
                   {["Yes", "No"].map(opt => (
                     <div key={opt} className="flex items-center space-x-2">
-                      <RadioGroupItem value={opt} id={`water-${opt}`} />
-                      <Label htmlFor={`water-${opt}`}>{opt}</Label>
+                      <RadioGroupItem value={opt} id={`water-${opt}`} className="border-slate-500 text-amber-500" />
+                      <Label htmlFor={`water-${opt}`} className="text-slate-300">{opt}</Label>
                     </div>
                   ))}
                 </RadioGroup>
               </div>
               <div className="space-y-3">
-                <Label className="text-base font-semibold">Have you been baptised with the holyspirit?</Label>
+                <Label className="text-base font-semibold text-white">Have you been baptised with the holyspirit?</Label>
                 <RadioGroup value={formData.baptisedSpirit} onValueChange={(v) => updateFormData('baptisedSpirit', v)} className="space-y-2">
                   {["Yes", "No", "I am interested to learn more and need guidance"].map(opt => (
                     <div key={opt} className="flex items-center space-x-2">
-                      <RadioGroupItem value={opt} id={`spirit-${opt}`} />
-                      <Label htmlFor={`spirit-${opt}`} className="text-sm">{opt}</Label>
+                      <RadioGroupItem value={opt} id={`spirit-${opt}`} className="border-slate-500 text-amber-500" />
+                      <Label htmlFor={`spirit-${opt}`} className="text-sm text-slate-300">{opt}</Label>
                     </div>
                   ))}
                 </RadioGroup>
@@ -251,12 +251,12 @@ export function MinistryRegistrationFlow({ onClose, onComplete }: MinistryRegist
             </div>
 
             <div className="space-y-3">
-              <Label className="text-base font-semibold">Are you currently attending a local church?</Label>
+              <Label className="text-base font-semibold text-white">Are you currently attending a local church?</Label>
               <RadioGroup value={formData.attendingLocalChurch} onValueChange={(v) => updateFormData('attendingLocalChurch', v)} className="space-y-2">
                 {["Yes, Regularly", "Yes, Occasionally", "No"].map(opt => (
                   <div key={opt} className="flex items-center space-x-2">
-                    <RadioGroupItem value={opt} id={`church-${opt}`} />
-                    <Label htmlFor={`church-${opt}`}>{opt}</Label>
+                    <RadioGroupItem value={opt} id={`church-${opt}`} className="border-slate-500 text-amber-500" />
+                    <Label htmlFor={`church-${opt}`} className="text-slate-300">{opt}</Label>
                   </div>
                 ))}
               </RadioGroup>
