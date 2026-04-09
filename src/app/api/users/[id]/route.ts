@@ -29,6 +29,23 @@ export async function GET(
         emailOptIn: true,
         smsOptIn: true,
         createdAt: true,
+        // Ministry Registration Fields
+        faithStatusDetail: true,
+        believesInSalvation: true,
+        confessedChrist: true,
+        completedDiscipleship: true,
+        baptisedWater: true,
+        baptisedSpirit: true,
+        attendingLocalChurch: true,
+        notMemberReason: true,
+        currentlyServing: true,
+        ministryInterests: true,
+        giftsStrengths: true,
+        prayerSupportArea: true,
+        spiritualGrowthArea: true,
+        contactPreference: true,
+        mentorshipInterest: true,
+        dataConsent: true,
         _count: {
           select: {
             registrations: true,
@@ -101,6 +118,23 @@ export async function PUT(
         emailOptIn: true,
         smsOptIn: true,
         createdAt: true,
+        // Ministry Registration Fields
+        faithStatusDetail: true,
+        believesInSalvation: true,
+        confessedChrist: true,
+        completedDiscipleship: true,
+        baptisedWater: true,
+        baptisedSpirit: true,
+        attendingLocalChurch: true,
+        notMemberReason: true,
+        currentlyServing: true,
+        ministryInterests: true,
+        giftsStrengths: true,
+        prayerSupportArea: true,
+        spiritualGrowthArea: true,
+        contactPreference: true,
+        mentorshipInterest: true,
+        dataConsent: true,
       }
     });
 

@@ -719,7 +719,7 @@ export function DashboardPage() {
             {/* Right Side - Stats & Activity */}
             <div className="flex-1 space-y-6">
               {/* Profile Completion Prompt */}
-              {user && (!user.country || !user.faithStatus) && (
+              {user && (!user.country || !user.faithStatusDetail) && (
                 <Card className="bg-amber-500/10 border-amber-500/30 border-l-4 border-l-amber-500 animate-in fade-in slide-in-from-top-4 duration-500">
                   <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
