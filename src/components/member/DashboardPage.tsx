@@ -430,11 +430,11 @@ export function DashboardPage() {
                               </label>
                             </div>
                           </TabsContent>
-                          <TabsContent value="url" className="mt-2">
+                          <TabsContent value="url" className="mt-2 text-slate-100">
                             <Input
                               value={profileImage}
                               onChange={(e) => setProfileImage(e.target.value)}
-                              className="bg-slate-800/50 border-slate-700 text-white text-xs"
+                              className="bg-slate-800/50 border-slate-700 text-white text-xs placeholder:text-slate-500"
                               placeholder="https://..."
                             />
                           </TabsContent>
@@ -450,7 +450,7 @@ export function DashboardPage() {
                               <SelectTrigger className="bg-slate-800/50 border-slate-700 text-white h-9 text-xs">
                                 <SelectValue placeholder="Country" />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent className="bg-slate-900 border-slate-700 text-slate-100">
                                 <SelectItem value="USA">United States</SelectItem>
                                 <SelectItem value="UK">United Kingdom</SelectItem>
                                 <SelectItem value="Canada">Canada</SelectItem>
@@ -478,7 +478,7 @@ export function DashboardPage() {
                             <SelectTrigger className="bg-slate-800/50 border-slate-700 text-white h-9 text-xs">
                               <SelectValue placeholder="Select Timezone" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-slate-900 border-slate-700 text-slate-100">
                               <SelectItem value="UTC+3">UTC+3 (EAT)</SelectItem>
                               <SelectItem value="UTC+1">UTC+1 (WAT)</SelectItem>
                               <SelectItem value="UTC+0">UTC (GMT)</SelectItem>
@@ -493,7 +493,7 @@ export function DashboardPage() {
                             <SelectTrigger className="bg-slate-800/50 border-slate-700 text-white h-9 text-xs">
                               <SelectValue placeholder="Denomination" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-slate-900 border-slate-700 text-slate-100">
                               <SelectItem value="Baptist">Baptist</SelectItem>
                               <SelectItem value="Anglican">Anglican</SelectItem>
                               <SelectItem value="Lutheran">Lutheran</SelectItem>
@@ -719,7 +719,14 @@ export function DashboardPage() {
             {/* Right Side - Stats & Activity */}
             <div className="flex-1 space-y-6">
               {/* Profile Completion Prompt */}
-              {user && (!user.country || !user.faithStatusDetail) && (
+              {user && (
+                !user.country || 
+                !user.faithStatusDetail || 
+                !user.believesInSalvation || 
+                !user.confessedChrist || 
+                !user.attendingLocalChurch ||
+                user.dataConsent !== true
+              ) && (
                 <Card className="bg-amber-500/10 border-amber-500/30 border-l-4 border-l-amber-500 animate-in fade-in slide-in-from-top-4 duration-500">
                   <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
