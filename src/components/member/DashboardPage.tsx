@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,7 +26,6 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { MinistryRegistrationFlow } from './MinistryRegistrationFlow';
 
 interface Registration {
   id: string;
@@ -101,6 +101,7 @@ const formatTime = (dateStr: string) => {
 };
 
 export function DashboardPage() {
+  const router = useRouter();
   const { user, isAuthenticated, setUser, setCurrentView } = useAppStore();
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [donations, setDonations] = useState<Donation[]>([]);
@@ -130,7 +131,6 @@ export function DashboardPage() {
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(user?.acceptedPrivacy || false);
   const [isAcceptedStatementOfFaith, setIsAcceptedStatementOfFaith] = useState(user?.acceptedStatementOfFaith || false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
-  const [showFullRegistration, setShowFullRegistration] = useState(false);
   
   // Password change state
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -739,7 +739,7 @@ export function DashboardPage() {
                       </div>
                     </div>
                     <Button 
-                      onClick={() => setShowFullRegistration(true)}
+                      onClick={() => router.push('/register/ministry')}
                       className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 px-4 rounded-lg flex items-center gap-2"
                     >
                       <Edit3 className="h-4 w-4" />
@@ -1115,17 +1115,6 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* Ministry Registration Flow Modal */}
-      {showFullRegistration && (
-        <MinistryRegistrationFlow 
-          onClose={() => setShowFullRegistration(false)}
-          onComplete={() => {
-            setShowFullRegistration(false);
-            // Refresh data if needed or just let the store update handle it
-            fetchDashboardData();
-          }}
-        />
-      )}
     </div>
   );
 }

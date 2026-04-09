@@ -26,12 +26,13 @@ import { cn } from '@/lib/utils';
 interface MinistryRegistrationFlowProps {
   onClose: () => void;
   onComplete: () => void;
+  isPage?: boolean;
 }
 
 // Helper to slugify strings for HTML IDs
 const slugify = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
 
-export function MinistryRegistrationFlow({ onClose, onComplete }: MinistryRegistrationFlowProps) {
+export function MinistryRegistrationFlow({ onClose, onComplete, isPage = false }: MinistryRegistrationFlowProps) {
   const { user, setUser } = useAppStore();
   const [step, setStep] = useState(1);
   const totalSteps = 5;
@@ -538,14 +539,21 @@ export function MinistryRegistrationFlow({ onClose, onComplete }: MinistryRegist
     }
   };
 
+  const containerClasses = isPage 
+    ? "min-h-screen w-full bg-slate-950 flex flex-col items-center py-12 px-4"
+    : "fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl overflow-y-auto";
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+    <div className={containerClasses}>
        <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.4); border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #f59e0b; border-radius: 10px; }
       `}</style>
-      <Card className="w-full max-w-2xl bg-slate-950 border-slate-800 shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden animate-in zoom-in-95 duration-500 rounded-3xl relative">
+      <Card className={cn(
+        "bg-slate-950 border-slate-800 shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden animate-in zoom-in-95 duration-500 rounded-3xl relative",
+        isPage ? "w-full max-w-4xl min-h-[80vh]" : "w-full max-w-2xl"
+      )}>
         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-amber-500/5 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-orange-600/5 rounded-full blur-[100px] pointer-events-none" />
 
