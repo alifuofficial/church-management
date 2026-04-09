@@ -113,36 +113,56 @@ export function MinistryRegistrationFlow({ onClose, onComplete }: MinistryRegist
           <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Full Name</Label>
-                <Input value={formData.name} onChange={(e) => updateFormData('name', e.target.value)} placeholder="Full Name" />
+                <Label className="text-slate-300">Full Name</Label>
+                <Input 
+                  value={formData.name} 
+                  onChange={(e) => updateFormData('name', e.target.value)} 
+                  placeholder="Full Name" 
+                  className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+                />
               </div>
               <div className="space-y-2">
-                <Label>Email Address</Label>
-                <Input value={formData.email} disabled className="bg-slate-800/50" />
+                <Label className="text-slate-300">Email Address</Label>
+                <Input value={formData.email} disabled className="bg-slate-800/30 border-slate-700/50 text-slate-400" />
               </div>
               <div className="space-y-2">
-                <Label>Phone / WhatsApp Number</Label>
-                <Input value={formData.phone} onChange={(e) => updateFormData('phone', e.target.value)} placeholder="Phone Number" />
+                <Label className="text-slate-300">Phone / WhatsApp Number</Label>
+                <Input 
+                  value={formData.phone} 
+                  onChange={(e) => updateFormData('phone', e.target.value)} 
+                  placeholder="Phone Number" 
+                  className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+                />
               </div>
               <div className="space-y-2">
-                <Label>Country of Residence</Label>
-                <Input value={formData.country} onChange={(e) => updateFormData('country', e.target.value)} placeholder="Country" />
+                <Label className="text-slate-300">Country of Residence</Label>
+                <Input 
+                  value={formData.country} 
+                  onChange={(e) => updateFormData('country', e.target.value)} 
+                  placeholder="Country" 
+                  className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+                />
               </div>
               <div className="space-y-2">
-                <Label>City / State / Region</Label>
-                <Input value={formData.city} onChange={(e) => updateFormData('city', e.target.value)} placeholder="City" />
+                <Label className="text-slate-300">City / State / Region</Label>
+                <Input 
+                  value={formData.city} 
+                  onChange={(e) => updateFormData('city', e.target.value)} 
+                  placeholder="City" 
+                  className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+                />
               </div>
               <div className="space-y-2">
-                <Label>Time Zone</Label>
+                <Label className="text-slate-300">Time Zone</Label>
                 <Select value={formData.timezone} onValueChange={(v) => updateFormData('timezone', v)}>
-                  <SelectTrigger className="bg-slate-900 border-slate-700">
+                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
                     <SelectValue placeholder="Select Timezone" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="UTC+3">UTC+3 (East Africa Time)</SelectItem>
-                    <SelectItem value="UTC+1">UTC+1 (West Africa Time)</SelectItem>
-                    <SelectItem value="UTC+0">UTC (GMT)</SelectItem>
-                    <SelectItem value="UTC-5">UTC-5 (EST)</SelectItem>
+                  <SelectContent className="bg-slate-900 border-slate-700 text-white z-[100]">
+                    <SelectItem value="UTC+3" className="focus:bg-slate-800 focus:text-white">UTC+3 (East Africa Time)</SelectItem>
+                    <SelectItem value="UTC+1" className="focus:bg-slate-800 focus:text-white">UTC+1 (West Africa Time)</SelectItem>
+                    <SelectItem value="UTC+0" className="focus:bg-slate-800 focus:text-white">UTC (GMT)</SelectItem>
+                    <SelectItem value="UTC-5" className="focus:bg-slate-800 focus:text-white">UTC-5 (EST)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -153,7 +173,7 @@ export function MinistryRegistrationFlow({ onClose, onComplete }: MinistryRegist
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300 overflow-y-auto max-h-[60vh] pr-2">
             <div className="space-y-3">
-              <Label className="text-base font-semibold">What best describes your current faith status?</Label>
+              <Label className="text-base font-semibold text-white">What best describes your current faith status?</Label>
               <RadioGroup value={formData.faithStatusDetail} onValueChange={(v) => updateFormData('faithStatusDetail', v)} className="space-y-2">
                 {[
                   "I am a committed believer in Jesus Christ",
@@ -161,45 +181,45 @@ export function MinistryRegistrationFlow({ onClose, onComplete }: MinistryRegist
                   "I am growing in my faith",
                   "I am exploring Christianity"
                 ].map(opt => (
-                  <div key={opt} className="flex items-center space-x-2 bg-slate-800/30 p-3 rounded-lg border border-slate-700/50 hover:bg-slate-800 transition-colors">
-                    <RadioGroupItem value={opt} id={`faith-${opt}`} />
-                    <Label htmlFor={`faith-${opt}`} className="flex-1 cursor-pointer">{opt}</Label>
+                  <div key={opt} className="flex items-center space-x-2 bg-slate-800/30 p-3 rounded-xl border border-slate-700/50 hover:bg-slate-800 transition-colors">
+                    <RadioGroupItem value={opt} id={`faith-${opt}`} className="border-slate-500 text-amber-500" />
+                    <Label htmlFor={`faith-${opt}`} className="flex-1 cursor-pointer text-slate-300">{opt}</Label>
                   </div>
                 ))}
               </RadioGroup>
             </div>
 
             <div className="space-y-3">
-              <Label className="text-base font-semibold">Do you believe in the salvation given through Jesus Christ?</Label>
+              <Label className="text-base font-semibold text-white">Do you believe in the salvation given through Jesus Christ?</Label>
               <RadioGroup value={formData.believesInSalvation} onValueChange={(v) => updateFormData('believesInSalvation', v)} className="flex flex-col space-y-2">
                 {["Yes", "No", "I wanted to learn about salvation through Jesus"].map(opt => (
-                  <div key={opt} className="flex items-center space-x-2 bg-slate-800/30 p-3 rounded-lg border border-slate-700/50">
-                    <RadioGroupItem value={opt} id={`salv-${opt}`} />
-                    <Label htmlFor={`salv-${opt}`} className="flex-1 cursor-pointer">{opt}</Label>
+                  <div key={opt} className="flex items-center space-x-2 bg-slate-800/30 p-3 rounded-xl border border-slate-700/50 hover:bg-slate-800">
+                    <RadioGroupItem value={opt} id={`salv-${opt}`} className="border-slate-500 text-amber-500" />
+                    <Label htmlFor={`salv-${opt}`} className="flex-1 cursor-pointer text-slate-300">{opt}</Label>
                   </div>
                 ))}
               </RadioGroup>
             </div>
 
             <div className="space-y-3">
-              <Label className="text-base font-semibold">Have you personally confessed Jesus Christ as your Lord and Savior?</Label>
+              <Label className="text-base font-semibold text-white">Have you personally confessed Jesus Christ as your Lord and Savior?</Label>
               <RadioGroup value={formData.confessedChrist} onValueChange={(v) => updateFormData('confessedChrist', v)} className="flex items-center space-x-4">
                 {["Yes", "No", "Maybe"].map(opt => (
                   <div key={opt} className="flex items-center space-x-2">
-                    <RadioGroupItem value={opt} id={`conf-${opt}`} />
-                    <Label htmlFor={`conf-${opt}`}>{opt}</Label>
+                    <RadioGroupItem value={opt} id={`conf-${opt}`} className="border-slate-500 text-amber-500" />
+                    <Label htmlFor={`conf-${opt}`} className="text-slate-300">{opt}</Label>
                   </div>
                 ))}
               </RadioGroup>
             </div>
 
             <div className="space-y-3">
-              <Label className="text-base font-semibold">Have you completed any foundational Christian teaching or discipleship class?</Label>
+              <Label className="text-base font-semibold text-white">Have you completed any foundational Christian teaching or discipleship class?</Label>
               <RadioGroup value={formData.completedDiscipleship} onValueChange={(v) => updateFormData('completedDiscipleship', v)} className="space-y-2">
                 {["Yes", "No", "Looking to attend"].map(opt => (
-                  <div key={opt} className="flex items-center space-x-2 bg-slate-800/30 p-3 rounded-lg border border-slate-700/50">
-                    <RadioGroupItem value={opt} id={`disc-${opt}`} />
-                    <Label htmlFor={`disc-${opt}`}>{opt}</Label>
+                  <div key={opt} className="flex items-center space-x-2 bg-slate-800/30 p-3 rounded-xl border border-slate-700/50 hover:bg-slate-800">
+                    <RadioGroupItem value={opt} id={`disc-${opt}`} className="border-slate-500 text-amber-500" />
+                    <Label htmlFor={`disc-${opt}`} className="flex-1 cursor-pointer text-slate-300">{opt}</Label>
                   </div>
                 ))}
               </RadioGroup>
@@ -244,12 +264,12 @@ export function MinistryRegistrationFlow({ onClose, onComplete }: MinistryRegist
 
             {formData.attendingLocalChurch === 'No' && (
               <div className="space-y-2">
-                <Label>If your answer is No to the above can you tell us why you are not a member to a local church</Label>
+                <Label className="text-white">If your answer is No to the above can you tell us why you are not a member to a local church</Label>
                 <Textarea 
                   value={formData.notMemberReason} 
                   onChange={(e) => updateFormData('notMemberReason', e.target.value)} 
                   placeholder="Share your reason..."
-                  className="bg-slate-900 border-slate-700"
+                  className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 min-h-[80px]"
                 />
               </div>
             )}
@@ -259,7 +279,7 @@ export function MinistryRegistrationFlow({ onClose, onComplete }: MinistryRegist
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
             <div className="space-y-3">
-              <Label className="text-base font-semibold">Are you currently serving the Body of Christ with your gifts or talents?</Label>
+              <Label className="text-base font-semibold text-white">Are you currently serving the Body of Christ with your gifts or talents?</Label>
               <RadioGroup value={formData.currentlyServing} onValueChange={(v) => updateFormData('currentlyServing', v)} className="space-y-2">
                 {[
                   "Yes, actively",
@@ -267,16 +287,16 @@ export function MinistryRegistrationFlow({ onClose, onComplete }: MinistryRegist
                   "Not currently",
                   "Not yet, but I would like to serve"
                 ].map(opt => (
-                  <div key={opt} className="flex items-center space-x-2 bg-slate-800/30 p-3 rounded-lg border border-slate-700/50">
-                    <RadioGroupItem value={opt} id={`serve-${opt}`} />
-                    <Label htmlFor={`serve-${opt}`} className="flex-1 cursor-pointer">{opt}</Label>
+                  <div key={opt} className="flex items-center space-x-2 bg-slate-800/30 p-3 rounded-xl border border-slate-700/50 hover:bg-slate-800 transition-colors">
+                    <RadioGroupItem value={opt} id={`serve-${opt}`} className="border-slate-500 text-amber-500" />
+                    <Label htmlFor={`serve-${opt}`} className="flex-1 cursor-pointer text-slate-300">{opt}</Label>
                   </div>
                 ))}
               </RadioGroup>
             </div>
 
             <div className="space-y-3">
-              <Label className="text-base font-semibold">What area(s) of service or ministry would you like to join?</Label>
+              <Label className="text-base font-semibold text-white">What area(s) of service or ministry would you like to join?</Label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
                 {[
                   "Prayer Ministry", "Worship / Music", "Media / Technical Support", 
@@ -284,7 +304,7 @@ export function MinistryRegistrationFlow({ onClose, onComplete }: MinistryRegist
                   "Follow-up / New Converts Care", "Intercession", "Social Media / Communications",
                   "Small Group / Cell Fellowship", "I am not sure yet, but I want guidance"
                 ].map(opt => (
-                  <div key={opt} className="flex items-center space-x-2 p-2 rounded hover:bg-slate-800/50 transition-colors">
+                  <div key={opt} className="flex items-center space-x-2 p-2 rounded-lg hover:bg-slate-800 transition-colors">
                     <Checkbox 
                       id={`min-${opt}`} 
                       checked={formData.ministryInterests.includes(opt)}
@@ -295,20 +315,21 @@ export function MinistryRegistrationFlow({ onClose, onComplete }: MinistryRegist
                           updateFormData('ministryInterests', formData.ministryInterests.filter(i => i !== opt));
                         }
                       }}
+                      className="border-slate-600 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
                     />
-                    <Label htmlFor={`min-${opt}`} className="text-sm cursor-pointer">{opt}</Label>
+                    <Label htmlFor={`min-${opt}`} className="text-sm cursor-pointer text-slate-300">{opt}</Label>
                   </div>
                 ))}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-base font-semibold">What gifts, talents, or strengths do you believe God has given you?</Label>
+              <Label className="text-base font-semibold text-white">What gifts, talents, or strengths do you believe God has given you?</Label>
               <Textarea 
                 value={formData.giftsStrengths} 
                 onChange={(e) => updateFormData('giftsStrengths', e.target.value)} 
                 placeholder="Share your strengths..."
-                className="bg-slate-900 border-slate-700 min-h-[100px]"
+                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 min-h-[100px]"
               />
             </div>
           </div>
@@ -317,17 +338,17 @@ export function MinistryRegistrationFlow({ onClose, onComplete }: MinistryRegist
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
             <div className="space-y-2">
-              <Label className="text-base font-semibold">Is there any area where you need prayer support?</Label>
+              <Label className="text-base font-semibold text-white">Is there any area where you need prayer support?</Label>
               <Textarea 
                 value={formData.prayerSupportArea} 
                 onChange={(e) => updateFormData('prayerSupportArea', e.target.value)} 
                 placeholder="Share your prayer requests..."
-                className="bg-slate-900 border-slate-700 min-h-[100px]"
+                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 min-h-[100px]"
               />
             </div>
 
             <div className="space-y-3">
-              <Label className="text-base font-semibold">Spiritual growth area you'd like to focus on:</Label>
+              <Label className="text-base font-semibold text-white">Spiritual growth area you'd like to focus on:</Label>
               <RadioGroup value={formData.spiritualGrowthArea} onValueChange={(v) => updateFormData('spiritualGrowthArea', v)} className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {[
                   "Spiritual growth", "Healing / health", "Family / marriage", 
@@ -335,33 +356,35 @@ export function MinistryRegistrationFlow({ onClose, onComplete }: MinistryRegist
                   "Emotional well-being", "Salvation / rededication"
                 ].map(opt => (
                   <div key={opt} className="flex items-center space-x-2 p-2 rounded hover:bg-slate-800/50 transition-colors">
-                    <RadioGroupItem value={opt} id={`growth-${opt}`} />
-                    <Label htmlFor={`growth-${opt}`} className="text-sm cursor-pointer">{opt}</Label>
+                    <RadioGroupItem value={opt} id={`growth-${opt}`} className="border-slate-500 text-amber-500" />
+                    <Label htmlFor={`growth-${opt}`} className="text-sm cursor-pointer text-slate-300">{opt}</Label>
                   </div>
                 ))}
               </RadioGroup>
             </div>
 
             <div className="space-y-4 pt-4 border-t border-slate-700/50">
-              <div className="flex items-center justify-between p-3 bg-slate-800/20 rounded-xl border border-slate-700/30">
+              <div className="flex items-center justify-between p-3 bg-slate-800/30 rounded-2xl border border-slate-700/50 hover:bg-slate-800 transition-colors">
                 <div className="space-y-0.5">
-                  <Label>Contact Request</Label>
-                  <p className="text-xs text-slate-500">Would you like someone from the ministry team to contact you personally?</p>
+                  <Label className="text-white">Contact Request</Label>
+                  <p className="text-xs text-slate-400">Would you like someone from the ministry team to contact you personally?</p>
                 </div>
                 <Checkbox 
                   checked={formData.contactPreference} 
                   onCheckedChange={(v) => updateFormData('contactPreference', !!v)} 
+                  className="border-slate-500 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
                 />
               </div>
               
-              <div className="flex items-center justify-between p-3 bg-slate-800/20 rounded-xl border border-slate-700/30">
+              <div className="flex items-center justify-between p-3 bg-slate-800/30 rounded-2xl border border-slate-700/50 hover:bg-slate-800 transition-colors">
                 <div className="space-y-0.5">
-                  <Label>Mentorship</Label>
-                  <p className="text-xs text-slate-500">Would you be interested in mentorship or discipleship follow-up?</p>
+                  <Label className="text-white">Mentorship</Label>
+                  <p className="text-xs text-slate-400">Would you be interested in mentorship or discipleship follow-up?</p>
                 </div>
                 <Checkbox 
                   checked={formData.mentorshipInterest} 
                   onCheckedChange={(v) => updateFormData('mentorshipInterest', !!v)} 
+                  className="border-slate-500 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
                 />
               </div>
             </div>
