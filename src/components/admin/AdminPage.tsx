@@ -167,6 +167,16 @@ interface SmallGroup {
   localChurch: string | null;
   interests: string | null;
   _count: { members: number };
+  members?: Array<{
+    userId: string;
+    role: string;
+    user: {
+      id: string;
+      name: string | null;
+      email: string;
+      image: string | null;
+    };
+  }>;
 }
 
 // Sidebar menu categories
@@ -4959,30 +4969,18 @@ function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isSuggestDialogOpen, setIsSuggestDialogOpen] = useState(false);
+  const [isViewMembersOpen, setIsViewMembersOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<SmallGroup | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<'groups' | 'suggestions' | 'analytics'>('groups');
-  const [selectedSuggestion, setSelectedSuggestion] = useState<any>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
 
   const interestOptions = [
     'Prayer Ministry', 'Worship / Music', 'Media Support', 
     'Evangelism', 'Bible Teaching', 'Administration',
     'Follow-up', 'Intercession', 'Communication',
     'Cell Fellowship', 'Need guidance'
-  ];
-
-  const faithStatusOptions = [
-    'I am a committed believer in Jesus Christ',
-    'I recently gave my life to Christ',
-    'I am growing in my faith',
-    'I am exploring Christianity'
-  ];
-
-  const growthAreas = [
-    'Spiritual growth', 'Healing / health', 'Family / marriage', 
-    'Finances', 'Career / business', 'Direction / purpose',
-    'Emotional well-being', 'Salvation'
   ];
 
   const countries = [
@@ -5108,51 +5106,17 @@ function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
       .slice(0, 5)
       .forEach(([location, count]) => {
         const matchingMembers = membersData.filter(m => m.country === location);
-        const topInterest = [...analytics.byInterest.entries()]
-          .sort((a, b) => (b[1] as number) - (a[1] as number))[0]?.[0] || 'General';
         suggestions.push({
           type: 'location',
           name: `${location} Fellowship`,
           location,
           memberCount: count,
           matchingMembers,
-          suggestedInterest: topInterest,
           suggestedDay: 'Sunday',
           suggestedTime: '14:00',
           priority: 'medium' as const
         });
       });
-
-    Object.entries(analytics.byGrowthArea)
-      .filter(([_, count]) => (count as number) >= 2)
-      .sort((a, b) => (b[1] as number) - (a[1] as number))
-      .slice(0, 5)
-      .forEach(([area, count]) => {
-        const matchingMembers = membersData.filter(m => m.spiritualGrowthArea === area);
-        suggestions.push({
-          type: 'growth',
-          name: `${area} Support Group`,
-          growthArea: area,
-          memberCount: count,
-          matchingMembers,
-          suggestedDay: 'Wednesday',
-          suggestedTime: '19:00',
-          priority: 'medium' as const
-        });
-      });
-
-    if (analytics.needsMentorship >= 3) {
-      const matchingMembers = membersData.filter(m => m.mentorshipInterest === true);
-      suggestions.push({
-        type: 'mentorship',
-        name: 'New Believers Mentorship',
-        memberCount: analytics.needsMentorship,
-        matchingMembers,
-        suggestedDay: 'Saturday',
-        suggestedTime: '10:00',
-        priority: 'high' as const
-      });
-    }
 
     return suggestions.sort((a, b) => {
       const priorityOrder = { high: 0, medium: 1, low: 2 };
@@ -5189,8 +5153,8 @@ function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: suggestion.name,
-          description: `Auto-generated group based on ${suggestion.type}: ${suggestion.interest || suggestion.location || suggestion.growthArea || 'member data'}`,
-          type: suggestion.type === 'interest' ? 'Ministry' : suggestion.type === 'growth' ? 'Interests' : 'General',
+          description: `Group based on ${suggestion.type}: ${suggestion.interest || suggestion.location || 'member data'}`,
+          type: suggestion.type === 'interest' ? 'Ministry' : 'General',
           country: suggestion.location || '',
           meetingDay: suggestion.suggestedDay || 'Sunday',
           meetingTime: suggestion.suggestedTime || '10:00',
@@ -5200,10 +5164,10 @@ function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
       });
       if (res.ok) {
         await fetchGroups();
-        setIsSuggestDialogOpen(false);
+        setActiveTab('groups');
       }
     } catch (error) {
-      console.error('Error creating group from suggestion:', error);
+      console.error('Error creating group:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -5234,6 +5198,7 @@ function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
   const handleDeleteGroup = async () => {
     if (!selectedGroup) return;
     setIsSubmitting(true);
+    setDeleteError(null);
     try {
       const res = await fetch(`/api/groups/${selectedGroup.id}`, {
         method: 'DELETE'
@@ -5242,9 +5207,15 @@ function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
         await fetchGroups();
         setIsDeleteDialogOpen(false);
         setSelectedGroup(null);
+        setDeleteSuccess(true);
+        setTimeout(() => setDeleteSuccess(false), 3000);
+      } else {
+        const data = await res.json();
+        setDeleteError(data.error || 'Failed to delete group');
       }
     } catch (error) {
       console.error('Error deleting group:', error);
+      setDeleteError('Failed to delete group');
     } finally {
       setIsSubmitting(false);
     }
@@ -5279,6 +5250,11 @@ function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
       interests: group.interests ? group.interests.split(',') : []
     });
     setIsEditDialogOpen(true);
+  };
+
+  const openViewMembers = (group: SmallGroup) => {
+    setSelectedGroup(group);
+    setIsViewMembersOpen(true);
   };
 
   const toggleInterest = (interest: string) => {
@@ -5672,6 +5648,12 @@ function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
       {/* Groups Tab */}
       {activeTab === 'groups' && (
         <>
+          {deleteSuccess && (
+            <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-4 rounded-xl mb-4 flex items-center gap-3">
+              <CheckCircle2 className="h-5 w-5" />
+              Group deleted successfully
+            </div>
+          )}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {groups.map((group) => (
               <Card key={group.id} className="bg-slate-900/50 border-slate-800 hover:border-amber-500/50 transition">
@@ -5692,11 +5674,14 @@ function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-slate-900 border-slate-800">
+                          <DropdownMenuItem onClick={() => openViewMembers(group)} className="text-slate-300 hover:text-white focus:bg-slate-800 focus:text-white cursor-pointer">
+                            <Users className="h-4 w-4 mr-2" /> View Members
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => openEditDialog(group)} className="text-slate-300 hover:text-white focus:bg-slate-800 focus:text-white cursor-pointer">
                             <Pencil className="h-4 w-4 mr-2" /> Edit Details
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-slate-800" />
-                          <DropdownMenuItem onClick={() => { setSelectedGroup(group); setIsDeleteDialogOpen(true); }} className="text-red-400 hover:text-red-300 focus:bg-red-500/10 focus:text-red-400 cursor-pointer">
+                          <DropdownMenuItem onClick={() => { setSelectedGroup(group); setDeleteError(null); setIsDeleteDialogOpen(true); }} className="text-red-400 hover:text-red-300 focus:bg-red-500/10 focus:text-red-400 cursor-pointer">
                             <Trash2 className="h-4 w-4 mr-2" /> Delete Group
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -5745,16 +5730,76 @@ function GroupsContent({ initialGroups }: { initialGroups: SmallGroup[] }) {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="bg-slate-900 border-slate-800">
           <DialogHeader>
-            <DialogTitle className="text-white">Delete Small Group</DialogTitle>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-red-500" />
+              Delete Small Group
+            </DialogTitle>
             <DialogDescription className="text-slate-400">
-              Are you sure you want to delete <span className="text-white font-medium">"{selectedGroup?.name}"</span>? This action cannot be undone.
+              Are you sure you want to delete <span className="text-white font-medium">"{selectedGroup?.name}"</span>? 
+              {selectedGroup && selectedGroup._count.members > 0 && (
+                <span className="block mt-2 text-amber-500 text-sm">
+                  This group has {selectedGroup._count.members} member(s). They will be removed from the group.
+                </span>
+              )}
             </DialogDescription>
           </DialogHeader>
+          {deleteError && (
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-lg flex items-center gap-2 text-sm">
+              <AlertCircle className="h-4 w-4" />
+              {deleteError}
+            </div>
+          )}
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="border-slate-700 text-white">Cancel</Button>
+            <Button variant="outline" onClick={() => { setIsDeleteDialogOpen(false); setDeleteError(null); }} className="border-slate-700 text-white">Cancel</Button>
             <Button onClick={handleDeleteGroup} disabled={isSubmitting} className="bg-red-500 hover:bg-red-600 text-white">
               {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
               Delete Group
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Members Dialog */}
+      <Dialog open={isViewMembersOpen} onOpenChange={setIsViewMembersOpen}>
+        <DialogContent className="bg-slate-900 border-slate-800 max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Users className="h-5 w-5 text-amber-500" />
+              {selectedGroup?.name} - Members
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              {selectedGroup?._count.members} member(s) in this group
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[400px] overflow-y-auto space-y-3 py-4">
+            {selectedGroup?.members && selectedGroup.members.length > 0 ? (
+              selectedGroup.members.map((member: any) => (
+                <div key={member.userId} className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-lg">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-bold">
+                    {member.user?.name?.charAt(0) || 'U'}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-white font-medium">{member.user?.name || 'Unknown'}</p>
+                    <p className="text-slate-400 text-xs">{member.user?.email}</p>
+                  </div>
+                  <Badge className={
+                    member.role === 'LEADER' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                    'bg-slate-700/50 text-slate-400'
+                  }>
+                    {member.role}
+                  </Badge>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-slate-700 mx-auto mb-3" />
+                <p className="text-slate-400">No members in this group yet</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewMembersOpen(false)} className="border-slate-700 text-white">
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
