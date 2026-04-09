@@ -25,6 +25,7 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { MinistryRegistrationFlow } from './MinistryRegistrationFlow';
 
 interface Registration {
   id: string;
@@ -127,8 +128,9 @@ export function DashboardPage() {
   const [interests, setInterests] = useState(user?.interests || '');
   const [acceptedTerms, setAcceptedTerms] = useState(user?.acceptedTerms || false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(user?.acceptedPrivacy || false);
-  const [acceptedStatementOfFaith, setAcceptedStatementOfFaith] = useState(user?.acceptedStatementOfFaith || false);
+  const [isAcceptedStatementOfFaith, setIsAcceptedStatementOfFaith] = useState(user?.acceptedStatementOfFaith || false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [showFullRegistration, setShowFullRegistration] = useState(false);
   
   // Password change state
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -157,7 +159,7 @@ export function DashboardPage() {
       setInterests(user.interests || '');
       setAcceptedTerms(user.acceptedTerms || false);
       setAcceptedPrivacy(user.acceptedPrivacy || false);
-      setAcceptedStatementOfFaith(user.acceptedStatementOfFaith || false);
+      setIsAcceptedStatementOfFaith(user.acceptedStatementOfFaith || false);
       fetchDashboardData();
     }
   }, [user]);
@@ -208,7 +210,7 @@ export function DashboardPage() {
           interests,
           acceptedTerms,
           acceptedPrivacy,
-          acceptedStatementOfFaith
+          acceptedStatementOfFaith: isAcceptedStatementOfFaith
         }),
       });
       
@@ -572,8 +574,8 @@ export function DashboardPage() {
                             <div className="flex items-center space-x-2">
                               <Checkbox 
                                 id="edit-faith-agree" 
-                                checked={acceptedStatementOfFaith}
-                                onCheckedChange={(v) => setAcceptedStatementOfFaith(!!v)}
+                                checked={isAcceptedStatementOfFaith}
+                                onCheckedChange={(v) => setIsAcceptedStatementOfFaith(!!v)}
                               />
                               <Label htmlFor="edit-faith-agree" className="text-xs text-slate-400 font-normal">Statement of Faith</Label>
                             </div>
@@ -730,7 +732,7 @@ export function DashboardPage() {
                       </div>
                     </div>
                     <Button 
-                      onClick={() => setIsEditingProfile(true)}
+                      onClick={() => setShowFullRegistration(true)}
                       className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 px-4 rounded-lg flex items-center gap-2"
                     >
                       <Edit3 className="h-4 w-4" />
@@ -1105,6 +1107,18 @@ export function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Ministry Registration Flow Modal */}
+      {showFullRegistration && (
+        <MinistryRegistrationFlow 
+          onClose={() => setShowFullRegistration(false)}
+          onComplete={() => {
+            setShowFullRegistration(false);
+            // Refresh data if needed or just let the store update handle it
+            fetchDashboardData();
+          }}
+        />
+      )}
     </div>
   );
 }

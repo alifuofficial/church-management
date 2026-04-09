@@ -22,6 +22,28 @@ interface User {
   acceptedTerms: boolean;
   acceptedPrivacy: boolean;
   acceptedStatementOfFaith: boolean;
+  
+  // Faith Background (Expanded)
+  faithStatusDetail: string | null;
+  believesInSalvation: string | null;
+  confessedChrist: string | null;
+  completedDiscipleship: string | null;
+  baptisedWater: string | null;
+  baptisedSpirit: string | null;
+  attendingLocalChurch: string | null;
+  notMemberReason: string | null;
+  
+  // Service & Ministry
+  currentlyServing: string | null;
+  ministryInterests: string | null;
+  giftsStrengths: string | null;
+  
+  // Follow-up & Prayer
+  prayerSupportArea: string | null;
+  spiritualGrowthArea: string | null;
+  contactPreference: boolean | null;
+  mentorshipInterest: boolean | null;
+  dataConsent: boolean | null;
 }
 
 export interface FeatureFlags {

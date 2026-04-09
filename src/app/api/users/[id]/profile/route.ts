@@ -32,6 +32,28 @@ export async function PUT(
     if (body.acceptedTerms !== undefined) updateData.acceptedTerms = body.acceptedTerms;
     if (body.acceptedPrivacy !== undefined) updateData.acceptedPrivacy = body.acceptedPrivacy;
     if (body.acceptedStatementOfFaith !== undefined) updateData.acceptedStatementOfFaith = body.acceptedStatementOfFaith;
+    
+    // Faith Background
+    if (body.faithStatusDetail !== undefined) updateData.faithStatusDetail = body.faithStatusDetail;
+    if (body.believesInSalvation !== undefined) updateData.believesInSalvation = body.believesInSalvation;
+    if (body.confessedChrist !== undefined) updateData.confessedChrist = body.confessedChrist;
+    if (body.completedDiscipleship !== undefined) updateData.completedDiscipleship = body.completedDiscipleship;
+    if (body.baptisedWater !== undefined) updateData.baptisedWater = body.baptisedWater;
+    if (body.baptisedSpirit !== undefined) updateData.baptisedSpirit = body.baptisedSpirit;
+    if (body.attendingLocalChurch !== undefined) updateData.attendingLocalChurch = body.attendingLocalChurch;
+    if (body.notMemberReason !== undefined) updateData.notMemberReason = body.notMemberReason;
+    
+    // Service & Ministry
+    if (body.currentlyServing !== undefined) updateData.currentlyServing = body.currentlyServing;
+    if (body.ministryInterests !== undefined) updateData.ministryInterests = body.ministryInterests;
+    if (body.giftsStrengths !== undefined) updateData.giftsStrengths = body.giftsStrengths;
+    
+    // Follow-up & Prayer
+    if (body.prayerSupportArea !== undefined) updateData.prayerSupportArea = body.prayerSupportArea;
+    if (body.spiritualGrowthArea !== undefined) updateData.spiritualGrowthArea = body.spiritualGrowthArea;
+    if (body.contactPreference !== undefined) updateData.contactPreference = body.contactPreference;
+    if (body.mentorshipInterest !== undefined) updateData.mentorshipInterest = body.mentorshipInterest;
+    if (body.dataConsent !== undefined) updateData.dataConsent = body.dataConsent;
 
     const user = await db.user.update({
       where: { id },
@@ -62,6 +84,23 @@ export async function PUT(
         acceptedTerms: true,
         acceptedPrivacy: true,
         acceptedStatementOfFaith: true,
+        // New fields
+        faithStatusDetail: true,
+        believesInSalvation: true,
+        confessedChrist: true,
+        completedDiscipleship: true,
+        baptisedWater: true,
+        baptisedSpirit: true,
+        attendingLocalChurch: true,
+        notMemberReason: true,
+        currentlyServing: true,
+        ministryInterests: true,
+        giftsStrengths: true,
+        prayerSupportArea: true,
+        spiritualGrowthArea: true,
+        contactPreference: true,
+        mentorshipInterest: true,
+        dataConsent: true,
       }
     });
 

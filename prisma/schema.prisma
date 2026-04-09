@@ -107,7 +107,30 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  // Faith Background (Expanded)
+  faithStatusDetail   String?
+  believesInSalvation String?
+  confessedChrist     String?
+  completedDiscipleship String?
+  baptisedWater       String?
+  baptisedSpirit      String?
+  attendingLocalChurch String?
+  notMemberReason     String?
+  
+  // Service & Ministry
+  currentlyServing    String?
+  ministryInterests   String? // Store as comma-separated
+  giftsStrengths      String?
+  
+  // Follow-up & Prayer
+  prayerSupportArea   String?
+  spiritualGrowthArea String?
+  contactPreference   Boolean? @default(false)
+  mentorshipInterest  Boolean? @default(false)
+  dataConsent         Boolean? @default(false)
+
   // Relations
+
   createdEvents      Event[]             @relation("EventCreator")
   registrations      Registration[]
   prayerRequests     PrayerRequest[]
