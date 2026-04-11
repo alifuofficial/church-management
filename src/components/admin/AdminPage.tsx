@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import { useAppStore } from '@/store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -2900,6 +2901,7 @@ function EventsContent({ events, formatDate }: { events: Event[]; formatDate: (d
 
 // Sermons Content Component
 function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate: (date: string) => string }) {
+  const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -2907,13 +2909,15 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
   const [selectedSermon, setSelectedSermon] = useState<Sermon | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sermonList, setSermonList] = useState<Sermon[]>(sermons);
-  const [filter, setFilter] = useState<'popular' | 'recent' | 'all'>('popular');
+  const [filter, setFilter] = useState<'popular' | 'recent' | 'all'>('recent');
   
   // Media Picker states
   const [isVideoPickerOpen, setIsVideoPickerOpen] = useState(false);
   const [isAudioPickerOpen, setIsAudioPickerOpen] = useState(false);
+  const [isThumbnailPickerOpen, setIsThumbnailPickerOpen] = useState(false);
   const [isEditVideoPickerOpen, setIsEditVideoPickerOpen] = useState(false);
   const [isEditAudioPickerOpen, setIsEditAudioPickerOpen] = useState(false);
+  const [isEditThumbnailPickerOpen, setIsEditThumbnailPickerOpen] = useState(false);
 
   useEffect(() => {
     setSermonList(sermons);
@@ -2927,6 +2931,8 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
     scripture: '',
     videoUrl: '',
     audioUrl: '',
+    thumbnailUrl: '',
+    duration: '',
     seriesId: '',
     tags: '',
     isFeatured: false,
@@ -2940,6 +2946,8 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
     scripture: '',
     videoUrl: '',
     audioUrl: '',
+    thumbnailUrl: '',
+    duration: '',
     isFeatured: false,
   });
 
@@ -2954,7 +2962,14 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
   });
 
   const handleCreateSermon = async () => {
-    if (!newSermon.title || !newSermon.speakerName) return;
+    if (!newSermon.title || !newSermon.speakerName) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsSubmitting(true);
     try {
@@ -2967,21 +2982,48 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
         }),
       });
       
+      const data = await res.json();
+
       if (res.ok) {
-        const createdSermon = await res.json();
-        setSermonList(prev => [createdSermon, ...prev]);
-        setNewSermon({ title: '', description: '', speakerName: '', scripture: '', videoUrl: '', audioUrl: '', seriesId: '', tags: '', isFeatured: false });
+        setSermonList(prev => [data, ...prev]);
+        setNewSermon({
+          title: '', description: '', speakerName: '', scripture: '',
+          videoUrl: '', audioUrl: '', thumbnailUrl: '', duration: '',
+          seriesId: '', tags: '', isFeatured: false
+        });
         setIsCreateDialogOpen(false);
+        toast({
+          title: "Success",
+          description: "Sermon created successfully.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to create sermon.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error creating sermon:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleEditSermon = async () => {
-    if (!selectedSermon || !editSermon.title) return;
+    if (!selectedSermon || !editSermon.title) {
+      toast({
+        title: "Error",
+        description: "Sermon title is required.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsSubmitting(true);
     try {
@@ -2991,17 +3033,32 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
         body: JSON.stringify(editSermon),
       });
       
+      const data = await res.json();
+
       if (res.ok) {
         setSermonList(prev => prev.map(s => 
-          s.id === selectedSermon.id 
-            ? { ...s, ...editSermon }
-            : s
+          s.id === selectedSermon.id ? data : s
         ));
         setIsEditDialogOpen(false);
         setSelectedSermon(null);
+        toast({
+          title: "Success",
+          description: "Sermon updated successfully.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to update sermon.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error editing sermon:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -3020,9 +3077,25 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
         setSermonList(prev => prev.filter(s => s.id !== selectedSermon.id));
         setIsDeleteDialogOpen(false);
         setSelectedSermon(null);
+        toast({
+          title: "Success",
+          description: "Sermon deleted successfully.",
+        });
+      } else {
+        const data = await res.json();
+        toast({
+          title: "Error",
+          description: data.error || "Failed to delete sermon.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error deleting sermon:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -3032,12 +3105,14 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
     setSelectedSermon(sermon);
     setEditSermon({
       title: sermon.title,
-      description: '',
+      description: sermon.description || '',
       speakerName: sermon.speakerName,
-      scripture: '',
-      videoUrl: '',
-      audioUrl: '',
-      isFeatured: false,
+      scripture: sermon.scripture || '',
+      videoUrl: sermon.videoUrl || '',
+      audioUrl: sermon.audioUrl || '',
+      thumbnailUrl: sermon.thumbnailUrl || '',
+      duration: sermon.duration?.toString() || '',
+      isFeatured: sermon.isFeatured || false,
     });
     setIsEditDialogOpen(true);
   };
@@ -3054,398 +3129,352 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Button 
-            variant={filter === 'popular' ? 'default' : 'outline'}
-            className={filter === 'popular' ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'border-slate-600 text-slate-300'}
-            onClick={() => setFilter('popular')}
-          >
-            Most Popular
-          </Button>
-          <Button 
             variant={filter === 'recent' ? 'default' : 'outline'}
-            className={filter === 'recent' ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30' : 'border-slate-600 text-slate-300'}
+            className={filter === 'recent' ? 'bg-amber-500 text-black hover:bg-amber-600' : 'border-slate-700 text-slate-300 hover:bg-slate-800'}
             onClick={() => setFilter('recent')}
           >
-            Recently Published
+            <Clock className="h-4 w-4 mr-2" />
+            Recent
+          </Button>
+          <Button 
+            variant={filter === 'popular' ? 'default' : 'outline'}
+            className={filter === 'popular' ? 'bg-amber-500 text-black hover:bg-amber-600' : 'border-slate-700 text-slate-300 hover:bg-slate-800'}
+            onClick={() => setFilter('popular')}
+          >
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Popular
           </Button>
         </div>
         
-        {/* Add Sermon Dialog */}
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-amber-500 hover:bg-amber-600 text-black">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Sermon
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-slate-900 border-slate-800 text-white max-w-lg max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Add New Sermon</DialogTitle>
-              <DialogDescription className="text-slate-400">
-                Enter the details for the new sermon.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="sermon-title" className="text-slate-300">Sermon Title</Label>
-                <Input
-                  id="sermon-title"
-                  value={newSermon.title}
-                  onChange={(e) => setNewSermon(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="Walking in Faith"
-                  className="bg-slate-800 border-slate-700 text-white"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="sermon-speaker" className="text-slate-300">Speaker Name</Label>
-                <Input
-                  id="sermon-speaker"
-                  value={newSermon.speakerName}
-                  onChange={(e) => setNewSermon(prev => ({ ...prev, speakerName: e.target.value }))}
-                  placeholder="Pastor John Smith"
-                  className="bg-slate-800 border-slate-700 text-white"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="sermon-scripture" className="text-slate-300">Scripture Reference</Label>
-                <Input
-                  id="sermon-scripture"
-                  value={newSermon.scripture}
-                  onChange={(e) => setNewSermon(prev => ({ ...prev, scripture: e.target.value }))}
-                  placeholder="John 3:16-17"
-                  className="bg-slate-800 border-slate-700 text-white"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="sermon-description" className="text-slate-300">Description</Label>
-                <Input
-                  id="sermon-description"
-                  value={newSermon.description}
-                  onChange={(e) => setNewSermon(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="A message about faith and trust in God..."
-                  className="bg-slate-800 border-slate-700 text-white"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="sermon-video" className="text-slate-300">Video</Label>
-                <Tabs defaultValue="url" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 bg-slate-800">
-                    <TabsTrigger value="url">URL</TabsTrigger>
-                    <TabsTrigger value="upload">Upload</TabsTrigger>
-                    <TabsTrigger value="library">Library</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="url" className="mt-2">
+        <div className="flex items-center gap-3">
+          <div className="relative hidden xl:block">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+            <Input 
+              placeholder="Filter sermons..." 
+              className="pl-10 w-64 bg-slate-900 border-slate-800 text-white"
+            />
+          </div>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-amber-500 hover:bg-amber-600 text-black">
+                <Plus className="h-4 w-4 mr-2" />
+                New Sermon
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-slate-900 border-slate-800 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold">Add New Sermon</DialogTitle>
+                <DialogDescription className="text-slate-400">
+                  Fill in the details to publish a new sermon message.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+                <div className="space-y-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="sermon-title" className="text-slate-300">Sermon Title *</Label>
                     <Input
-                      id="sermon-video"
-                      value={newSermon.videoUrl}
-                      onChange={(e) => setNewSermon(prev => ({ ...prev, videoUrl: e.target.value }))}
-                      placeholder="https://youtube.com/watch?v=..."
-                      className="bg-slate-800 border-slate-700 text-white"
+                      id="sermon-title"
+                      value={newSermon.title}
+                      onChange={(e) => setNewSermon(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="e.g. The Power of Grace"
+                      className="bg-slate-800 border-slate-700 text-white focus:border-amber-500/50"
                     />
-                  </TabsContent>
-                  <TabsContent value="upload" className="mt-2">
-                    <div className="border-2 border-dashed border-slate-700 rounded-lg p-4 text-center hover:border-amber-500/50 transition-colors">
-                      <input
-                        type="file"
-                        accept="video/*"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const formData = new FormData();
-                            formData.append('file', file);
-                            formData.append('type', 'video');
-                            try {
-                              const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                              const data = await res.json();
-                              if (data.url) {
-                                setNewSermon(prev => ({ ...prev, videoUrl: data.url }));
-                              }
-                            } catch (err) {
-                              console.error('Upload error:', err);
-                            }
-                          }
-                        }}
-                        className="hidden"
-                        id="video-upload-create"
-                      />
-                      <label htmlFor="video-upload-create" className="cursor-pointer">
-                        <Upload className="h-8 w-8 mx-auto text-slate-400 mb-2" />
-                        <p className="text-sm text-slate-400">Click to upload video</p>
-                        <p className="text-xs text-slate-500">MP4, WebM, MOV (max 50MB)</p>
-                      </label>
-                    </div>
-                  </TabsContent>
-                  <TabsContent value="library" className="mt-2">
-                    <div className="flex items-center gap-2">
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="sermon-speaker" className="text-slate-300">Speaker Name *</Label>
+                    <Input
+                      id="sermon-speaker"
+                      value={newSermon.speakerName}
+                      onChange={(e) => setNewSermon(prev => ({ ...prev, speakerName: e.target.value }))}
+                      placeholder="e.g. Pastor Davids"
+                      className="bg-slate-800 border-slate-700 text-white focus:border-amber-500/50"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="sermon-scripture" className="text-slate-300">Scripture Reference</Label>
+                    <Input
+                      id="sermon-scripture"
+                      value={newSermon.scripture}
+                      onChange={(e) => setNewSermon(prev => ({ ...prev, scripture: e.target.value }))}
+                      placeholder="e.g. Romans 8:1-4"
+                      className="bg-slate-800 border-slate-700 text-white focus:border-amber-500/50"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="sermon-description" className="text-slate-300">Short Description</Label>
+                    <textarea
+                      id="sermon-description"
+                      value={newSermon.description}
+                      onChange={(e) => setNewSermon(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Summary of the message..."
+                      className="flex min-h-[100px] w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-amber-500/50 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="grid gap-2">
+                    <Label className="text-slate-300">Thumbnail Image</Label>
+                    <div className="flex gap-2">
                       <Input
-                        value={newSermon.videoUrl}
-                        onChange={(e) => setNewSermon(prev => ({ ...prev, videoUrl: e.target.value }))}
-                        placeholder="Select from media library..."
-                        className="bg-slate-800 border-slate-700 text-white"
-                        readOnly
+                        value={newSermon.thumbnailUrl}
+                        onChange={(e) => setNewSermon(prev => ({ ...prev, thumbnailUrl: e.target.value }))}
+                        placeholder="Image URL..."
+                        className="bg-slate-800 border-slate-700 text-white flex-1"
                       />
                       <Button 
-                        type="button"
-                        variant="outline"
+                        variant="outline" 
+                        size="icon" 
                         className="border-slate-700 text-slate-300 shrink-0"
-                        onClick={() => setIsVideoPickerOpen(true)}
+                        onClick={() => setIsThumbnailPickerOpen(true)}
                       >
-                        <FolderOpen className="h-4 w-4 mr-2" />
-                        Browse
+                        <ImageIcon className="h-4 w-4" />
                       </Button>
                     </div>
-                  </TabsContent>
-                </Tabs>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="sermon-audio" className="text-slate-300">Audio</Label>
-                <Tabs defaultValue="url" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 bg-slate-800">
-                    <TabsTrigger value="url">URL</TabsTrigger>
-                    <TabsTrigger value="upload">Upload</TabsTrigger>
-                    <TabsTrigger value="library">Library</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="url" className="mt-2">
-                    <Input
-                      id="sermon-audio"
-                      value={newSermon.audioUrl}
-                      onChange={(e) => setNewSermon(prev => ({ ...prev, audioUrl: e.target.value }))}
-                      placeholder="https://example.com/audio.mp3"
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
-                  </TabsContent>
-                  <TabsContent value="upload" className="mt-2">
-                    <div className="border-2 border-dashed border-slate-700 rounded-lg p-4 text-center hover:border-amber-500/50 transition-colors">
-                      <input
-                        type="file"
-                        accept="audio/*"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const formData = new FormData();
-                            formData.append('file', file);
-                            formData.append('type', 'audio');
-                            try {
-                              const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                              const data = await res.json();
-                              if (data.url) {
-                                setNewSermon(prev => ({ ...prev, audioUrl: data.url }));
-                              }
-                            } catch (err) {
-                              console.error('Upload error:', err);
-                            }
-                          }
-                        }}
-                        className="hidden"
-                        id="audio-upload-create"
-                      />
-                      <label htmlFor="audio-upload-create" className="cursor-pointer">
-                        <Upload className="h-8 w-8 mx-auto text-slate-400 mb-2" />
-                        <p className="text-sm text-slate-400">Click to upload audio</p>
-                        <p className="text-xs text-slate-500">MP3, WAV, M4A (max 50MB)</p>
-                      </label>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label className="text-slate-300">Media Files (Video/Audio)</Label>
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Input
+                          value={newSermon.videoUrl}
+                          onChange={(e) => setNewSermon(prev => ({ ...prev, videoUrl: e.target.value }))}
+                          placeholder="Video URL (YouTube/MP4)..."
+                          className="bg-slate-800 border-slate-700 text-white text-xs"
+                        />
+                        <Button variant="outline" size="sm" className="border-slate-700 text-xs text-slate-300" onClick={() => setIsVideoPickerOpen(true)}>
+                          Pick
+                        </Button>
+                      </div>
+                      <div className="flex gap-2">
+                        <Input
+                          value={newSermon.audioUrl}
+                          onChange={(e) => setNewSermon(prev => ({ ...prev, audioUrl: e.target.value }))}
+                          placeholder="Audio URL (MP3)..."
+                          className="bg-slate-800 border-slate-700 text-white text-xs"
+                        />
+                        <Button variant="outline" size="sm" className="border-slate-700 text-xs text-slate-300" onClick={() => setIsAudioPickerOpen(true)}>
+                          Pick
+                        </Button>
+                      </div>
                     </div>
-                  </TabsContent>
-                  <TabsContent value="library" className="mt-2">
-                    <div className="flex items-center gap-2">
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="sermon-duration" className="text-slate-300">Duration (min)</Label>
                       <Input
-                        value={newSermon.audioUrl}
-                        onChange={(e) => setNewSermon(prev => ({ ...prev, audioUrl: e.target.value }))}
-                        placeholder="Select from media library..."
-                        className="bg-slate-800 border-slate-700 text-white"
-                        readOnly
+                        id="sermon-duration"
+                        value={newSermon.duration}
+                        onChange={(e) => setNewSermon(prev => ({ ...prev, duration: e.target.value }))}
+                        placeholder="e.g. 45"
+                        type="number"
+                        className="bg-slate-800 border-slate-700 text-white focus:border-amber-500/50"
                       />
-                      <Button 
-                        type="button"
-                        variant="outline"
-                        className="border-slate-700 text-slate-300 shrink-0"
-                        onClick={() => setIsAudioPickerOpen(true)}
-                      >
-                        <FolderOpen className="h-4 w-4 mr-2" />
-                        Browse
-                      </Button>
                     </div>
-                  </TabsContent>
-                </Tabs>
+                    <div className="grid gap-2">
+                      <Label htmlFor="sermon-tags" className="text-slate-300">Tags</Label>
+                      <Input
+                        id="sermon-tags"
+                        value={newSermon.tags}
+                        onChange={(e) => setNewSermon(prev => ({ ...prev, tags: e.target.value }))}
+                        placeholder="grace, faith"
+                        className="bg-slate-800 border-slate-700 text-white focus:border-amber-500/50"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2 pt-4">
+                    <Checkbox 
+                      id="isFeatured" 
+                      checked={newSermon.isFeatured}
+                      onCheckedChange={(checked) => setNewSermon(prev => ({ ...prev, isFeatured: !!checked }))}
+                    />
+                    <label htmlFor="isFeatured" className="text-sm font-medium leading-none text-slate-300 cursor-pointer">
+                      Feature this sermon on homepage
+                    </label>
+                  </div>
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="sermon-tags" className="text-slate-300">Tags (comma separated)</Label>
-                <Input
-                  id="sermon-tags"
-                  value={newSermon.tags}
-                  onChange={(e) => setNewSermon(prev => ({ ...prev, tags: e.target.value }))}
-                  placeholder="faith, trust, prayer"
-                  className="bg-slate-800 border-slate-700 text-white"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="sermon-featured"
-                  checked={newSermon.isFeatured}
-                  onChange={(e) => setNewSermon(prev => ({ ...prev, isFeatured: e.target.checked }))}
-                  className="h-4 w-4 rounded border-slate-700 bg-slate-800"
-                />
-                <Label htmlFor="sermon-featured" className="text-slate-300">Featured Sermon</Label>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="border-slate-700 text-slate-300">
-                Cancel
-              </Button>
-              <Button onClick={handleCreateSermon} disabled={isSubmitting} className="bg-amber-500 hover:bg-amber-600 text-black">
-                {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Add Sermon
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <DialogFooter className="mt-6 border-t border-slate-800 pt-4">
+                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="border-slate-700 text-slate-300">
+                  Cancel
+                </Button>
+                <Button onClick={handleCreateSermon} disabled={isSubmitting} className="bg-amber-500 hover:bg-amber-600 text-black px-8">
+                  {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                  Save Sermon
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      <Card className="bg-slate-900/50 border-slate-800">
-        <CardContent className="p-0">
-          <ScrollArea className="h-[600px]">
-            <table className="w-full">
-              <thead className="bg-slate-800 sticky top-0">
-                <tr>
-                  <th className="text-left text-slate-400 font-medium px-6 py-4">Sermon</th>
-                  <th className="text-left text-slate-400 font-medium px-6 py-4">Speaker</th>
-                  <th className="text-left text-slate-400 font-medium px-6 py-4">Views</th>
-                  <th className="text-left text-slate-400 font-medium px-6 py-4">Downloads</th>
-                  <th className="text-left text-slate-400 font-medium px-6 py-4">Published</th>
-                  <th className="text-left text-slate-400 font-medium px-6 py-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedSermons.map((sermon) => (
-                  <tr key={sermon.id} className="border-b border-slate-800 hover:bg-slate-800/50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                          <Play className="h-5 w-5 text-blue-400" />
-                        </div>
-                        <div>
-                          <span className="text-white font-medium">{sermon.title}</span>
-                          {sermon.viewCount > 500 && (
-                            <Badge className="ml-2 bg-amber-500/20 text-amber-400 text-xs">Popular</Badge>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-slate-400">{sermon.speakerName}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1 text-amber-400">
-                        <Video className="h-4 w-4" />
-                        {sermon.viewCount}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1 text-emerald-400">
-                        <ArrowDownRight className="h-4 w-4" />
-                        {sermon.downloadCount}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-slate-400">
-                      {sermon.publishedAt ? formatDate(sermon.publishedAt) : 'Draft'}
-                    </td>
-                    <td className="px-6 py-4">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="bg-slate-800 border-slate-700">
-                          <DropdownMenuLabel className="text-slate-300">Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator className="bg-slate-700" />
-                          <DropdownMenuItem 
-                            className="text-slate-300 hover:text-white hover:bg-slate-700 cursor-pointer"
-                            onClick={() => openViewDialog(sermon)}
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="text-slate-300 hover:text-white hover:bg-slate-700 cursor-pointer"
-                            onClick={() => openEditDialog(sermon)}
-                          >
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Edit Sermon
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-slate-700" />
-                          <DropdownMenuItem 
-                            className="text-red-400 hover:text-red-300 hover:bg-slate-700 cursor-pointer"
-                            onClick={() => openDeleteDialog(sermon)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete Sermon
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                ))}
-                
-                {sortedSermons.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
-                      <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p className="text-lg font-medium">No sermons found</p>
-                      <p className="text-sm">Add your first sermon to get started</p>
-                    </td>
-                  </tr>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {sortedSermons.map((sermon) => (
+          <Card key={sermon.id} className="bg-slate-900 border-slate-800 overflow-hidden group hover:border-amber-500/30 transition-all duration-300 flex flex-col">
+            <div className="relative aspect-video bg-slate-800 overflow-hidden">
+              {sermon.thumbnailUrl ? (
+                <img 
+                  src={sermon.thumbnailUrl} 
+                  alt={sermon.title} 
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
+                  <PlayIcon className="h-12 w-12 text-slate-700" />
+                </div>
+              )}
+              <div className="absolute top-2 right-2 flex gap-2">
+                {sermon.isFeatured && (
+                  <Badge className="bg-amber-500 text-black font-semibold">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    Featured
+                  </Badge>
                 )}
-              </tbody>
-            </table>
-          </ScrollArea>
-        </CardContent>
-      </Card>
+              </div>
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Button size="icon" variant="secondary" className="rounded-full bg-white/20 backdrop-blur-md hover:bg-white/40 border-none" onClick={() => openViewDialog(sermon)}>
+                  <Eye className="h-5 w-5 text-white" />
+                </Button>
+              </div>
+            </div>
+            
+            <CardContent className="p-4 flex-1 flex flex-col">
+              <div className="mb-2">
+                <h3 className="text-lg font-bold text-white line-clamp-1 group-hover:text-amber-400 transition-colors uppercase tracking-tight">{sermon.title}</h3>
+                <p className="text-slate-400 text-sm flex items-center gap-1">
+                  <UserCircle className="h-3 w-3 text-amber-500" />
+                  {sermon.speakerName}
+                </p>
+              </div>
+              
+              <div className="mt-auto pt-4 flex items-center justify-between border-t border-slate-800/50">
+                <div className="flex gap-4">
+                  <div className="flex items-center text-xs text-slate-500 gap-1">
+                    <Video className="h-3 w-3 text-blue-400" />
+                    {sermon.viewCount}
+                  </div>
+                  <div className="flex items-center text-xs text-slate-500 gap-1">
+                    <Download className="h-3 w-3 text-emerald-400" />
+                    {sermon.downloadCount || 0}
+                  </div>
+                </div>
+                
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => openEditDialog(sermon)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-red-400/50 hover:text-red-500" onClick={() => openDeleteDialog(sermon)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+
+        {sortedSermons.length === 0 && (
+          <Card className="col-span-full bg-slate-900 border-slate-800 border-dashed p-12 flex flex-col items-center justify-center text-center">
+            <BookOpen className="h-16 w-16 text-slate-700 mb-4" />
+            <h3 className="text-xl font-bold text-white">No Sermons Found</h3>
+            <p className="text-slate-500 max-w-xs mx-auto mt-2">
+              Start adding your sermons to build your library and reach your congregation.
+            </p>
+            <Button className="mt-6 bg-slate-800 border-slate-700 text-white hover:bg-slate-700" onClick={() => setIsCreateDialogOpen(true)}>
+              Add Your First Sermon
+            </Button>
+          </Card>
+        )}
+      </div>
 
       {/* View Sermon Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="bg-slate-900 border-slate-800 text-white">
+        <DialogContent className="bg-slate-900 border-slate-800 text-white max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Sermon Details</DialogTitle>
+            <DialogTitle>Message Preview</DialogTitle>
           </DialogHeader>
           {selectedSermon && (
-            <div className="space-y-4">
-              <div className="flex items-start gap-4">
-                <div className="w-16 h-16 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0">
-                  <Play className="h-8 w-8 text-blue-400" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold">{selectedSermon.title}</h3>
-                  <p className="text-slate-400">by {selectedSermon.speakerName}</p>
-                </div>
+            <div className="space-y-6">
+              <div className="aspect-video bg-slate-800 rounded-xl flex items-center justify-center overflow-hidden border border-slate-800 shadow-2xl relative">
+                {selectedSermon.videoUrl ? (
+                  <div className="absolute inset-0 bg-black flex items-center justify-center group cursor-pointer">
+                    <div className="w-16 h-16 rounded-full bg-amber-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <PlayIcon className="h-8 w-8 text-black fill-current" />
+                    </div>
+                    {selectedSermon.thumbnailUrl && (
+                       <img src={selectedSermon.thumbnailUrl} className="absolute inset-0 w-full h-full object-cover opacity-50" alt="" />
+                    )}
+                  </div>
+                ) : selectedSermon.thumbnailUrl ? (
+                  <img src={selectedSermon.thumbnailUrl} className="w-full h-full object-cover" alt="" />
+                ) : (
+                  <Video className="h-16 w-16 text-slate-700" />
+                )}
               </div>
-              <Separator className="bg-slate-800" />
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <p className="text-slate-400 text-sm">Views</p>
-                  <p className="text-white flex items-center gap-1">
-                    <Video className="h-4 w-4 text-amber-400" />
-                    {selectedSermon.viewCount}
-                  </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-2 space-y-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white leading-tight">{selectedSermon.title}</h2>
+                    <p className="text-amber-500 font-medium">with {selectedSermon.speakerName}</p>
+                  </div>
+                  
+                  {selectedSermon.scripture && (
+                    <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                      <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-1">SCRIPTURE</p>
+                      <p className="text-slate-300 italic">{selectedSermon.scripture}</p>
+                    </div>
+                  )}
+                  
+                  <div className="text-slate-400 text-sm leading-relaxed">
+                    {selectedSermon.description || "No description provided for this sermon message."}
+                  </div>
                 </div>
-                <div>
-                  <p className="text-slate-400 text-sm">Downloads</p>
-                  <p className="text-white flex items-center gap-1">
-                    <ArrowDownRight className="h-4 w-4 text-emerald-400" />
-                    {selectedSermon.downloadCount}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-slate-400 text-sm">Published</p>
-                  <p className="text-white">
-                    {selectedSermon.publishedAt ? formatDate(selectedSermon.publishedAt) : 'Draft'}
-                  </p>
+                
+                <div className="space-y-4">
+                  <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 text-xs">Views</span>
+                      <span className="text-white font-bold">{selectedSermon.viewCount}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 text-xs">Downloads</span>
+                      <span className="text-white font-bold">{selectedSermon.downloadCount || 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 text-xs">Published</span>
+                      <span className="text-white font-bold">{selectedSermon.publishedAt ? formatDate(selectedSermon.publishedAt) : 'Draft'}</span>
+                    </div>
+                    <Separator className="bg-slate-800" />
+                    <div className="space-y-2">
+                       {selectedSermon.videoUrl && (
+                         <Button variant="outline" className="w-full justify-start text-xs border-slate-800 hover:bg-slate-800" asChild>
+                           <a href={selectedSermon.videoUrl} target="_blank" rel="noreferrer">
+                             <MonitorPlay className="h-3 w-3 mr-2 text-blue-400" />
+                             Play Video
+                           </a>
+                         </Button>
+                       )}
+                       {selectedSermon.audioUrl && (
+                         <Button variant="outline" className="w-full justify-start text-xs border-slate-800 hover:bg-slate-800" asChild>
+                           <a href={selectedSermon.audioUrl} target="_blank" rel="noreferrer">
+                             <Music className="h-3 w-3 mr-2 text-emerald-400" />
+                             Play Audio
+                           </a>
+                         </Button>
+                       )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="border-t border-slate-800 pt-4 gap-2">
             <Button variant="outline" onClick={() => setIsViewDialogOpen(false)} className="border-slate-700 text-slate-300">
               Close
             </Button>
@@ -3461,158 +3490,111 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
 
       {/* Edit Sermon Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="bg-slate-900 border-slate-800 text-white">
+        <DialogContent className="bg-slate-900 border-slate-800 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Sermon</DialogTitle>
+            <DialogTitle>Edit Sermon Message</DialogTitle>
             <DialogDescription className="text-slate-400">
-              Update the sermon information.
+              Update the details for this published message.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="edit-sermon-title" className="text-slate-300">Sermon Title</Label>
-              <Input
-                id="edit-sermon-title"
-                value={editSermon.title}
-                onChange={(e) => setEditSermon(prev => ({ ...prev, title: e.target.value }))}
-                className="bg-slate-800 border-slate-700 text-white"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-sermon-speaker" className="text-slate-300">Speaker Name</Label>
-              <Input
-                id="edit-sermon-speaker"
-                value={editSermon.speakerName}
-                onChange={(e) => setEditSermon(prev => ({ ...prev, speakerName: e.target.value }))}
-                className="bg-slate-800 border-slate-700 text-white"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-sermon-scripture" className="text-slate-300">Scripture Reference</Label>
-              <Input
-                id="edit-sermon-scripture"
-                value={editSermon.scripture}
-                onChange={(e) => setEditSermon(prev => ({ ...prev, scripture: e.target.value }))}
-                className="bg-slate-800 border-slate-700 text-white"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label className="text-slate-300">Video</Label>
-              <Tabs defaultValue="url" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-slate-800">
-                  <TabsTrigger value="url">URL</TabsTrigger>
-                  <TabsTrigger value="upload">Upload</TabsTrigger>
-                </TabsList>
-                <TabsContent value="url" className="mt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+            <div className="space-y-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-title" className="text-slate-300">Sermon Title</Label>
                   <Input
-                    id="edit-sermon-video"
+                    id="edit-title"
+                    value={editSermon.title}
+                    onChange={(e) => setEditSermon(prev => ({ ...prev, title: e.target.value }))}
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-speaker" className="text-slate-300">Speaker Name</Label>
+                  <Input
+                    id="edit-speaker"
+                    value={editSermon.speakerName}
+                    onChange={(e) => setEditSermon(prev => ({ ...prev, speakerName: e.target.value }))}
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-scripture" className="text-slate-300">Scripture Reference</Label>
+                  <Input
+                    id="edit-scripture"
+                    value={editSermon.scripture}
+                    onChange={(e) => setEditSermon(prev => ({ ...prev, scripture: e.target.value }))}
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-description" className="text-slate-300">Description</Label>
+                  <textarea
+                    id="edit-description"
+                    value={editSermon.description}
+                    onChange={(e) => setEditSermon(prev => ({ ...prev, description: e.target.value }))}
+                    className="flex min-h-[100px] w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500/50"
+                  />
+                </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid gap-2">
+                <Label className="text-slate-300 text-xs">Media Links</Label>
+                <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    value={editSermon.thumbnailUrl}
+                    onChange={(e) => setEditSermon(prev => ({ ...prev, thumbnailUrl: e.target.value }))}
+                    placeholder="Thumbnail URL..."
+                    className="bg-slate-800 border-slate-700 text-white text-xs border-r-0 rounded-r-none"
+                  />
+                  <Button variant="outline" size="sm" className="border-slate-700 text-xs text-slate-300 rounded-l-none" onClick={() => setIsEditThumbnailPickerOpen(true)}>
+                    Pick
+                  </Button>
+                </div>
+                  <Input
                     value={editSermon.videoUrl}
                     onChange={(e) => setEditSermon(prev => ({ ...prev, videoUrl: e.target.value }))}
-                    placeholder="https://youtube.com/watch?v=..."
-                    className="bg-slate-800 border-slate-700 text-white"
+                    placeholder="Video URL..."
+                    className="bg-slate-800 border-slate-700 text-white text-xs"
                   />
-                </TabsContent>
-                <TabsContent value="upload" className="mt-2">
-                  <div className="border-2 border-dashed border-slate-700 rounded-lg p-4 text-center hover:border-amber-500/50 transition-colors">
-                    <input
-                      type="file"
-                      accept="video/*"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const formData = new FormData();
-                          formData.append('file', file);
-                          formData.append('type', 'video');
-                          try {
-                            const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                            const data = await res.json();
-                            if (data.url) {
-                              setEditSermon(prev => ({ ...prev, videoUrl: data.url }));
-                            }
-                          } catch (err) {
-                            console.error('Upload error:', err);
-                          }
-                        }
-                      }}
-                      className="hidden"
-                      id="video-upload-edit"
-                    />
-                    <label htmlFor="video-upload-edit" className="cursor-pointer">
-                      <Upload className="h-8 w-8 mx-auto text-slate-400 mb-2" />
-                      <p className="text-sm text-slate-400">Click to upload video</p>
-                      <p className="text-xs text-slate-500">MP4, WebM, MOV (max 50MB)</p>
-                    </label>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </div>
-            <div className="grid gap-2">
-              <Label className="text-slate-300">Audio</Label>
-              <Tabs defaultValue="url" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-slate-800">
-                  <TabsTrigger value="url">URL</TabsTrigger>
-                  <TabsTrigger value="upload">Upload</TabsTrigger>
-                </TabsList>
-                <TabsContent value="url" className="mt-2">
                   <Input
-                    id="edit-sermon-audio"
                     value={editSermon.audioUrl}
                     onChange={(e) => setEditSermon(prev => ({ ...prev, audioUrl: e.target.value }))}
-                    placeholder="https://example.com/audio.mp3"
-                    className="bg-slate-800 border-slate-700 text-white"
+                    placeholder="Audio URL..."
+                    className="bg-slate-800 border-slate-700 text-white text-xs"
                   />
-                </TabsContent>
-                <TabsContent value="upload" className="mt-2">
-                  <div className="border-2 border-dashed border-slate-700 rounded-lg p-4 text-center hover:border-amber-500/50 transition-colors">
-                    <input
-                      type="file"
-                      accept="audio/*"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const formData = new FormData();
-                          formData.append('file', file);
-                          formData.append('type', 'audio');
-                          try {
-                            const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                            const data = await res.json();
-                            if (data.url) {
-                              setEditSermon(prev => ({ ...prev, audioUrl: data.url }));
-                            }
-                          } catch (err) {
-                            console.error('Upload error:', err);
-                          }
-                        }
-                      }}
-                      className="hidden"
-                      id="audio-upload-edit"
-                    />
-                    <label htmlFor="audio-upload-edit" className="cursor-pointer">
-                      <Upload className="h-8 w-8 mx-auto text-slate-400 mb-2" />
-                      <p className="text-sm text-slate-400">Click to upload audio</p>
-                      <p className="text-xs text-slate-500">MP3, WAV, M4A (max 50MB)</p>
-                    </label>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="edit-sermon-featured"
-                checked={editSermon.isFeatured}
-                onChange={(e) => setEditSermon(prev => ({ ...prev, isFeatured: e.target.checked }))}
-                className="h-4 w-4 rounded border-slate-700 bg-slate-800"
-              />
-              <Label htmlFor="edit-sermon-featured" className="text-slate-300">Featured Sermon</Label>
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="edit-duration" className="text-slate-300">Duration (min)</Label>
+                <Input
+                  id="edit-duration"
+                  value={editSermon.duration}
+                  onChange={(e) => setEditSermon(prev => ({ ...prev, duration: e.target.value }))}
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+
+              <div className="flex items-center space-x-2 pt-4">
+                <Checkbox 
+                  id="edit-isFeatured" 
+                  checked={editSermon.isFeatured}
+                  onCheckedChange={(checked) => setEditSermon(prev => ({ ...prev, isFeatured: !!checked }))}
+                />
+                <label htmlFor="edit-isFeatured" className="text-sm font-medium leading-none text-slate-300 cursor-pointer">
+                  Featured Sermon
+                </label>
+              </div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="mt-6 border-t border-slate-800 pt-4">
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="border-slate-700 text-slate-300">
               Cancel
             </Button>
             <Button onClick={handleEditSermon} disabled={isSubmitting} className="bg-amber-500 hover:bg-amber-600 text-black">
-              {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
               Save Changes
             </Button>
           </DialogFooter>
@@ -3623,7 +3605,10 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="bg-slate-900 border-slate-800 text-white">
           <DialogHeader>
-            <DialogTitle>Delete Sermon</DialogTitle>
+            <DialogTitle className="text-red-500 flex items-center gap-2">
+              <Trash2 className="h-5 w-5" />
+              Delete Sermon Permanently?
+            </DialogTitle>
             <DialogDescription className="text-slate-400">
               Are you sure you want to delete this sermon? This will also remove all notes and bookmarks. This action cannot be undone.
             </DialogDescription>
@@ -3677,6 +3662,18 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
         onClose={() => setIsEditAudioPickerOpen(false)}
         onSelect={(url) => setEditSermon(prev => ({ ...prev, audioUrl: url }))}
         typeFilter="audio"
+      />
+      <MediaPicker
+        open={isThumbnailPickerOpen}
+        onClose={() => setIsThumbnailPickerOpen(false)}
+        onSelect={(url) => setNewSermon(prev => ({ ...prev, thumbnailUrl: url }))}
+        typeFilter="image"
+      />
+      <MediaPicker
+        open={isEditThumbnailPickerOpen}
+        onClose={() => setIsEditThumbnailPickerOpen(false)}
+        onSelect={(url) => setEditSermon(prev => ({ ...prev, thumbnailUrl: url }))}
+        typeFilter="image"
       />
     </div>
   );
