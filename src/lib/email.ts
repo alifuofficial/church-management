@@ -53,9 +53,10 @@ async function sendViaSMTP(options: EmailOptions, settings: EmailSettings): Prom
     // Determine the correct port and secure setting
     const port = settings.smtpPort || 587;
     
+    // Use the stored setting if available, otherwise fallback to port-based logic
     // For port 465, use implicit TLS (secure: true)
     // For port 587 or others, use STARTTLS (secure: false with requireTLS)
-    const secure = port === 465 ? true : false;
+    const secure = settings.smtpSecure !== null ? settings.smtpSecure : (port === 465);
     
     const transporter = nodemailer.createTransport({
       host: settings.smtpHost,

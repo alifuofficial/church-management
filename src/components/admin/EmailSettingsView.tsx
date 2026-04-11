@@ -267,18 +267,34 @@ export function EmailSettingsView() {
                 {emailSettings?.provider === 'smtp' ? (
                   <div className="space-y-3 animate-in fade-in duration-300">
                     <div className="grid grid-cols-2 gap-3">
-                      <Input
-                        value={emailSettings.smtpHost || ''}
-                        onChange={(e) => setEmailSettings({ ...emailSettings, smtpHost: e.target.value })}
-                        className="bg-slate-800 border-slate-700 text-white"
-                        placeholder="Host"
-                      />
-                      <Input
-                        type="number"
-                        value={emailSettings.smtpPort || ''}
-                        onChange={(e) => setEmailSettings({ ...emailSettings, smtpPort: parseInt(e.target.value) })}
-                        className="bg-slate-800 border-slate-700 text-white"
-                        placeholder="Port"
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Host</Label>
+                        <Input
+                          value={emailSettings.smtpHost || ''}
+                          onChange={(e) => setEmailSettings({ ...emailSettings, smtpHost: e.target.value })}
+                          className="bg-slate-800 border-slate-700 text-white"
+                          placeholder="smtp.example.com"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Port</Label>
+                        <Input
+                          type="number"
+                          value={emailSettings.smtpPort || ''}
+                          onChange={(e) => setEmailSettings({ ...emailSettings, smtpPort: parseInt(e.target.value) })}
+                          className="bg-slate-800 border-slate-700 text-white"
+                          placeholder="587"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between p-2 rounded-lg bg-slate-800/30 border border-slate-700/50">
+                      <div className="flex flex-col">
+                        <span className="text-slate-300 text-sm font-medium">Secure Connection</span>
+                        <span className="text-slate-500 text-[10px]">Enable SSL/TLS (required for port 465)</span>
+                      </div>
+                      <Switch
+                        checked={emailSettings.smtpSecure}
+                        onCheckedChange={(checked) => setEmailSettings({ ...emailSettings, smtpSecure: checked })}
                       />
                     </div>
                     <Input
@@ -370,7 +386,11 @@ export function EmailSettingsView() {
                         body: JSON.stringify({ testEmail }),
                       });
                       const data = await res.json();
-                      setTestResult({ success: res.ok, message: data.message || 'Test complete' });
+                      if (res.ok) {
+                        setTestResult({ success: true, message: data.message || 'Test email sent successfully' });
+                      } else {
+                        setTestResult({ success: false, message: data.error || 'Failed to send test email' });
+                      }
                     } finally { setIsTesting(false); }
                   }} 
                   disabled={isTesting || !testEmail}
