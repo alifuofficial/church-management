@@ -310,6 +310,27 @@ export function EmailSettingsView() {
                       className="bg-slate-800 border-slate-700 text-white"
                       placeholder="Password"
                     />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">From Name</Label>
+                        <Input
+                          value={emailSettings.smtpFromName || ''}
+                          onChange={(e) => setEmailSettings({ ...emailSettings, smtpFromName: e.target.value })}
+                          className="bg-slate-800 border-slate-700 text-white"
+                          placeholder="Church Office"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">From Email</Label>
+                        <Input
+                          type="email"
+                          value={emailSettings.smtpFromEmail || ''}
+                          onChange={(e) => setEmailSettings({ ...emailSettings, smtpFromEmail: e.target.value })}
+                          className="bg-slate-800 border-slate-700 text-white"
+                          placeholder="noreply@church.com"
+                        />
+                      </div>
+                    </div>
                   </div>
                 ) : (
                    <div className="space-y-3 animate-in fade-in duration-300">
@@ -326,6 +347,33 @@ export function EmailSettingsView() {
                       className="bg-slate-800 border-slate-700 text-white"
                       placeholder="Server Prefix (e.g., us1)"
                     />
+                    <Input
+                      value={emailSettings?.mailchimpListId || ''}
+                      onChange={(e) => emailSettings && setEmailSettings({ ...emailSettings, mailchimpListId: e.target.value })}
+                      className="bg-slate-800 border-slate-700 text-white"
+                      placeholder="Audience/List ID"
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">From Name</Label>
+                        <Input
+                          value={emailSettings?.mailchimpFromName || ''}
+                          onChange={(e) => emailSettings && setEmailSettings({ ...emailSettings, mailchimpFromName: e.target.value })}
+                          className="bg-slate-800 border-slate-700 text-white"
+                          placeholder="Church Newsletter"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">From Email</Label>
+                        <Input
+                          type="email"
+                          value={emailSettings?.mailchimpFromEmail || ''}
+                          onChange={(e) => emailSettings && setEmailSettings({ ...emailSettings, mailchimpFromEmail: e.target.value })}
+                          className="bg-slate-800 border-slate-700 text-white"
+                          placeholder="newsletter@church.com"
+                        />
+                      </div>
+                    </div>
                   </div>
                 )}
               </CardContent>
