@@ -235,6 +235,7 @@ model Program {
 
 model Sermon {
   id              String   @id @default(cuid())
+  slug            String?  @unique
   title           String
   description     String?
   scripture       String?

@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { slugify } from '@/lib/utils';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { z } from 'zod';
 
 const sermonSchema = z.object({
   title: z.string().min(1),
+  slug: z.string().optional().nullable(),
   description: z.string().optional(),
   scripture: z.string().optional(),
   speakerName: z.string().min(1, "Speaker name is required"),
@@ -77,6 +79,7 @@ export async function POST(request: NextRequest) {
     const sermon = await db.sermon.create({
       data: {
         title: body.title,
+        slug: body.slug || slugify(body.title),
         description: body.description || null,
         scripture: body.scripture || null,
         speakerName: body.speakerName,

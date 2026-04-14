@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAppStore } from '@/store';
 import { Button } from '@/components/ui/button';
+import { slugify } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -3345,6 +3346,7 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
   // Form state for new sermon
   const [newSermon, setNewSermon] = useState({
     title: '',
+    slug: '',
     description: '',
     speakerName: '',
     scripture: '',
@@ -3360,6 +3362,7 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
   // Form state for edit sermon
   const [editSermon, setEditSermon] = useState({
     title: '',
+    slug: '',
     description: '',
     speakerName: '',
     scripture: '',
@@ -3601,9 +3604,26 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
                     <Input
                       id="sermon-title"
                       value={newSermon.title}
-                      onChange={(e) => setNewSermon(prev => ({ ...prev, title: e.target.value }))}
+                      onChange={(e) => {
+                        const title = e.target.value;
+                        setNewSermon(prev => ({ 
+                          ...prev, 
+                          title,
+                          slug: slugify(title)
+                        }));
+                      }}
                       placeholder="e.g. The Power of Grace"
                       className="bg-slate-800 border-slate-700 text-white focus:border-amber-500/50"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="sermon-slug" className="text-slate-300">URL Slug</Label>
+                    <Input
+                      id="sermon-slug"
+                      value={newSermon.slug}
+                      onChange={(e) => setNewSermon(prev => ({ ...prev, slug: e.target.value }))}
+                      placeholder="the-power-of-grace"
+                      className="bg-slate-800 border-slate-700 text-white focus:border-amber-500/50 text-xs"
                     />
                   </div>
                   <div className="grid gap-2">
@@ -3944,8 +3964,24 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
                   <Input
                     id="edit-title"
                     value={editSermon.title}
-                    onChange={(e) => setEditSermon(prev => ({ ...prev, title: e.target.value }))}
+                    onChange={(e) => {
+                      const title = e.target.value;
+                      setEditSermon(prev => ({ 
+                        ...prev, 
+                        title,
+                        slug: slugify(title)
+                      }));
+                    }}
                     className="bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-slug" className="text-slate-300">URL Slug</Label>
+                  <Input
+                    id="edit-slug"
+                    value={editSermon.slug}
+                    onChange={(e) => setEditSermon(prev => ({ ...prev, slug: e.target.value }))}
+                    className="bg-slate-800 border-slate-700 text-white text-xs"
                   />
                 </div>
                 <div className="grid gap-2">

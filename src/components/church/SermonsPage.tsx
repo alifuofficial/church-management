@@ -21,8 +21,10 @@ import {
   Globe,
   Users,
   Loader2,
-  X
+  X,
+  Share2
 } from 'lucide-react';
+import Link from 'next/link';
 import { 
   Dialog, 
   DialogContent, 
@@ -32,6 +34,7 @@ import {
 
 interface Sermon {
   id: string;
+  slug: string | null;
   title: string;
   description: string | null;
   scripture: string | null;
@@ -215,7 +218,11 @@ export function SermonsPage() {
                     <Badge className="bg-slate-700 text-slate-300 border-0 mb-3">
                       {featuredSermon.series?.name || 'Standalone'}
                     </Badge>
-                    <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">{featuredSermon.title}</h2>
+                    <Link href={`/sermons/${featuredSermon.slug || featuredSermon.id}`}>
+                      <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 hover:text-amber-400 transition-colors cursor-pointer">
+                        {featuredSermon.title}
+                      </h2>
+                    </Link>
                     <p className="text-slate-400 mb-6 line-clamp-2">{featuredSermon.description}</p>
                     
                     <div className="flex flex-wrap gap-4 text-sm text-slate-500 mb-6">
@@ -440,9 +447,11 @@ export function SermonsPage() {
                       {sermon.series && (
                         <Badge className="bg-slate-700 text-slate-300 border-0 mb-2">{sermon.series.name}</Badge>
                       )}
-                      <h3 className="font-semibold text-white mb-1 line-clamp-1 group-hover:text-amber-400 transition-colors">
-                        {sermon.title}
-                      </h3>
+                      <Link href={`/sermons/${sermon.slug || sermon.id}`}>
+                        <h3 className="font-semibold text-white mb-1 line-clamp-1 hover:text-amber-400 transition-colors cursor-pointer">
+                          {sermon.title}
+                        </h3>
+                      </Link>
                       <p className="text-sm text-slate-500 flex items-center gap-1 mb-3">
                         <BookOpen className="h-3 w-3" />
                         {sermon.speakerName}

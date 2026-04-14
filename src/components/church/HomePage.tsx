@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import {
   Play,
@@ -60,6 +61,7 @@ interface Event {
 
 interface Sermon {
   id: string;
+  slug: string | null;
   title: string;
   description: string | null;
   speakerName: string;
@@ -657,9 +659,11 @@ export function HomePage() {
                       )}
                     </div>
                     <div className="p-5">
-                      <h3 className="text-lg font-semibold text-white mb-2 line-clamp-1 group-hover:text-amber-400 transition-colors">
-                        {sermon.title}
-                      </h3>
+                      <Link href={`/sermons/${sermon.slug || sermon.id}`}>
+                        <h3 className="text-lg font-semibold text-white mb-2 line-clamp-1 hover:text-amber-400 transition-colors cursor-pointer">
+                          {sermon.title}
+                        </h3>
+                      </Link>
                       <p className="text-slate-500 text-sm">{sermon.speakerName}</p>
                       {sermon.scripture && (
                         <Badge variant="secondary" className="mt-3 bg-slate-700 text-slate-300 border-0">

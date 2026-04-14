@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { slugify } from '@/lib/utils';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
@@ -54,6 +55,7 @@ export async function PUT(
     const updateData: Record<string, unknown> = {};
     
     if (body.title !== undefined) updateData.title = body.title;
+    if (body.slug !== undefined) updateData.slug = body.slug || (body.title ? slugify(body.title) : undefined);
     if (body.description !== undefined) updateData.description = body.description || null;
     if (body.scripture !== undefined) updateData.scripture = body.scripture || null;
     if (body.speakerName !== undefined) updateData.speakerName = body.speakerName;
