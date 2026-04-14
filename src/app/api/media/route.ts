@@ -8,11 +8,11 @@ import { authOptions } from '@/lib/auth';
 import { z } from 'zod';
 
 const mediaSchema = z.object({
-  name: z.string().optional(),
-  description: z.string().optional(),
-  tags: z.string().optional(),
-  folder: z.string().optional(),
-  alt: z.string().optional(),
+  name: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  tags: z.string().optional().nullable(),
+  folder: z.string().optional().nullable(),
+  alt: z.string().optional().nullable(),
 });
 
 // Media API - CRUD operations for media library
