@@ -2987,10 +2987,14 @@ function SeriesContent() {
         toast({ title: "Success", description: "Series created successfully" });
       } else {
         const error = await res.json();
-        toast({ title: "Error", description: error.error || "Failed to create series", variant: "destructive" });
+        toast({ 
+          title: "Error", 
+          description: `${error.error || "Failed to create series"} ${error.details ? `(${error.details})` : ""}`, 
+          variant: "destructive" 
+        });
       }
     } catch (error) {
-      toast({ title: "Error", description: "An unexpected error occurred", variant: "destructive" });
+      toast({ title: "Error", description: "An unexpected error occurred. Please check your connection.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -3012,10 +3016,14 @@ function SeriesContent() {
         toast({ title: "Success", description: "Series updated successfully" });
       } else {
         const error = await res.json();
-        toast({ title: "Error", description: error.error || "Failed to update series", variant: "destructive" });
+        toast({ 
+          title: "Error", 
+          description: `${error.error || "Failed to update series"} ${error.details ? `(${error.details})` : ""}`, 
+          variant: "destructive" 
+        });
       }
     } catch (error) {
-      toast({ title: "Error", description: "An unexpected error occurred", variant: "destructive" });
+      toast({ title: "Error", description: "An unexpected error occurred during update.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -3267,6 +3275,7 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedSermon, setSelectedSermon] = useState<Sermon | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [sermonList, setSermonList] = useState<Sermon[]>(sermons);
   const [filter, setFilter] = useState<'popular' | 'recent' | 'all'>('recent');
   
@@ -3333,6 +3342,7 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
     thumbnailUrl: '',
     duration: '',
     seriesId: '',
+    tags: '',
     isFeatured: false,
   });
 
@@ -3350,7 +3360,7 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
     if (!newSermon.title || !newSermon.speakerName) {
       toast({
         title: "Error",
-        description: "Please fill in all required fields.",
+        description: "Please fill in all required fields (Title and Speaker).",
         variant: "destructive",
       });
       return;
@@ -3370,6 +3380,7 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
       const data = await res.json();
 
       if (res.ok) {
+        // Refresh local list
         setSermonList(prev => [data, ...prev]);
         setNewSermon({
           title: '', description: '', speakerName: '', scripture: '',
@@ -3383,16 +3394,16 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
         });
       } else {
         toast({
-          title: "Error",
-          description: data.error || "Failed to create sermon.",
+          title: "Create Failed",
+          description: `${data.error || "Failed to create sermon."} ${data.details ? `(${data.details})` : ""}`,
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating sermon:', error);
       toast({
-        title: "Error",
-        description: "An unexpected error occurred.",
+        title: "Network Error",
+        description: "An unexpected error occurred. Please check your connection.",
         variant: "destructive",
       });
     } finally {
@@ -3432,16 +3443,16 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
         });
       } else {
         toast({
-          title: "Error",
-          description: data.error || "Failed to update sermon.",
+          title: "Update Failed",
+          description: `${data.error || "Failed to update sermon."} ${data.details ? `(${data.details})` : ""}`,
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error editing sermon:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred.",
+        description: "An unexpected error occurred during update.",
         variant: "destructive",
       });
     } finally {
@@ -10018,15 +10029,15 @@ function MediaLibraryContent() {
       } else {
         toast({
           title: "Upload Failed",
-          description: data.error || "Failed to upload media.",
+          description: `${data.error || "Failed to upload media."} ${data.details ? `(${data.details})` : ""}`,
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading media:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred during upload.",
+        description: "An unexpected error occurred during upload. Please check your connection or file size.",
         variant: "destructive",
       });
     } finally {

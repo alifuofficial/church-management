@@ -98,8 +98,16 @@ export async function DELETE(
       return NextResponse.json({ error: 'Media not found' }, { status: 404 });
     }
 
-    // Delete file from filesystem
-    const filePath = path.join(process.cwd(), 'public', media.url);
+    // Delete file from filesystem - handle both /api/uploads/ and /uploads/ paths
+    let filePath: string;
+    if (media.url.startsWith('/api/uploads/')) {
+      const relativePath = media.url.replace('/api/uploads/', '');
+      filePath = path.join(process.cwd(), 'public', 'uploads', relativePath);
+    } else if (media.url.startsWith('/uploads/')) {
+      filePath = path.join(process.cwd(), 'public', media.url);
+    } else {
+      filePath = path.join(process.cwd(), 'public', media.url);
+    }
     if (existsSync(filePath)) {
       await unlink(filePath);
     }

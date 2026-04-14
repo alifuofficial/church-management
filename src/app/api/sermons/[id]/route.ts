@@ -54,18 +54,18 @@ export async function PUT(
     const updateData: Record<string, unknown> = {};
     
     if (body.title !== undefined) updateData.title = body.title;
-    if (body.description !== undefined) updateData.description = body.description;
-    if (body.scripture !== undefined) updateData.scripture = body.scripture;
+    if (body.description !== undefined) updateData.description = body.description || null;
+    if (body.scripture !== undefined) updateData.scripture = body.scripture || null;
     if (body.speakerName !== undefined) updateData.speakerName = body.speakerName;
-    if (body.seriesId !== undefined) updateData.seriesId = body.seriesId;
-    if (body.videoUrl !== undefined) updateData.videoUrl = body.videoUrl;
-    if (body.audioUrl !== undefined) updateData.audioUrl = body.audioUrl;
-    if (body.documentUrl !== undefined) updateData.documentUrl = body.documentUrl;
-    if (body.thumbnailUrl !== undefined) updateData.thumbnailUrl = body.thumbnailUrl;
+    if (body.seriesId !== undefined) updateData.seriesId = body.seriesId || null;
+    if (body.videoUrl !== undefined) updateData.videoUrl = body.videoUrl || null;
+    if (body.audioUrl !== undefined) updateData.audioUrl = body.audioUrl || null;
+    if (body.documentUrl !== undefined) updateData.documentUrl = body.documentUrl || null;
+    if (body.thumbnailUrl !== undefined) updateData.thumbnailUrl = body.thumbnailUrl || null;
     if (body.duration !== undefined) updateData.duration = body.duration ? parseInt(body.duration.toString()) : null;
-    if (body.publishedAt !== undefined) updateData.publishedAt = body.publishedAt ? new Date(body.publishedAt) : null;
+    if (body.publishedAt !== undefined) updateData.publishedAt = body.publishedAt && body.publishedAt !== "" ? new Date(body.publishedAt) : null;
     if (body.isFeatured !== undefined) updateData.isFeatured = body.isFeatured;
-    if (body.tags !== undefined) updateData.tags = body.tags;
+    if (body.tags !== undefined) updateData.tags = body.tags || null;
     if (body.viewCount !== undefined) updateData.viewCount = body.viewCount;
     if (body.downloadCount !== undefined) updateData.downloadCount = body.downloadCount;
 
@@ -80,7 +80,11 @@ export async function PUT(
     return NextResponse.json(sermon);
   } catch (error) {
     console.error('Error updating sermon:', error);
-    return NextResponse.json({ error: 'Failed to update sermon' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ 
+      error: 'Failed to update sermon', 
+      details: message 
+    }, { status: 500 });
   }
 }
 

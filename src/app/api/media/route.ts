@@ -142,8 +142,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to write file to disk' }, { status: 500 });
     }
 
-    // Public URL
-    const publicUrl = `/uploads/${type}/${fileName}`;
+    // Public URL - use /api/uploads for file serving
+    const publicUrl = `/api/uploads/${type}/${fileName}`;
 
     // Create media record in database
     const media = await db.media.create({
@@ -153,11 +153,11 @@ export async function POST(request: NextRequest) {
         url: publicUrl,
         type,
         mimeType,
-        size: file.size,
-        description: validatedMetadata.data.description || '',
-        tags: validatedMetadata.data.tags || '',
+        size: Math.round(file.size),
+        description: validatedMetadata.data.description || null,
+        tags: validatedMetadata.data.tags || null,
         folder: validatedMetadata.data.folder || 'unsorted',
-        alt: validatedMetadata.data.alt || '',
+        alt: validatedMetadata.data.alt || null,
       },
     });
 
@@ -167,6 +167,10 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error uploading media:', error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Failed to upload media' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ 
+      error: 'Failed to upload media', 
+      details: message 
+    }, { status: 500 });
   }
 }

@@ -45,16 +45,20 @@ export async function POST(request: NextRequest) {
     const series = await db.sermonSeries.create({
       data: {
         name: body.name,
-        description: body.description,
-        imageUrl: body.imageUrl,
-        startDate: body.startDate ? new Date(body.startDate) : null,
-        endDate: body.endDate ? new Date(body.endDate) : null,
+        description: body.description || null,
+        imageUrl: body.imageUrl || null,
+        startDate: body.startDate && body.startDate !== "" ? new Date(body.startDate) : null,
+        endDate: body.endDate && body.endDate !== "" ? new Date(body.endDate) : null,
       },
     });
 
     return NextResponse.json(series);
   } catch (error) {
     console.error('Error creating series:', error);
-    return NextResponse.json({ error: 'Failed to create series' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ 
+      error: 'Failed to create series', 
+      details: message 
+    }, { status: 500 });
   }
 }

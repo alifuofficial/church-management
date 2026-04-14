@@ -77,24 +77,28 @@ export async function POST(request: NextRequest) {
     const sermon = await db.sermon.create({
       data: {
         title: body.title,
-        description: body.description,
-        scripture: body.scripture,
+        description: body.description || null,
+        scripture: body.scripture || null,
         speakerName: body.speakerName,
-        seriesId: body.seriesId,
-        videoUrl: body.videoUrl,
-        audioUrl: body.audioUrl,
-        documentUrl: body.documentUrl,
-        thumbnailUrl: body.thumbnailUrl,
+        seriesId: body.seriesId || null,
+        videoUrl: body.videoUrl || null,
+        audioUrl: body.audioUrl || null,
+        documentUrl: body.documentUrl || null,
+        thumbnailUrl: body.thumbnailUrl || null,
         duration: body.duration ? parseInt(body.duration.toString()) : null,
-        publishedAt: body.publishedAt ? new Date(body.publishedAt) : new Date(),
+        publishedAt: body.publishedAt && body.publishedAt !== "" ? new Date(body.publishedAt) : new Date(),
         isFeatured: body.isFeatured ?? false,
-        tags: body.tags,
+        tags: body.tags || null,
       },
     });
 
     return NextResponse.json(sermon);
   } catch (error) {
     console.error('Error creating sermon:', error);
-    return NextResponse.json({ error: 'Failed to create sermon' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ 
+      error: 'Failed to create sermon', 
+      details: message 
+    }, { status: 500 });
   }
 }

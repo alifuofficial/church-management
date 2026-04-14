@@ -46,17 +46,21 @@ export async function PUT(
       where: { id },
       data: {
         name: body.name,
-        description: body.description,
-        imageUrl: body.imageUrl,
-        startDate: body.startDate ? new Date(body.startDate) : undefined,
-        endDate: body.endDate ? new Date(body.endDate) : undefined,
+        description: body.description || null,
+        imageUrl: body.imageUrl || null,
+        startDate: body.startDate && body.startDate !== "" ? new Date(body.startDate) : null,
+        endDate: body.endDate && body.endDate !== "" ? new Date(body.endDate) : null,
       },
     });
 
     return NextResponse.json(series);
   } catch (error) {
     console.error('Error updating series:', error);
-    return NextResponse.json({ error: 'Failed to update series' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ 
+      error: 'Failed to update series', 
+      details: message 
+    }, { status: 500 });
   }
 }
 
