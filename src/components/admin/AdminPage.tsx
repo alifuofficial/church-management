@@ -136,9 +136,31 @@ interface Sermon {
   id: string;
   title: string;
   speakerName: string;
+  description: string | null;
+  scripture: string | null;
+  videoUrl: string | null;
+  audioUrl: string | null;
+  thumbnailUrl: string | null;
+  duration: number | null;
+  isFeatured: boolean;
   viewCount: number;
   downloadCount: number;
   publishedAt: string | null;
+  tags: string | null;
+  seriesId: string | null;
+  series?: { name: string };
+  createdAt: string;
+}
+
+interface SermonSeries {
+  id: string;
+  name: string;
+  description: string | null;
+  imageUrl: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  createdAt: string;
+  _count?: { sermons: number };
 }
 
 interface Donation {
@@ -364,6 +386,8 @@ export function AdminPage() {
         return <CampaignsContent />;
       case 'prayers':
         return <PrayersContent charts={charts} stats={stats} user={user} />;
+      case 'series':
+        return <SeriesContent />;
       case 'groups':
         return <GroupsContent initialGroups={groups} />;
       case 'settings':
@@ -2899,6 +2923,341 @@ function EventsContent({ events, formatDate }: { events: Event[]; formatDate: (d
   );
 }
 
+// Sermon Series Content Component
+function SeriesContent() {
+  const { toast } = useToast();
+  const [seriesList, setSeriesList] = useState<SermonSeries[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedSeries, setSelectedSeries] = useState<SermonSeries | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [newSeries, setNewSeries] = useState({
+    name: '',
+    description: '',
+    imageUrl: '',
+    startDate: '',
+    endDate: '',
+  });
+
+  const [editSeries, setEditSeries] = useState({
+    name: '',
+    description: '',
+    imageUrl: '',
+    startDate: '',
+    endDate: '',
+  });
+
+  useEffect(() => {
+    fetchSeries();
+  }, []);
+
+  const fetchSeries = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/sermon-series');
+      const data = await res.json();
+      if (Array.isArray(data)) setSeriesList(data);
+    } catch (error) {
+      console.error('Error fetching series:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateSeries = async () => {
+    if (!newSeries.name) {
+      toast({ title: "Error", description: "Name is required", variant: "destructive" });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/sermon-series', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSeries),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSeriesList(prev => [data, ...prev]);
+        setIsCreateDialogOpen(false);
+        setNewSeries({ name: '', description: '', imageUrl: '', startDate: '', endDate: '' });
+        toast({ title: "Success", description: "Series created successfully" });
+      } else {
+        const error = await res.json();
+        toast({ title: "Error", description: error.error || "Failed to create series", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "An unexpected error occurred", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateSeries = async () => {
+    if (!selectedSeries || !editSeries.name) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/sermon-series/${selectedSeries.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editSeries),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSeriesList(prev => prev.map(s => s.id === selectedSeries.id ? data : s));
+        setIsEditDialogOpen(false);
+        toast({ title: "Success", description: "Series updated successfully" });
+      } else {
+        const error = await res.json();
+        toast({ title: "Error", description: error.error || "Failed to update series", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "An unexpected error occurred", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteSeries = async () => {
+    if (!selectedSeries) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/sermon-series/${selectedSeries.id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setSeriesList(prev => prev.filter(s => s.id !== selectedSeries.id));
+        setIsDeleteDialogOpen(false);
+        toast({ title: "Deleted", description: "Series removed successfully" });
+      } else {
+        const error = await res.json();
+        toast({ title: "Error", description: error.error || "Failed to delete series", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "An unexpected error occurred", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-1">Sermon Series</h2>
+          <p className="text-slate-400">Organize your sermons into series and collections</p>
+        </div>
+        <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-amber-500 hover:bg-amber-600 text-black">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Series
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center p-12 bg-slate-900/50 border border-slate-800 rounded-xl">
+          <Loader2 className="h-8 w-8 text-amber-500 animate-spin mb-4" />
+          <p className="text-slate-400">Loading series...</p>
+        </div>
+      ) : (
+        <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          {seriesList.map((series) => (
+            <Card key={series.id} className="bg-slate-900 border-slate-800 hover:border-slate-700 transition-colors group">
+              <CardHeader className="p-5">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
+                    <FolderOpen className="h-6 w-6 text-amber-500" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-slate-400 hover:text-white hover:bg-slate-800"
+                      onClick={() => {
+                        setSelectedSeries(series);
+                        setEditSeries({
+                          name: series.name,
+                          description: series.description || '',
+                          imageUrl: series.imageUrl || '',
+                          startDate: series.startDate || '',
+                          endDate: series.endDate || '',
+                        });
+                        setIsEditDialogOpen(true);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-slate-400 hover:text-red-500 hover:bg-red-500/10"
+                      onClick={() => {
+                        setSelectedSeries(series);
+                        setIsDeleteDialogOpen(true);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <CardTitle className="text-white text-lg group-hover:text-amber-500 transition-colors">{series.name}</CardTitle>
+                <CardDescription className="text-slate-400 text-sm line-clamp-2 mt-2">
+                  {series.description || 'No description provided.'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="px-5 pb-5 pt-0">
+                <div className="flex items-center justify-between text-xs text-slate-500 bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="h-3.5 w-3.5 text-amber-500/70" />
+                    <span>{series._count?.sermons || 0} Sermons</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-3.5 w-3.5 text-blue-500/70" />
+                    <span>{new Date(series.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+          {seriesList.length === 0 && (
+            <div className="col-span-full py-12 text-center bg-slate-900/50 border border-slate-800 rounded-xl">
+              <FolderOpen className="h-12 w-12 mx-auto text-slate-700 mb-4" />
+              <h3 className="text-lg font-medium text-white">No series found</h3>
+              <p className="text-slate-400 max-w-sm mx-auto mt-2">Create your first sermon series to organize your content better.</p>
+              <Button onClick={() => setIsCreateDialogOpen(true)} variant="outline" className="mt-6 border-slate-700 hover:bg-slate-800">
+                Create First Series
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Create Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="bg-slate-900 border-slate-800 text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Series</DialogTitle>
+            <DialogDescription className="text-slate-400">Add a new collection for your sermons.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="series-name" className="text-slate-300">Name</Label>
+              <Input 
+                id="series-name"
+                value={newSeries.name}
+                onChange={(e) => setNewSeries(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="e.g. The Grace of God"
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="series-image" className="text-slate-300">Image URL</Label>
+              <Input 
+                id="series-image"
+                value={newSeries.imageUrl}
+                onChange={(e) => setNewSeries(prev => ({ ...prev, imageUrl: e.target.value }))}
+                placeholder="https://..."
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="series-description" className="text-slate-300">Description</Label>
+              <textarea 
+                id="series-description"
+                value={newSeries.description}
+                onChange={(e) => setNewSeries(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="About this series..."
+                className="w-full bg-slate-800 border-slate-700 text-white rounded-md p-2 text-sm min-h-[100px] focus:outline-none focus:ring-1 focus:ring-amber-500"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="border-slate-700 text-slate-300 hover:bg-slate-800">
+              Cancel
+            </Button>
+            <Button onClick={handleCreateSeries} disabled={isSubmitting} className="bg-amber-500 hover:bg-amber-600 text-black">
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+              Create Series
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="bg-slate-900 border-slate-800 text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Series</DialogTitle>
+            <DialogDescription className="text-slate-400">Update series details.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-series-name" className="text-slate-300">Name</Label>
+              <Input 
+                id="edit-series-name"
+                value={editSeries.name}
+                onChange={(e) => setEditSeries(prev => ({ ...prev, name: e.target.value }))}
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-series-image" className="text-slate-300">Image URL</Label>
+              <Input 
+                id="edit-series-image"
+                value={editSeries.imageUrl}
+                onChange={(e) => setEditSeries(prev => ({ ...prev, imageUrl: e.target.value }))}
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-series-description" className="text-slate-300">Description</Label>
+              <textarea 
+                id="edit-series-description"
+                value={editSeries.description}
+                onChange={(e) => setEditSeries(prev => ({ ...prev, description: e.target.value }))}
+                className="w-full bg-slate-800 border-slate-700 text-white rounded-md p-2 text-sm min-h-[100px] focus:outline-none focus:ring-1 focus:ring-amber-500"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="border-slate-700 text-slate-300 hover:bg-slate-800">
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateSeries} disabled={isSubmitting} className="bg-amber-500 hover:bg-amber-600 text-black">
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="bg-slate-900 border-slate-800 text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-500">Delete Series?</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Are you sure you want to delete <span className="text-white font-medium">{selectedSeries?.name}</span>? 
+              This will not delete the sermons in this series, but they will no longer be associated with it.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="border-slate-700 text-slate-300">
+              Cancel
+            </Button>
+            <Button onClick={handleDeleteSeries} disabled={isSubmitting} variant="destructive" className="bg-red-600 hover:bg-red-700 text-white">
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+              Delete Series
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 // Sermons Content Component
 function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate: (date: string) => string }) {
   const { toast } = useToast();
@@ -2918,10 +3277,35 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
   const [isEditVideoPickerOpen, setIsEditVideoPickerOpen] = useState(false);
   const [isEditAudioPickerOpen, setIsEditAudioPickerOpen] = useState(false);
   const [isEditThumbnailPickerOpen, setIsEditThumbnailPickerOpen] = useState(false);
+  const [seriesOptions, setSeriesOptions] = useState<SermonSeries[]>([]);
 
   useEffect(() => {
-    setSermonList(sermons);
-  }, [sermons]);
+    fetchSermons();
+    fetchSeries();
+  }, [filter]);
+
+  const fetchSermons = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/sermons?limit=100`);
+      const data = await res.json();
+      if (Array.isArray(data)) setSermonList(data);
+    } catch (error) {
+      console.error('Error fetching sermons:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchSeries = async () => {
+    try {
+      const res = await fetch('/api/sermon-series');
+      const data = await res.json();
+      if (Array.isArray(data)) setSeriesOptions(data);
+    } catch (error) {
+      console.error('Error fetching series:', error);
+    }
+  };
 
   // Form state for new sermon
   const [newSermon, setNewSermon] = useState({
@@ -2948,6 +3332,7 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
     audioUrl: '',
     thumbnailUrl: '',
     duration: '',
+    seriesId: '',
     isFeatured: false,
   });
 
@@ -3112,6 +3497,7 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
       audioUrl: sermon.audioUrl || '',
       thumbnailUrl: sermon.thumbnailUrl || '',
       duration: sermon.duration?.toString() || '',
+      seriesId: sermon.seriesId || '',
       isFeatured: sermon.isFeatured || false,
     });
     setIsEditDialogOpen(true);
@@ -3202,6 +3588,23 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
                       placeholder="e.g. Romans 8:1-4"
                       className="bg-slate-800 border-slate-700 text-white focus:border-amber-500/50"
                     />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="sermon-series" className="text-slate-300">Sermon Series</Label>
+                    <Select 
+                      value={newSermon.seriesId || 'none'} 
+                      onValueChange={(val) => setNewSermon(prev => ({ ...prev, seriesId: val === 'none' ? '' : val }))}
+                    >
+                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                        <SelectValue placeholder="Select a series" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-700 text-white">
+                        <SelectItem value="none">No Series</SelectItem>
+                        {seriesOptions.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="sermon-description" className="text-slate-300">Short Description</Label>
@@ -3527,6 +3930,23 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
                   />
                 </div>
                 <div className="grid gap-2">
+                  <Label htmlFor="edit-series" className="text-slate-300">Sermon Series</Label>
+                  <Select 
+                    value={editSermon.seriesId || 'none'} 
+                    onValueChange={(val) => setEditSermon(prev => ({ ...prev, seriesId: val === 'none' ? '' : val }))}
+                  >
+                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                      <SelectValue placeholder="Select a series" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700 text-white">
+                      <SelectItem value="none">No Series</SelectItem>
+                      {seriesOptions.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
                   <Label htmlFor="edit-description" className="text-slate-300">Description</Label>
                   <textarea
                     id="edit-description"
@@ -3552,18 +3972,28 @@ function SermonsContent({ sermons, formatDate }: { sermons: Sermon[]; formatDate
                     Pick
                   </Button>
                 </div>
-                  <Input
-                    value={editSermon.videoUrl}
-                    onChange={(e) => setEditSermon(prev => ({ ...prev, videoUrl: e.target.value }))}
-                    placeholder="Video URL..."
-                    className="bg-slate-800 border-slate-700 text-white text-xs"
-                  />
-                  <Input
-                    value={editSermon.audioUrl}
-                    onChange={(e) => setEditSermon(prev => ({ ...prev, audioUrl: e.target.value }))}
-                    placeholder="Audio URL..."
-                    className="bg-slate-800 border-slate-700 text-white text-xs"
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      value={editSermon.videoUrl}
+                      onChange={(e) => setEditSermon(prev => ({ ...prev, videoUrl: e.target.value }))}
+                      placeholder="Video URL..."
+                      className="bg-slate-800 border-slate-700 text-white text-xs border-r-0 rounded-r-none"
+                    />
+                    <Button variant="outline" size="sm" className="border-slate-700 text-xs text-slate-300 rounded-l-none" onClick={() => setIsEditVideoPickerOpen(true)}>
+                      Pick
+                    </Button>
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      value={editSermon.audioUrl}
+                      onChange={(e) => setEditSermon(prev => ({ ...prev, audioUrl: e.target.value }))}
+                      placeholder="Audio URL..."
+                      className="bg-slate-800 border-slate-700 text-white text-xs border-r-0 rounded-r-none"
+                    />
+                    <Button variant="outline" size="sm" className="border-slate-700 text-xs text-slate-300 rounded-l-none" onClick={() => setIsEditAudioPickerOpen(true)}>
+                      Pick
+                    </Button>
+                  </div>
                 </div>
               </div>
 
@@ -9516,6 +9946,7 @@ function TestimoniesContent() {
 
 // Media Library Content Component
 function MediaLibraryContent() {
+  const { toast } = useToast();
   const [mediaList, setMediaList] = useState<Media[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -9575,13 +10006,29 @@ function MediaLibraryContent() {
         body: formData,
       });
 
+      const data = await res.json();
+
       if (res.ok) {
-        const data = await res.json();
         setMediaList(prev => [data.media, ...prev]);
         setIsUploadDialogOpen(false);
+        toast({
+          title: "Success",
+          description: "Media uploaded successfully.",
+        });
+      } else {
+        toast({
+          title: "Upload Failed",
+          description: data.error || "Failed to upload media.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error uploading media:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred during upload.",
+        variant: "destructive",
+      });
     } finally {
       setIsUploading(false);
     }
@@ -9602,9 +10049,25 @@ function MediaLibraryContent() {
         setMediaList(prev => prev.map(m => m.id === selectedMedia.id ? updated : m));
         setIsEditDialogOpen(false);
         setSelectedMedia(null);
+        toast({
+          title: "Success",
+          description: "Media details updated.",
+        });
+      } else {
+        const data = await res.json();
+        toast({
+          title: "Update Failed",
+          description: data.error || "Failed to update media details.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error updating media:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -9622,9 +10085,25 @@ function MediaLibraryContent() {
         setMediaList(prev => prev.filter(m => m.id !== selectedMedia.id));
         setIsDeleteDialogOpen(false);
         setSelectedMedia(null);
+        toast({
+          title: "Deleted",
+          description: "Media removed from library.",
+        });
+      } else {
+        const data = await res.json();
+        toast({
+          title: "Delete Failed",
+          description: data.error || "Failed to delete media.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error deleting media:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }

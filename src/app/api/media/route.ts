@@ -115,22 +115,32 @@ export async function POST(request: NextRequest) {
     else if (mimeType.startsWith('audio/')) type = 'audio';
 
     // Create upload directory if it doesn't exist
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', type);
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
+    const uploadDir = path.resolve(process.cwd(), 'public', 'uploads', type);
+    try {
+      if (!existsSync(uploadDir)) {
+        await mkdir(uploadDir, { recursive: true });
+      }
+    } catch (err) {
+      console.error('Error creating directory:', err);
+      return NextResponse.json({ error: 'Failed to create upload directory' }, { status: 500 });
     }
 
     // Generate unique filename
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 8);
-    const ext = file.name.split('.').pop() || 'bin';
-    const fileName = `${timestamp}-${randomString}.${ext}`;
+    const originalExt = file.name.split('.').pop() || 'bin';
+    const fileName = `${timestamp}-${randomString}.${originalExt}`;
     const filePath = path.join(uploadDir, fileName);
 
     // Write file
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
+    try {
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      await writeFile(filePath, buffer);
+    } catch (err) {
+      console.error('Error writing file:', err);
+      return NextResponse.json({ error: 'Failed to write file to disk' }, { status: 500 });
+    }
 
     // Public URL
     const publicUrl = `/uploads/${type}/${fileName}`;
@@ -144,10 +154,10 @@ export async function POST(request: NextRequest) {
         type,
         mimeType,
         size: file.size,
-        description: validatedMetadata.data.description,
-        tags: validatedMetadata.data.tags,
-        folder: validatedMetadata.data.folder,
-        alt: validatedMetadata.data.alt,
+        description: validatedMetadata.data.description || '',
+        tags: validatedMetadata.data.tags || '',
+        folder: validatedMetadata.data.folder || 'unsorted',
+        alt: validatedMetadata.data.alt || '',
       },
     });
 
@@ -157,6 +167,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error uploading media:', error);
-    return NextResponse.json({ error: 'Failed to upload media' }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Failed to upload media' }, { status: 500 });
   }
 }

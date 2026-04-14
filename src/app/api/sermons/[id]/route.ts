@@ -62,7 +62,7 @@ export async function PUT(
     if (body.audioUrl !== undefined) updateData.audioUrl = body.audioUrl;
     if (body.documentUrl !== undefined) updateData.documentUrl = body.documentUrl;
     if (body.thumbnailUrl !== undefined) updateData.thumbnailUrl = body.thumbnailUrl;
-    if (body.duration !== undefined) updateData.duration = body.duration;
+    if (body.duration !== undefined) updateData.duration = body.duration ? parseInt(body.duration.toString()) : null;
     if (body.publishedAt !== undefined) updateData.publishedAt = body.publishedAt ? new Date(body.publishedAt) : null;
     if (body.isFeatured !== undefined) updateData.isFeatured = body.isFeatured;
     if (body.tags !== undefined) updateData.tags = body.tags;
