@@ -28,6 +28,12 @@ import {
   ChevronLeft,
   MessageSquare
 } from 'lucide-react';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface Program {
   id: string;
@@ -59,6 +65,8 @@ interface Sermon {
   speakerName: string;
   scripture: string | null;
   thumbnailUrl: string | null;
+  videoUrl?: string | null;
+  audioUrl?: string | null;
   duration: number | null;
   viewCount: number;
   publishedAt: string;
@@ -100,6 +108,21 @@ export function HomePage() {
   const [testimonies, setTestimonies] = useState<Testimony[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTestimony, setActiveTestimony] = useState(0);
+  const [playingSermon, setPlayingSermon] = useState<Sermon | null>(null);
+  const [playerType, setPlayerType] = useState<'video' | 'audio' | null>(null);
+
+  const getYoutubeEmbedUrl = (url: string) => {
+    if (!url) return '';
+    if (url.includes('youtube.com/watch?v=')) {
+      const videoId = url.split('v=')[1]?.split('&')[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    if (url.includes('youtu.be/')) {
+      const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    return url;
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -620,6 +643,10 @@ export function HomePage() {
                       <Button 
                         size="icon"
                         className="absolute inset-0 m-auto w-14 h-14 rounded-full bg-amber-500 hover:bg-amber-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => {
+                          setPlayingSermon(sermon);
+                          setPlayerType(sermon.videoUrl ? 'video' : 'audio');
+                        }}
                       >
                         <Play className="h-7 w-7 text-black ml-1" />
                       </Button>
@@ -901,6 +928,79 @@ export function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Video/Audio Player Dialog */}
+      <Dialog open={!!playingSermon} onOpenChange={(open) => !open && setPlayingSermon(null)}>
+        <DialogContent className="max-w-4xl bg-slate-900 border-slate-800 p-0 overflow-hidden text-white">
+          <DialogHeader className="p-4 border-b border-slate-800">
+            <DialogTitle className="flex items-center justify-between">
+              <span className="truncate pr-4">{playingSermon?.title}</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="aspect-video bg-black flex items-center justify-center">
+            {playingSermon && playerType === 'video' && (
+              playingSermon.videoUrl?.includes('youtube.com') || playingSermon.videoUrl?.includes('youtu.be') ? (
+                <iframe
+                  src={`${getYoutubeEmbedUrl(playingSermon.videoUrl)}?autoplay=1`}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <video 
+                  src={playingSermon.videoUrl || ''} 
+                  controls 
+                  autoPlay 
+                  className="w-full h-full"
+                />
+              )
+            )}
+            
+            {playingSermon && playerType === 'audio' && (
+              <div className="w-full px-8 flex flex-col items-center gap-6">
+                <div className="w-48 h-48 rounded-2xl bg-slate-800 flex items-center justify-center shadow-2xl overflow-hidden relative group">
+                  <img 
+                    src={playingSermon.thumbnailUrl || 'https://images.unsplash.com/photo-1507692049790-de58290a4334?w=800'} 
+                    alt={playingSermon.title} 
+                    className="w-full h-full object-cover opacity-50"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Headphones className="h-16 w-16 text-amber-500" />
+                  </div>
+                </div>
+                <div className="text-center">
+                  <h3 className="text-xl font-bold">{playingSermon.title}</h3>
+                  <p className="text-slate-400">{playingSermon.speakerName}</p>
+                </div>
+                <audio 
+                  src={playingSermon.audioUrl || ''} 
+                  controls 
+                  autoPlay 
+                  className="w-full"
+                />
+              </div>
+            )}
+          </div>
+          
+          <div className="p-6 bg-slate-950/50">
+            <div className="flex flex-wrap gap-4 text-xs text-slate-500">
+              {playingSermon?.scripture && (
+                <div className="flex items-center gap-1">
+                  <BookOpen className="h-3 w-3 text-amber-500" />
+                  {playingSermon.scripture}
+                </div>
+              )}
+              {playingSermon?.speakerName && (
+                <div className="flex items-center gap-1">
+                  <Users className="h-3 w-3 text-amber-500" />
+                  {playingSermon.speakerName}
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

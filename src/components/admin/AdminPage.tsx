@@ -2928,11 +2928,13 @@ function SeriesContent() {
   const { toast } = useToast();
   const [seriesList, setSeriesList] = useState<SermonSeries[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedSeries, setSelectedSeries] = useState<SermonSeries | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
+  const [isEditImagePickerOpen, setIsEditImagePickerOpen] = useState(false);
   
   const [newSeries, setNewSeries] = useState({
     name: '',
@@ -3162,13 +3164,18 @@ function SeriesContent() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="series-image" className="text-slate-300">Image URL</Label>
-              <Input 
-                id="series-image"
-                value={newSeries.imageUrl}
-                onChange={(e) => setNewSeries(prev => ({ ...prev, imageUrl: e.target.value }))}
-                placeholder="https://..."
-                className="bg-slate-800 border-slate-700 text-white"
-              />
+              <div className="flex gap-2">
+                <Input 
+                  id="series-image"
+                  value={newSeries.imageUrl}
+                  onChange={(e) => setNewSeries(prev => ({ ...prev, imageUrl: e.target.value }))}
+                  placeholder="https://..."
+                  className="bg-slate-800 border-slate-700 text-white flex-1"
+                />
+                <Button variant="outline" size="sm" className="border-slate-700 text-xs text-slate-300" onClick={() => setIsImagePickerOpen(true)}>
+                  Pick
+                </Button>
+              </div>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="series-description" className="text-slate-300">Description</Label>
@@ -3212,12 +3219,17 @@ function SeriesContent() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="edit-series-image" className="text-slate-300">Image URL</Label>
-              <Input 
-                id="edit-series-image"
-                value={editSeries.imageUrl}
-                onChange={(e) => setEditSeries(prev => ({ ...prev, imageUrl: e.target.value }))}
-                className="bg-slate-800 border-slate-700 text-white"
-              />
+              <div className="flex gap-2">
+                <Input 
+                  id="edit-series-image"
+                  value={editSeries.imageUrl}
+                  onChange={(e) => setEditSeries(prev => ({ ...prev, imageUrl: e.target.value }))}
+                  className="bg-slate-800 border-slate-700 text-white flex-1"
+                />
+                <Button variant="outline" size="sm" className="border-slate-700 text-xs text-slate-300" onClick={() => setIsEditImagePickerOpen(true)}>
+                  Pick
+                </Button>
+              </div>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="edit-series-description" className="text-slate-300">Description</Label>
@@ -3251,17 +3263,31 @@ function SeriesContent() {
               This will not delete the sermons in this series, but they will no longer be associated with it.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="border-slate-700 text-slate-300">
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="border-slate-700 text-slate-300 hover:bg-slate-800">
               Cancel
             </Button>
-            <Button onClick={handleDeleteSeries} disabled={isSubmitting} variant="destructive" className="bg-red-600 hover:bg-red-700 text-white">
+            <Button onClick={handleDeleteSeries} disabled={isSubmitting} variant="destructive">
               {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
               Delete Series
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Media Pickers */}
+      <MediaPicker
+        open={isImagePickerOpen}
+        onClose={() => setIsImagePickerOpen(false)}
+        onSelect={(url) => setNewSeries(prev => ({ ...prev, imageUrl: url }))}
+        typeFilter="image"
+      />
+      <MediaPicker
+        open={isEditImagePickerOpen}
+        onClose={() => setIsEditImagePickerOpen(false)}
+        onSelect={(url) => setEditSeries(prev => ({ ...prev, imageUrl: url }))}
+        typeFilter="image"
+      />
     </div>
   );
 }

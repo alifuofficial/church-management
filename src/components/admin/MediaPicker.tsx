@@ -161,6 +161,12 @@ export function MediaPicker({ open, onClose, onSelect, typeFilter }: MediaPicker
                       isSelected && "border-amber-500 ring-2 ring-amber-500/30"
                     )}
                     onClick={() => setSelectedMedia(media)}
+                    onDoubleClick={() => {
+                      setSelectedMedia(media);
+                      onSelect(media.url);
+                      onClose();
+                      setSelectedMedia(null);
+                    }}
                   >
                     <CardContent className="p-3">
                       <div className="aspect-square rounded-lg bg-slate-900 mb-2 overflow-hidden flex items-center justify-center relative">
