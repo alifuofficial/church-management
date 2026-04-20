@@ -252,24 +252,7 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Service Times */}
-        <div className="mt-8 pt-8 border-t border-slate-800">
-          <h3 className="font-semibold mb-4 text-sm uppercase tracking-wider text-center">Service Times</h3>
-          <div className="flex flex-wrap justify-center gap-8 text-sm">
-            <div className="text-center">
-              <p className="text-amber-500 font-medium">Sunday</p>
-              <p className="text-slate-400">10:00 AM & 6:00 PM</p>
-            </div>
-            <div className="text-center">
-              <p className="text-amber-500 font-medium">Wednesday</p>
-              <p className="text-slate-400">7:30 PM</p>
-            </div>
-            <div className="text-center">
-              <p className="text-amber-500 font-medium">Online</p>
-              <p className="text-slate-400">Live Stream Available</p>
-            </div>
-          </div>
-        </div>
+
 
         {/* Language Switcher */}
         <div className="mt-8 pt-8 border-t border-slate-800 flex justify-center">
